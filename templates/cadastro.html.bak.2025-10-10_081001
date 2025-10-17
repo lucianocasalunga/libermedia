@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Cadastro — LiberMedia</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+  <style>
+    .form-box {
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 24px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .form-box h2 { margin: 0 0 8px; }
+    .hint { margin: 0 0 18px; color: #555; }
+    .sub-box {
+      margin: 16px 0;
+      padding: 16px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+    .sub-box h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    .form-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .form-btn:hover { background: #555; }
+    @media (max-width: 600px) {
+      .form-box { max-width: 92%; padding: 16px; }
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    nav a { margin: 0 8px; text-decoration: none; color: #333; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" style="cursor:pointer" onclick="goHome()">
+      <img src="/static/img/logo.jpg" alt="LiberMedia Logo" height="40">
+    </div>
+    <nav>
+      <a href="/">Início</a>
+      <a href="/planos">Planos</a>
+      <a href="/cadastro">Cadastro</a>
+    </nav>
+    <button id="themeToggle" title="Tema">
+      <img src="/static/img/iconediaenoite.png" alt="Tema" height="24">
+    </button>
+  </header>
+
+  <main>
+    <div class="form-box">
+      <h2>Cadastro / Acesso</h2>
+      <p class="hint">Escolha uma das opções abaixo</p>
+
+      <div class="sub-box">
+        <h3>Novo por aqui?</h3>
+        <p>Crie sua conta com nome de usuário, chaves Nostr e senha.</p>
+        <button class="form-btn" onclick="window.location.href='/registro'">Ir para Registro</button>
+      </div>
+
+      <div class="sub-box">
+        <h3>Já tem conta?</h3>
+        <p>Entre usando sua chave pública e senha.</p>
+        <button class="form-btn" onclick="window.location.href='/login'">Entrar</button>
+      </div>
+
+      <div class="sub-box">
+        <h3>Entrar com extensão (NIP-07)</h3>
+        <p>Use sua carteira/extensão Nostr do navegador.</p>
+        <button class="form-btn" onclick="loginExtensao()">Entrar com extensão</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loginExtensao() {
+      if (!window.nostr || !window.nostr.getPublicKey) {
+        alert("Extensão Nostr (NIP-07) não detectada.");
+        return;
+      }
+      try {
+        const pubkey = await window.nostr.getPublicKey();
+        // Redireciona para login já com pubkey preenchida
+        window.location.href = "/login?pubkey=" + encodeURIComponent(pubkey);
+      } catch (e) {
+        alert("Não foi possível obter a chave pública da extensão.");
+      }
+    }
+  </script>
+</body>
+</html>

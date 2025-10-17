@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+
+<div class="container mx-auto max-w-3xl">
+  <div class="bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl p-10 border border-gray-200 dark:border-gray-700">
+    
+    <h1 class="text-4xl font-bold mb-8 text-gray-900 dark:text-white">⚙️ Configurações</h1>
+
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">👤 Perfil</h2>
+      
+      <div class="flex items-center space-x-4">
+        <img id="avatar" src="/static/img/avatar.png" class="w-20 h-20 rounded-full border-4 border-yellow-500">
+        <div>
+          <p class="font-bold text-gray-900 dark:text-white" id="userName">Usuário Nostr</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 break-all" id="userNpub"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <a href="/dashboard" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-center">
+        ← Voltar ao Dashboard
+      </a>
+      
+      <button onclick="sair()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
+        🚪 Sair da Conta
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const npub = localStorage.getItem('libermedia_npub');
+if (npub) {
+  document.getElementById('userNpub').innerText = npub;
+}
+
+function sair() {
+  if (confirm('Deseja sair?')) {
+    localStorage.clear();
+    window.location.href = '/';
+  }
+}
+</script>
+
+{% endblock %}

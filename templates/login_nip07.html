@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Entrar com NIP-07 - LiberMedia{% endblock %}
+{% block content %}
+<div class="min-h-[80vh] flex flex-col items-center justify-center bg-[url('/static/bg.jpg')] bg-cover bg-center">
+  <div class="bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-100 rounded-2xl shadow-2xl p-10 w-full max-w-md text-center">
+    <img src="/static/logo.png" alt="LiberMedia" class="mx-auto mb-6 w-20 h-20 rounded-full shadow-md">
+    <h1 class="text-2xl font-bold mb-4">Entrar com extensão Nostr (NIP-07)</h1>
+    <p class="text-gray-700 dark:text-gray-300 mb-6">Conecte-se usando sua carteira Nostr do navegador.</p>
+
+    <button id="btnLogin" class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition w-full">Conectar via extensão</button>
+    <p id="status" class="mt-4 text-sm text-gray-600 dark:text-gray-400"></p>
+
+    <a href="/" class="text-blue-600 dark:text-blue-400 mt-6 inline-block">← Voltar ao início</a>
+  </div>
+</div>
+
+<script>
+async function nostrLogin(){
+  const status=document.getElementById("status");
+  try{
+    if(!window.nostr){status.textContent="❌ Extensão Nostr não detectada.";return;}
+    const pubkey=await window.nostr.getPublicKey();
+    status.textContent="🔑 Chave pública detectada: "+pubkey.substring(0,12)+"...";
+    localStorage.setItem("libermedia_pubkey",pubkey);
+    status.textContent+=" ✅ Sessão salva!";
+  }catch(e){
+    status.textContent="Erro: "+e.message;
+  }
+}
+document.getElementById("btnLogin").addEventListener("click",nostrLogin);
+</script>
+{% endblock %}

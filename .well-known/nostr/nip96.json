@@ -1,0 +1,15 @@
+{
+  "api_url": "https://libermedia.app/api/nip96",
+  "download_url": "https://libermedia.app",
+  "supported_nips": [96, 94],
+  "tos_url": "https://libermedia.app/sobre",
+  "content_types": ["image/*", "video/*", "audio/*", "application/*"],
+  "plans": {
+    "free": {
+      "name": "Free",
+      "max_file_size": 52428800,
+      "file_expiration": [0, 0],
+      "media_transformations": {}
+    }
+  }
+}

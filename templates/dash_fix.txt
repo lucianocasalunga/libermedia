@@ -1,0 +1,9 @@
+Procure no dashboard.html a linha que tem:
+html += '<span class="text-3xl">' + icone + '</span>';
+
+Substitua por:
+if (a.tipo === 'image') {
+  html += '<img src="' + a.url + '" class="w-16 h-16 object-cover rounded border-2 border-gray-300 cursor-pointer" onclick="verImagem(\'' + a.url + '\', \'' + a.nome + '\')">';
+} else {
+  html += '<span class="text-3xl">' + icone + '</span>';
+}

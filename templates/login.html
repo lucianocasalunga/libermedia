@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-700">
+    
+    <div class="text-center mb-8">
+      <img src="/static/img/logo.jpg" class="w-24 h-24 mx-auto rounded-full border-4 border-yellow-500 mb-4">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">LiberMedia</h1>
+      <p class="text-gray-600 dark:text-gray-400">Faça login com Nostr</p>
+    </div>
+
+    <div class="space-y-4">
+      
+      <!-- Botão NIP-07 (extensão) -->
+      <button onclick="loginNIP07()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+        🔐 Login com Extensão (NIP-07)
+      </button>
+
+      <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">ou</span>
+        </div>
+      </div>
+
+      <!-- Login manual (nsec) -->
+      <form onsubmit="loginManual(event)" class="space-y-4">
+        <input 
+          type="password" 
+          id="nsec" 
+          placeholder="Sua nsec (chave privada)" 
+          class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+          required
+        >
+        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 px-6 rounded-xl transition-all">
+          🔑 Login com nsec
+        </button>
+      </form>
+
+    </div>
+
+    <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
+      Não tem Nostr? <a href="https://nostr.com" target="_blank" class="text-purple-600 hover:underline">Crie uma conta</a>
+    </p>
+
+  </div>
+</div>
+
+<script src="https://bundle.run/noble-curves@1.6.0"></script>
+<script src="https://bundle.run/noble-hashes@1.5.0"></script>
+
+<script>
+// Converte hex para npub
+function hexToNpub(hex) {
+  const data = new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  const words = bech32ToWords(data);
+  return bech32Encode('npub', words);
+}
+
+function bech32ToWords(data) {
+  const result = [];
+  let value = 0;
+  let bits = 0;
+  
+  for (let i = 0; i < data.length; i++) {
+    value = (value << 8) | data[i];
+    bits += 8;
+    
+    while (bits >= 5) {
+      bits -= 5;
+      result.push((value >> bits) & 31);
+    }
+  }
+  
+  if (bits > 0) {
+    result.push((value << (5 - bits)) & 31);
+  }
+  
+  return result;
+}
+
+function bech32Encode(prefix, words) {
+  const charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  let result = prefix + '1';
+  
+  for (let i = 0; i < words.length; i++) {
+    result += charset[words[i]];
+  }
+  
+  return result;
+}
+
+// LOGIN NIP-07 (extensão)
+async function loginNIP07() {
+  try {
+    if (!window.nostr) {
+      alert('❌ Extensão Nostr não detectada!\\n\\nInstale: nos2x, Alby ou outra extensão NIP-07');
+      return;
+    }
+    
+    const pubkey = await window.nostr.getPublicKey();
+    const npub = hexToNpub(pubkey);
+    
+    // Salva no localStorage
+    localStorage.setItem('libermedia_npub', npub);
+    localStorage.setItem('libermedia_pubkey', pubkey);
+    
+    // Redireciona
+    window.location.href = '/dashboard';
+    
+  } catch (error) {
+    console.error(error);
+    alert('❌ Erro ao conectar com extensão: ' + error.message);
+  }
+}
+
+// LOGIN MANUAL (nsec)
+async function loginManual(e) {
+  e.preventDefault();
+  
+  const nsec = document.getElementById('nsec').value.trim();
+  
+  if (!nsec.startsWith('nsec1')) {
+    alert('❌ nsec inválida! Deve começar com nsec1');
+    return;
+  }
+  
+  try {
+    // TODO: converter nsec para npub
+    alert('⚠️ Login manual em desenvolvimento. Use extensão NIP-07 por enquanto.');
+    
+  } catch (error) {
+    alert('❌ Erro: ' + error.message);
+  }
+}
+</script>
+
+{% endblock %}

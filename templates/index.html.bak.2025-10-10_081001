@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>LiberMedia — LiberMedia</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+<script src="/static/nostr_auth.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="logo" onclick="goHome()" style="cursor:pointer;">
+      <img src="/static/img/logo.jpg" alt="LiberMedia Logo" height="40">
+    </div>
+    <nav>
+      <a href="/">Início</a>
+      <a href="/planos">Planos</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/sobre">Sobre</a>
+      <a href="/suporte">Suporte</a>
+    </nav>
+    <button id="themeToggle"><img src="/static/img/iconediaenoite.png" alt="Tema" height="24"></button>
+  </header>
+
+  <main>
+    <div class='main-box'><h1>Bem-vindo ao LiberMedia</h1><p>Crie sua conta ou acesse sua área:</p><button class='btn btn-primary' onclick="location.href='/cadastro'">Criar Conta</button> <button class='btn btn-primary' onclick="location.href='/usuario'">Entrar</button></div>
+  </main>
+</body>
+</html>

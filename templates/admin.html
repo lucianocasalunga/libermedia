@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Admin - Sofia{% endblock %}
+{% block content %}
+
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-4xl font-bold mb-8 text-gray-900 dark:text-white">👑 Admin - Sofia</h1>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+      <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">👥 Usuários (<span id="totalUsers">0</span>)</h2>
+      <div id="listaUsuarios" class="space-y-2 max-h-96 overflow-y-auto"></div>
+    </div>
+    
+    <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+      <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">📁 Todos os Arquivos (<span id="totalFiles">0</span>)</h2>
+      <div id="listaArquivos" class="space-y-2 max-h-96 overflow-y-auto"></div>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+async function carregarUsuarios(){
+  try{
+    const r=await fetch('/api/admin/usuarios');
+    const d=await r.json();
+    const lista=document.getElementById('listaUsuarios');
+    
+    if(d.status==='ok'){
+      document.getElementById('totalUsers').innerText=d.usuarios.length;
+      let html='';
+      for(let u of d.usuarios){
+        const badge=u.is_admin?'<span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded">👑 ADMIN</span>':'';
+        html+=`<div class="bg-gray-50 dark:bg-gray-900 p-3 rounded border">
+          <p class="font-bold">${u.nome} ${badge}</p>
+          <p class="text-xs text-gray-600 dark:text-gray-400">${u.pubkey}</p>
+          <p class="text-xs">Plano: ${u.plano}</p>
+        </div>`;
+      }
+      lista.innerHTML=html;
+    }
+  }catch(e){console.error(e);}
+}
+
+async function carregarArquivos(){
+  try{
+    const r=await fetch('/api/admin/arquivos');
+    const d=await r.json();
+    const lista=document.getElementById('listaArquivos');
+    
+    if(d.status==='ok'){
+      document.getElementById('totalFiles').innerText=d.arquivos.length;
+      let html='';
+      for(let a of d.arquivos){
+        const mb=(a.tamanho/1024/1024).toFixed(2);
+        html+=`<div class="bg-gray-50 dark:bg-gray-900 p-3 rounded border flex justify-between items-center">
+          <div>
+            <p class="font-bold">${a.nome}</p>
+            <p class="text-xs text-gray-600">User ID: ${a.usuario_id} | ${mb} MB</p>
+          </div>
+          <button onclick="deletar(${a.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">🗑️</button>
+        </div>`;
+      }
+      lista.innerHTML=html;
+    }
+  }catch(e){console.error(e);}
+}
+
+async function deletar(id){
+  if(!confirm('Deletar arquivo?'))return;
+  try{
+    const r=await fetch('/api/admin/delete/'+id,{method:'DELETE'});
+    const d=await r.json();
+    if(d.status==='ok'){
+      alert('✅ Deletado!');
+      carregarArquivos();
+    }else{
+      alert('❌ Erro: '+d.error);
+    }
+  }catch{alert('❌ Erro');}
+}
+
+carregarUsuarios();
+carregarArquivos();
+</script>
+
+{% endblock %}

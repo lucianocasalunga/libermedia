@@ -1,0 +1,22 @@
+{
+    email admin@libernet.app
+    acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+}
+
+nostr.libernet.app {
+    # API Python
+    reverse_proxy libermedia:8081
+    
+    # Arquivos estáticos
+    handle_path /uploads/* {
+        root * /opt/libermedia/data
+        file_server browse
+    }
+    
+    # Frontend
+    handle {
+        root * /opt/libermedia/static
+        file_server
+        try_files {path} /index.html
+    }
+}

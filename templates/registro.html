@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Registro — LiberMedia</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+  <style>
+    .form-box{max-width:520px;margin:40px auto;padding:24px;background:rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 12px rgba(0,0,0,.2);text-align:center}
+    .form-input{width:100%;padding:10px 12px;margin:8px 0;border:1px solid #ccc;border-radius:6px;font-size:.95rem}
+    .form-btn{width:100%;padding:12px;margin-top:12px;border:none;border-radius:6px;background:#333;color:#fff;cursor:pointer;font-size:1rem}
+    .form-btn:hover{background:#555}
+    .back{display:inline-block;margin-top:8px;font-size:.9rem}
+    header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+    nav a{margin:0 8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" style="cursor:pointer" onclick="goHome()">
+      <img src="/static/img/logo.jpg" alt="LiberMedia Logo" height="40">
+    </div>
+    <nav>
+      <a href="/">Início</a>
+      <a href="/planos">Planos</a>
+      <a href="/cadastro">Cadastro</a>
+    </nav>
+    <button id="themeToggle" title="Tema">
+      <img src="/static/img/iconediaenoite.png" alt="Tema" height="24">
+    </button>
+  </header>
+
+  <main>
+    <div class="form-box">
+      <h2>Registro</h2>
+      <input id="nome" class="form-input" placeholder="Nome de usuário" autocomplete="username">
+      <input id="pubkey" class="form-input" placeholder="Chave pública (npub/hex)">
+      <input id="privkey" class="form-input" placeholder="Chave secreta (nsec/hex)">
+      <input id="senha" class="form-input" type="password" placeholder="Senha" autocomplete="new-password">
+      <input id="confirm" class="form-input" type="password" placeholder="Confirmar senha" autocomplete="new-password">
+      <button class="form-btn" onclick="registrar()">Registrar</button>
+      <a class="back" href="/cadastro">← Voltar</a>
+    </div>
+  </main>
+
+  <script>
+    async function registrar(){
+      const nome   = document.getElementById("nome").value.trim();
+      const pubkey = document.getElementById("pubkey").value.trim();
+      const privkey= document.getElementById("privkey").value.trim();
+      const senha  = document.getElementById("senha").value.trim();
+      const confirm= document.getElementById("confirm").value.trim();
+
+      if(!nome || !pubkey || !privkey || !senha || !confirm){
+        alert("Preencha todos os campos.");
+        return;
+      }
+      if(senha !== confirm){
+        alert("As senhas não conferem.");
+        return;
+      }
+
+      try{
+        const res  = await fetch("/api/register",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({nome, pubkey, privkey, password: senha, confirm})
+        });
+        const data = await res.json();
+        if(res.ok){
+          alert("✅ Registro concluído! Faça login.");
+          window.location.href = "/login?pubkey=" + encodeURIComponent(pubkey);
+        }else{
+          alert("Erro: " + (data.error || "Falha no registro"));
+        }
+      }catch(_){
+        alert("Erro de conexão com o servidor.");
+      }
+    }
+  </script>
+</body>
+</html>

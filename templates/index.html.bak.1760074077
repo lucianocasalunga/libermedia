@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Início - LiberMedia{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[70vh] bg-[url('/static/bg.jpg')] bg-cover bg-center py-10">
+  <div class="bg-white bg-opacity-95 p-8 rounded-2xl shadow-lg w-full max-w-md text-center">
+    <h1 class="text-3xl font-extrabold mb-4">Bem-vindo ao LiberMedia</h1>
+    <p class="text-gray-700 mb-6">Escolha como deseja entrar no LiberMedia:</p>
+
+    <div class="space-y-4">
+      <a href="/cadastro" class="block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+        Criar Conta
+      </a>
+      <a href="#" class="block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+        Entrar com extensão (NIP-07)
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

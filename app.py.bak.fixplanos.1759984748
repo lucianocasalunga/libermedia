@@ -1,0 +1,168 @@
+import os
+import time
+import jwt
+from flask import Flask, request, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# --- Configuração ---
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///libermedia.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
+JWT_SECRET = os.environ.get("JWT_SECRET", "libermedia-secret")
+JWT_ALGO = "HS256"
+
+# --- Modelo de usuário ---
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(120), nullable=False)
+    pubkey = db.Column(db.String(256), unique=True, nullable=False)
+    privkey = db.Column(db.String(256), nullable=False)
+    senha_hash = db.Column(db.String(256), nullable=False)
+    plano = db.Column(db.String(32), default="free")
+    created_at = db.Column(db.Integer, default=lambda: int(time.time()))
+
+with app.app_context():
+    db.create_all()
+
+# --- Rotas principais ---
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/cadastro")
+def cadastro_page():
+    return render_template("cadastro.html")
+
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
+
+@app.route("/registro")
+def registro_page():
+    return render_template("registro.html")
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
+# --- API Registro ---
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    data = request.get_json(force=True)
+    nome = data.get("nome")
+    pubkey = data.get("pubkey")
+    privkey = data.get("privkey")
+    password = data.get("password")
+    confirm = data.get("confirm")
+
+    if not nome or not pubkey or not privkey or not password or not confirm:
+        return jsonify({"error": "Todos os campos são obrigatórios"}), 400
+
+    if password != confirm:
+        return jsonify({"error": "As senhas não coincidem"}), 400
+
+    if Usuario.query.filter_by(pubkey=pubkey).first():
+        return jsonify({"error": "Usuário já existe"}), 400
+
+    senha_hash = generate_password_hash(password)
+    user = Usuario(
+        nome=nome,
+        pubkey=pubkey,
+        privkey=privkey,
+        senha_hash=senha_hash
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"message": "Usuário registrado com sucesso", "plan": user.plano}), 200
+
+# --- API Login ---
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(force=True)
+    pubkey = data.get("pubkey")
+    password = data.get("password")
+
+    user = Usuario.query.filter_by(pubkey=pubkey).first()
+    if not user or not check_password_hash(user.senha_hash, password):
+        return jsonify({"error": "Credenciais inválidas"}), 401
+
+    token = jwt.encode(
+        {"pubkey": pubkey, "plan": user.plano, "exp": time.time() + 3600},
+        JWT_SECRET,
+        algorithm=JWT_ALGO
+    )
+    return jsonify({"token": token, "plan": user.plano}), 200
+
+# --- API Me ---
+@app.route("/api/me", methods=["GET"])
+def api_me():
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Token ausente"}), 401
+
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+    except Exception:
+        return jsonify({"error": "Token inválido"}), 401
+
+    user = Usuario.query.filter_by(pubkey=payload["pubkey"]).first()
+    if not user:
+        return jsonify({"error": "Usuário não encontrado"}), 404
+
+    return jsonify({
+        "nome": user.nome,
+        "pubkey": user.pubkey,
+        "plano": user.plano,
+        "created_at": user.created_at
+    })
+
+# --- Healthcheck ---
+@app.route("/health")
+def health():
+    try:
+        db.session.execute("SELECT 1")
+        return jsonify({"status": "ok", "db": True})
+    except Exception:
+        return jsonify({"status": "erro", "db": False}), 500
+
+# --- Main ---
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8081)
+
+# === Rotas restauradas automaticamente (LiberMedia) ===
+from flask import render_template
+
+@app.route("/planos")
+def planos():
+    return render_template("planos.html")
+
+@app.route("/usuario")
+def usuario():
+    return render_template("usuario.html")
+
+@app.route("/sobre")
+def sobre():
+    return render_template("sobre.html")
+
+@app.route("/suporte")
+def suporte():
+    return render_template("suporte.html")
+# === Fim das rotas restauradas ===
+
+# === [LiberMedia] helpers para página de planos ===
+import json, os
+def _load_plans_config():
+    conf_path = os.path.join(os.path.dirname(__file__), "config", "plans.json")
+    with open(conf_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("plans", []), data
+
+@app.route("/planos")
+def planos():
+    plans, meta = _load_plans_config()
+    return render_template("planos.html", plans=plans, meta=meta)

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Planos - LiberMedia{% endblock %}
+{% block content %}
+<section class="container mx-auto px-4 py-10" style="max-width: 1100px;">
+  <h1 class="text-3xl font-bold mb-6">Planos</h1>
+  <p class="mb-8">Escolha um plano e pague via Bitcoin. Os QR Codes são gerados no seu navegador.</p>
+
+  <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;">
+    {% for p in plans %}
+    <div class="card" style="border-radius:14px;padding:16px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.08);">
+      <h2 class="text-xl font-semibold">{{ p.name }}</h2>
+      <p class="text-sm text-gray-700 mb-2">{{ p.description }}</p>
+
+      <ul class="text-sm mb-3" style="line-height:1.5">
+        <li><strong>Espaço:</strong> {{ p.storage_gb }} GB</li>
+        <li><strong>Preço:</strong> {{ p.amount_sats }} sats</li>
+        <li><strong>Endereço:</strong> <code>{{ p.wallet_address }}</code></li>
+      </ul>
+
+      {% set btc_amount = (p.amount_sats / 100_000_000) %}
+      {% set payment_uri = "bitcoin:" ~ p.wallet_address ~ (p.amount_sats > 0 and "?amount=" ~ "%.8f"|format(btc_amount) or "") %}
+
+      <div id="qrcode-{{ p.id }}" class="mb-3" style="width:180px;height:180px;"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" data-copy="{{ payment_uri }}" style="padding:8px 12px;border-radius:10px;background:#111;color:#fff;border:0;cursor:pointer;">
+          Copiar URI
+        </button>
+        <a class="btn" href="{{ payment_uri }}" style="padding:8px 12px;border-radius:10px;border:1px solid #111;color:#111;text-decoration:none;" target="_blank" rel="noopener">
+          Abrir na carteira
+        </a>
+      </div>
+      <small class="block mt-2 text-gray-600">URI: {{ payment_uri }}</small>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="mt-8 text-sm text-gray-600">Para alterar valores/endereços, edite <code>/opt/libermedia/config/plans.json</code>.</p>
+</section>
+
+<!-- QRCodeJS (no browser) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-8+4JmUqblzQ7q5rQ5Hq8c4n8o5mN5A6uJkLxq9kH3tE9o7l2qf2hI1bKc3mT8b2QdY4K7yY6K5WJQm6bqf0h3Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  // dados injetados pelo servidor como dataset nos elementos via IDs conhecidos
+  const plans = {{ plans|tojson }};
+  for (const p of plans) {
+    const sats = Number(p.amount_sats||0);
+    const btc = sats > 0 ? (sats/100000000).toFixed(8) : "";
+    const uri = `bitcoin:${p.wallet_address}${btc ? `?amount=${btc}` : ""}`;
+    const el = document.getElementById(`qrcode-${p.id}`);
+    if (el && p.wallet_address && p.wallet_address !== "N/A") {
+      new QRCode(el, { text: uri, width: 180, height: 180 });
+    } else {
+      el && (el.innerHTML = "<small>Plano gratuito (sem pagamento)</small>");
+    }
+  }
+  document.querySelectorAll('button[data-copy]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      try { await navigator.clipboard.writeText(btn.dataset.copy); btn.textContent="Copiado!"; setTimeout(()=>btn.textContent="Copiar URI",1200); }
+      catch(e){ alert("Não foi possível copiar."); }
+    });
+  });
+</script>
+{% endblock %}

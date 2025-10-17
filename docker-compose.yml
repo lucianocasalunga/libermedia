@@ -1,0 +1,28 @@
+services:
+  libermedia:
+    build: .
+    container_name: libermedia
+    restart: always
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./app.py:/app/app.py
+      - ./templates:/app/templates
+      - ./.well-known:/.well-known
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://libermedia:libermedia123@db:5432/libermedia
+    command: gunicorn --bind 0.0.0.0:8081 --workers 2 --reload --log-level debug --access-logfile - --error-logfile - app:app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: libermedia-db
+    environment:
+      - POSTGRES_USER=libermedia
+      - POSTGRES_PASSWORD=libermedia123
+      - POSTGRES_DB=libermedia
+    volumes:
+      - /mnt/storage/libermedia/postgres:/var/lib/postgresql/data

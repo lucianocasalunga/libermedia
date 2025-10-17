@@ -1,0 +1,6 @@
+{
+  "name":"LiberMedia",
+  "short_name":"LiberMedia",
+  "start_url":"/",
+  "display":"standalone"
+}

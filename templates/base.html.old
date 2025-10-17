@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LiberMedia{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="bg-gray-900 text-white py-4">
+    <div class="container mx-auto flex justify-between items-center px-4">
+      <h1 class="text-2xl font-bold"><a href="/" class="hover:text-yellow-400">LiberMedia</a></h1>
+      <nav class="space-x-4">
+        <a href="/" class="hover:text-yellow-400">Início</a>
+        <a href="/planos" class="hover:text-yellow-400">Planos</a>
+        <a href="/usuario" class="hover:text-yellow-400">Usuário</a>
+        <a href="/sobre" class="hover:text-yellow-400">Sobre</a>
+        <a href="/suporte" class="hover:text-yellow-400">Suporte</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="py-10 px-4 container mx-auto">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-gray-900 text-gray-300 py-4 text-center">
+    <p>&copy; 2025 LiberMedia — Todos os direitos reservados.</p>
+  </footer>
+</body>
+</html>

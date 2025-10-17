@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Sobre - LiberMedia{% endblock %}
+{% block content %}
+
+<div class="container mx-auto max-w-3xl">
+  <div class="bg-white/95 dark:bg-gray-900/95 rounded-2xl shadow-2xl p-10">
+    
+    <h1 class="text-4xl font-bold mb-6 text-center">
+      Sobre o <span class="text-yellow-500">LiberMedia</span>
+    </h1>
+    
+    <div class="space-y-6 text-lg text-gray-700 dark:text-gray-300">
+      <p>
+        O <strong class="text-yellow-500">LiberMedia</strong> nasceu para ser uma plataforma de mídia descentralizada, 
+        baseada em <em class="text-purple-500">Nostr</em>, que coloca o controle nas mãos dos usuários.
+      </p>
+      
+      <p>
+        <strong>Missão:</strong> criar um ambiente seguro, transparente e aberto para criadores e consumidores de conteúdo.
+      </p>
+
+      <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded">
+        <h3 class="font-bold mb-2">🎯 Por que Nostr?</h3>
+        <p class="text-sm">
+          Nostr é um protocolo descentralizado que não depende de servidores centrais. 
+          Sua identidade é sua chave criptográfica, e ninguém pode censurá-lo.
+        </p>
+      </div>
+
+      <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
+        <h3 class="font-bold mb-2">⚡ Lightning Network</h3>
+        <p class="text-sm">
+          Pagamentos instantâneos em Bitcoin, com taxas mínimas. 
+          Monetização direta entre criadores e apoiadores.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="/planos" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition">
+        Ver Planos
+      </a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

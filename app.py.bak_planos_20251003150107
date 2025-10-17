@@ -1,0 +1,121 @@
+import os
+from flask import Flask, render_template, jsonify
+
+app = Flask(__name__, template_folder="templates", static_folder="static")
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/cadastro")
+def cadastro():
+    return render_template("cadastro.html")
+
+@app.route("/planos")
+def planos():
+    return render_template("planos.html")
+
+@app.route("/dashboard")
+def dashboard():
+    # por enquanto pode ser só um placeholder
+    return "<h1 style='text-align:center;margin-top:50px;'>📊 Dashboard em construção</h1>"
+
+@app.route("/sobre")
+def sobre():
+    return render_template("sobre.html")
+
+@app.route("/suporte")
+def suporte():
+    return render_template("suporte.html")
+
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "ok"})
+
+# --- /usuario ---
+@app.route("/usuario")
+def usuario():
+    return render_template("usuario.html")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8081)
+
+# --- /configuracoes ---
+@app.route("/configuracoes")
+def configuracoes():
+    return render_template("configuracoes.html")
+
+# --- /logout ---
+@app.route("/logout")
+def logout():
+    return render_template("logout.html")
+
+# --- /login ---
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
+# --- Cadastro/Login simples ---
+from werkzeug.security import generate_password_hash, check_password_hash
+
+USERS_FILE = os.path.join("data", "users.json")
+
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return {}
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=2)
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    data = request.get_json(force=True)
+    pubkey = data.get("pubkey")
+    password = data.get("password")
+
+    if not pubkey or not password:
+        return jsonify({"error": "pubkey e senha são obrigatórios"}), 400
+
+    users = load_users()
+    if pubkey in users:
+        return jsonify({"error": "Usuário já existe"}), 400
+
+    users[pubkey] = {
+        "password": generate_password_hash(password),
+        "created": int(time.time())
+    }
+    save_users(users)
+    return jsonify({"success": True})
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(force=True)
+    pubkey = data.get("pubkey")
+    password = data.get("password")
+
+    users = load_users()
+    if not pubkey or pubkey not in users:
+        return jsonify({"error": "Usuário não encontrado"}), 400
+
+    if not check_password_hash(users[pubkey]["password"], password):
+        return jsonify({"error": "Senha inválida"}), 403
+
+    token = jwt.encode({"pubkey": pubkey, "exp": time.time() + 3600}, JWT_SECRET, algorithm=JWT_ALGO)
+    return jsonify({"token": token})
+    data = request.get_json(force=True)
+    pubkey = data.get("pubkey")
+    password = data.get("password")
+
+    users = load_users()
+    if not pubkey or pubkey not in users:
+        return jsonify({"error": "Usuário não encontrado"}), 400
+
+    if not check_password_hash(users[pubkey]["password"], password):
+        return jsonify({"error": "Senha inválida"}), 403
+
+    token = jwt.encode({"pubkey": pubkey, "exp": time.time() + 3600}, JWT_SECRET, algorithm=JWT_ALGO)
+    return jsonify({"token": token})

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  libermedia:
+    build: .
+    container_name: libermedia
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - /opt/libermedia/secrets:/app/secrets
+      - /opt/libermedia/app.py:/app/app.py
+      - /opt/libermedia/templates:/app/templates
+      - /opt/libermedia/static:/app/static
+      - /opt/libermedia/data:/app/data

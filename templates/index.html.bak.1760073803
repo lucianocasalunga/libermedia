@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Início - LiberMedia{% endblock %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center bg-[url('/static/bg.jpg')] bg-cover bg-center py-12">
+  <div class="bg-white/95 rounded-2xl shadow-xl p-8 w-full max-w-2xl text-center">
+    <h1 class="text-3xl font-extrabold mb-3">Bem-vindo ao LiberMedia</h1>
+    <p class="text-gray-600 mb-8">Escolha como deseja começar:</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="/cadastro" class="px-6 py-3 rounded-lg bg-gray-900 text-white hover:bg-black transition">
+        Criar Conta
+      </a>
+      <button onclick="loginNIP07()" class="px-6 py-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition">
+        Entrar com Nostr (NIP-07)
+      </button>
+    </div>
+    <p id="nip07-msg" class="text-sm text-gray-500 mt-4"></p>
+  </div>
+</div>
+
+<script>
+async function loginNIP07(){
+  const msg = document.getElementById('nip07-msg');
+  if(!window.nostr){
+    msg.textContent = "Extensão Nostr (NIP-07) não detectada. Instale uma carteira/extensão compatível.";
+    return;
+  }
+  try{
+    const pubkey = await window.nostr.getPublicKey();
+    localStorage.setItem('libermedia_pubkey', pubkey);
+    msg.textContent = "Chave detectada. Você já pode prosseguir para o dashboard.";
+    // aqui futuramente podemos chamar /api/auth/nostr
+    // por ora só redireciona:
+    setTimeout(()=>{ window.location.href = "/dashboard"; }, 800);
+  }catch(e){
+    msg.textContent = "Não foi possível obter a chave da extensão.";
+  }
+}
+</script>

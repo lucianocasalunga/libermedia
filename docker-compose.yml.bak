@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  libermedia:
+    build: .
+    container_name: libermedia
+    environment:
+      - LIBERMEDIA_DATA_DIR=/data
+      - LIBERMEDIA_ADMIN_TOKEN=
+      - JWT_SECRET=${JWT_SECRET}
+      - LIBERMEDIA_MAX_UPLOAD_MB=200
+    volumes:
+      - /opt/libermedia/data:/data:rw
+    ports:
+      - "127.0.0.1:8081:8081"
+    restart: unless-stopped

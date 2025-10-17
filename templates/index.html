@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Início{% endblock %}
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-200 dark:border-gray-700">
+    
+    <div class="text-center mb-8">
+      <img src="/static/img/logo.jpg" class="w-24 h-24 mx-auto rounded-full border-4 border-yellow-500 mb-4">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Bem-vindo ao</h1>
+      <h2 class="text-4xl font-bold text-yellow-500 mb-2">LiberMedia</h2>
+      <p class="text-gray-600 dark:text-gray-400">Armazenamento descentralizado para o ecossistema Nostr</p>
+    </div>
+
+    <div class="space-y-4">
+      
+      <button onclick="loginNIP07()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg">
+        🔐 Entrar com Extensão Nostr
+      </button>
+
+      <button onclick="location.href='/login-manual'" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 px-6 rounded-xl transition-all">
+        🔑 Entrar com Chave Privada
+      </button>
+
+      <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">Ainda não tem uma conta?</span>
+        </div>
+      </div>
+
+      <button onclick="location.href='/cadastro'" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all">
+        ✨ Criar Conta Nova
+      </button>
+
+    </div>
+
+    <div class="text-center mt-6 space-x-4 text-sm">
+      <a href="/planos" class="text-purple-600 hover:underline">Ver Planos</a>
+      <a href="/sobre" class="text-purple-600 hover:underline">Sobre</a>
+      <a href="/suporte" class="text-purple-600 hover:underline">Suporte</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function loginNIP07() {
+  try {
+    if (!window.nostr) {
+      alert('❌ Extensão Nostr não detectada!\n\nInstale: nos2x, Alby ou Flamingo');
+      return;
+    }
+    
+    // Pega pubkey HEX da extensão
+    const pubkeyHex = await window.nostr.getPublicKey();
+    
+    // Envia pro BACKEND converter
+    const response = await fetch('/api/hex-to-npub', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({pubkey_hex: pubkeyHex})
+    });
+    
+    const data = await response.json();
+    
+    if (data.status !== 'ok') {
+      alert('❌ Erro na conversão: ' + data.error);
+      return;
+    }
+    
+    // Salva npub convertido
+    localStorage.setItem('libermedia_npub', data.npub);
+    localStorage.setItem('libermedia_pubkey', pubkeyHex);
+    
+    // Redireciona
+    window.location.href = '/dashboard';
+    
+  } catch (error) {
+    alert('❌ Erro: ' + error.message);
+  }
+}
+
+// Auto-login
+if (localStorage.getItem('libermedia_npub')) {
+  window.location.href = '/dashboard';
+}
+</script>
+
+{% endblock %}

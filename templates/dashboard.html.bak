@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="container mx-auto">
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <div class="lg:col-span-1 bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl p-6 space-y-4 border border-gray-200 dark:border-gray-700">
+      
+      <div class="text-center">
+        <img id="avatarImg" src="/static/img/avatar.png" class="w-20 h-20 mx-auto rounded-full border-4 border-yellow-500 mb-3">
+        <p id="userName" class="font-bold text-gray-900 dark:text-white">Usuário</p>
+        <p id="npubShort" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
+      </div>
+
+      <div class="flex justify-center space-x-2">
+        <button onclick="location.href='/configuracoes'" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded">⚙️</button>
+        <button onclick="sair()" class="bg-red-600 hover:bg-red-500 text-white p-2 rounded">🚪</button>
+      </div>
+
+      <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-300 dark:border-blue-700">
+        <p class="font-bold mb-2 text-gray-900 dark:text-white text-sm">💽 Espaço</p>
+        <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+          <div id="barraEspaco" class="bg-blue-500 h-2 rounded-full" style="width:0%"></div>
+        </div>
+        <p id="textoEspaco" class="text-xs text-gray-700 dark:text-gray-300">0 MB / 50 GB</p>
+      </div>
+
+      <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-300 dark:border-green-700">
+        <p class="text-sm text-gray-900 dark:text-white">📦 <strong id="totalArquivos">0</strong> arquivos</p>
+      </div>
+
+      <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-300 dark:border-purple-700">
+        <p class="text-sm text-gray-900 dark:text-white">📊 Analytics</p>
+      </div>
+
+      <div class="space-y-2">
+        <p class="font-bold text-gray-900 dark:text-white text-sm mb-2">📁 Pastas</p>
+        <button onclick="filtrar('Todas')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white transition">
+          📂 Todas
+        </button>
+        <button onclick="filtrar('Photos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white transition">
+          📷 Photos
+        </button>
+        <button onclick="filtrar('Videos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white transition">
+          🎥 Videos
+        </button>
+        <button onclick="filtrar('Docs')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white transition">
+          📄 Docs
+        </button>
+        <button onclick="filtrar('Audio')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white transition">
+          🎵 Audio
+        </button>
+      </div>
+
+      <button onclick="criarPasta()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-sm transition">
+        ➕ Criar Pasta
+      </button>
+
+      <button class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2 rounded text-sm transition">
+        🤖 Liber IA
+      </button>
+
+    </div>
+
+    <div class="lg:col-span-3 bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
+      
+      <h1 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Bem-vindo ao seu espaço! 👋</h1>
+      <p class="text-gray-700 dark:text-gray-300 mb-6">Gerencie seus arquivos e integrações com o ecossistema Nostr</p>
+
+      <div id="dropZone" class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center cursor-pointer hover:border-yellow-500 dark:hover:border-yellow-400 transition mb-8 bg-gray-50 dark:bg-gray-900/30">
+        <input type="file" id="fileInput" multiple class="hidden">
+        <p class="text-5xl mb-3">📤</p>
+        <p class="text-xl font-bold text-gray-900 dark:text-white mb-2">Arraste arquivos aqui</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">ou clique para selecionar</p>
+      </div>
+
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">📁 <span id="tituloSecao">Seus Arquivos</span></h2>
+      <div id="lista" class="space-y-3">
+        <p class="text-gray-600 dark:text-gray-400">Carregando...</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let pastaAtual = 'Todas';
+const npub = localStorage.getItem('libermedia_npub');
+
+if (!npub) {
+  alert('Faça login primeiro!');
+  location.href = '/';
+}
+
+document.getElementById('npubShort').innerText = npub.slice(0, 20) + '...';
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.onclick = () => fileInput.click();
+
+dropZone.ondragover = (e) => {
+  e.preventDefault();
+  dropZone.classList.add('border-yellow-500');
+};
+
+dropZone.ondragleave = () => {
+  dropZone.classList.remove('border-yellow-500');
+};
+
+dropZone.ondrop = (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('border-yellow-500');
+  enviarArquivos(e.dataTransfer.files);
+};
+
+fileInput.onchange = () => enviarArquivos(fileInput.files);
+
+async function enviarArquivos(files) {
+  for (let file of files) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('npub', npub);
+    fd.append('pasta', pastaAtual === 'Todas' ? 'Geral' : pastaAtual);
+    
+    try {
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.status === 'ok') console.log('Upload OK:', file.name);
+      else alert('Erro ao enviar: ' + file.name);
+    } catch(e) {
+      alert('Erro: ' + e);
+    }
+  }
+  carregarArquivos();
+}
+
+async function carregarArquivos() {
+  try {
+    let url = '/api/arquivos?npub=' + npub;
+    if (pastaAtual !== 'Todas') url += '&pasta=' + pastaAtual;
+    
+    const r = await fetch(url);
+    const d = await r.json();
+    
+    const lista = document.getElementById('lista');
+    
+    if (d.status !== 'ok' || d.arquivos.length === 0) {
+      lista.innerHTML = '<p class="text-gray-600 dark:text-gray-400">Nenhum arquivo ainda.</p>';
+      document.getElementById('totalArquivos').innerText = '0';
+      atualizarEspaco(0);
+      return;
+    }
+    
+    document.getElementById('totalArquivos').innerText = d.arquivos.length;
+    
+    let totalBytes = 0;
+    let html = '';
+    
+    for (let a of d.arquivos) {
+      totalBytes += a.tamanho;
+      const icone = a.tipo === 'image' ? '🖼️' : a.tipo === 'video' ? '🎥' : a.tipo === 'audio' ? '🎵' : '📄';
+      const mb = (a.tamanho / 1024 / 1024).toFixed(2);
+      
+      html += '<div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg flex justify-between items-center border border-gray-200 dark:border-gray-700">';
+      html += '<div class="flex items-center space-x-3">';
+      html += '<span class="text-3xl">' + icone + '</span>';
+      html += '<div>';
+      html += '<p class="font-bold text-gray-900 dark:text-white">' + a.nome + '</p>';
+      html += '<p class="text-xs text-gray-600 dark:text-gray-400">' + mb + ' MB • ' + a.pasta + '</p>';
+      html += '</div>';
+      html += '</div>';
+      html += '<div class="flex space-x-2">';
+      
+      if (a.tipo === 'image') {
+        html += '<button onclick="verImagem(\'' + a.url + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm">👁️ Ver</button>';
+      }
+      
+      html += '<a href="' + a.url + '" download class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm inline-block">⬇️ Download</a>';
+      html += '</div>';
+      html += '</div>';
+    }
+    
+    lista.innerHTML = html;
+    atualizarEspaco(totalBytes);
+    
+  } catch(e) {
+    console.error('Erro ao carregar:', e);
+  }
+}
+
+function atualizarEspaco(bytes) {
+  const mb = (bytes / 1024 / 1024).toFixed(2);
+  const gbTotal = 50;
+  const gbUsado = (bytes / 1024 / 1024 / 1024).toFixed(2);
+  const percentual = (gbUsado / gbTotal * 100).toFixed(1);
+  
+  document.getElementById('textoEspaco').innerText = mb + ' MB / ' + gbTotal + ' GB';
+  document.getElementById('barraEspaco').style.width = percentual + '%';
+}
+
+function filtrar(pasta) {
+  pastaAtual = pasta;
+  document.getElementById('tituloSecao').innerText = pasta === 'Todas' ? 'Seus Arquivos' : pasta;
+  carregarArquivos();
+}
+
+function criarPasta() {
+  const nome = prompt('Nome da nova pasta:');
+  if (nome) {
+    alert('Funcionalidade de criar pasta será implementada em breve!');
+  }
+}
+
+function verImagem(url) {
+  window.open(url, '_blank');
+}
+
+function sair() {
+  if (confirm('Deseja sair?')) {
+    localStorage.clear();
+    location.href = '/';
+  }
+}
+
+carregarArquivos();
+</script>
+
+{% endblock %}
+
+<div id="modalImagem" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onclick="fecharModal()">
+  <div class="relative max-w-6xl max-h-full" onclick="event.stopPropagation()">
+    <button onclick="fecharModal()" class="absolute -top-12 right-0 text-white text-4xl hover:text-red-500">&times;</button>
+    <img id="imagemModal" src="" class="max-w-full max-h-screen rounded-lg shadow-2xl">
+    <p id="nomeImagemModal" class="text-white text-center mt-4 text-lg"></p>
+  </div>
+</div>
+
+<script>
+function verImagem(url, nome) {
+  document.getElementById('imagemModal').src = url;
+  document.getElementById('nomeImagemModal').innerText = nome;
+  document.getElementById('modalImagem').classList.remove('hidden');
+}
+
+function fecharModal() {
+  document.getElementById('modalImagem').classList.add('hidden');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') fecharModal();
+});
+</script>

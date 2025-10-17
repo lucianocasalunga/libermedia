@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Assinatura — LiberMedia</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
+  <style>
+    .lightning-box {
+      margin-top: 12px;
+      text-align: left;
+      background: #111;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+      border-radius: 6px;
+    }
+    .copy-btn {
+      margin-left: 8px;
+      padding: 4px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #444;
+      color: #fff;
+      font-size: 0.8rem;
+    }
+    .copy-btn:hover { background: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo" onclick="goHome()" style="cursor:pointer;">
+      <img src="/static/img/logo.jpg" alt="LiberMedia Logo" height="40">
+    </div>
+    <nav>
+      <a href="/">Início</a>
+      <a href="/planos">Planos</a>
+    </nav>
+    <button id="themeToggle"><img src="/static/img/iconediaenoite.png" alt="Tema" height="24"></button>
+  </header>
+
+  <main>
+    <div class="main-box" style="max-width:560px;">
+      <h2>Assinatura</h2>
+      <p id="planoEscolhido">Plano selecionado:</p>
+      <div style="margin:18px 0; text-align:center;">
+        <p>💳 Envie o valor em Sats para:</p>
+        <div id="valorSats"></div>
+        <p>Escaneie o QR Code:</p>
+        <img id="qrCodePlano" src="" alt="QR Code do Plano" width="220">
+
+        <div class="lightning-box" id="lightningBox">
+          <span id="lightningCode">Carregando chave Lightning...</span>
+          <button class="copy-btn" onclick="copyLightning()">Copiar</button>
+        </div>
+      </div>
+      <p id="rodapePlano" style="opacity:.85"></p>
+    </div>
+  </main>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const plano = (urlParams.get("plano") || "").toLowerCase();
+
+    const planos = {
+      "free": {
+        nome: "Free",
+        preco: "0 sats (doação opcional)",
+        qr: "/static/img/planofree.jpg",
+        ln: "outwardasia93@walletofsatoshi.com"
+      },
+      "basico": {
+        nome: "Básico",
+        preco: "1.000 sats",
+        qr: "/static/img/planobasico.jpg",
+        ln: "lnbc10u1p5dls2ypp58849p8muc82ee8vu4nqpnr2ssg9emqs2dnqu3wkdkcjr5qd..."
+      },
+      "pro": {
+        nome: "Pró",
+        preco: "2.000 sats",
+        qr: "/static/img/planopro.jpg",
+        ln: "lnbc20u1p5dlsv4pp5a6s7ksaf0xc0l22dkyhpzu4zlg86tvvgdt7njajh809v..."
+      },
+      "premium": {
+        nome: "Premium",
+        preco: "4.000 sats",
+        qr: "/static/img/planopremium.jpg",
+        ln: "lnbc40u1p5dlswgpp5699gf3dvfhc9cxa8wcgjclf05w07dvpmmchj3qa3t94v..."
+      },
+      "promax": {
+        nome: "Pró-Max",
+        preco: "8.000 sats",
+        qr: "/static/img/planopromax.jpg",
+        ln: "lnbc80u1p5dls0cpp5gdhg4sx2zgy3le2n8y2cx0es4rxnnjg22h4929ayv8m..."
+      }
+    };
+
+    const aliases = {
+      "básico": "basico",
+      "pró": "pro",
+      "pro": "pro",
+      "pró-max": "promax",
+      "pro-max": "promax",
+      "gratis": "free"
+    };
+    let key = plano.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (aliases[key]) key = aliases[key];
+
+    if (key && planos[key]) {
+      document.getElementById("planoEscolhido").innerText = "Plano selecionado: " + planos[key].nome;
+      document.getElementById("valorSats").innerText = "Valor: " + planos[key].preco;
+      document.getElementById("qrCodePlano").src = planos[key].qr;
+      document.getElementById("lightningCode").innerText = planos[key].ln;
+
+      const rodape = document.getElementById("rodapePlano");
+      if (key === "free") {
+        rodape.innerText = "Sua assinatura está válida, mas você pode apoiar o projeto com uma doação.";
+      } else {
+        rodape.innerText = "Após o pagamento, sua assinatura será validada.";
+      }
+    } else {
+      document.getElementById("planoEscolhido").innerText = "Nenhum plano válido selecionado.";
+      document.getElementById("lightningCode").innerText = "";
+    }
+
+    function copyLightning() {
+      const code = document.getElementById("lightningCode").innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert("Código Lightning copiado!");
+      });
+    }
+  </script>
+</body>
+</html>

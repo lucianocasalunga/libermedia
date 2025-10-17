@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Planos - LiberMedia{% endblock %}
+{% block content %}
+
+<section class="container mx-auto py-10 px-4">
+  
+  <!-- Título em caixa destacada -->
+  <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl shadow-2xl p-8 mb-12 text-center">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">
+      Planos de Armazenamento - LiberMedia ⚡
+    </h1>
+    <p class="text-white/90 mt-2 text-lg">
+      Escolha o plano ideal para suas necessidades
+    </p>
+  </div>
+
+  <!-- Grid de planos -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for plan in plans %}
+    <div class="bg-white/95 dark:bg-gray-900/95 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 p-6 flex flex-col justify-between transition-all duration-300">
+      
+      <div>
+        <h2 class="text-3xl font-bold mb-2 text-center">
+          <span class="text-4xl">{{ plan.emoji }}</span> {{ plan.name }}
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 text-sm text-center mb-4">
+          {{ plan.description }}
+        </p>
+        <p class="text-gray-800 dark:text-gray-200 text-center font-medium text-lg">
+          📦 Espaço: <strong>{{ plan.storage_gb }} GB</strong>
+        </p>
+        
+        {% if plan.amount_sats > 0 %}
+          <p class="text-orange-600 dark:text-orange-400 text-center font-bold text-xl mt-2">
+            ⚡ {{ plan.amount_sats }} sats
+          </p>
+        {% else %}
+          <p class="text-green-600 dark:text-green-400 text-center font-bold text-xl mt-2">
+            💚 Gratuito
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- Botões -->
+      <div class="mt-6">
+        {% if plan.amount_sats > 0 %}
+          <!-- Planos pagos -->
+          <button 
+            id="btn-{{ plan.id }}" 
+            onclick="pagar('{{ plan.id }}')" 
+            class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 rounded-lg shadow-lg transition"
+          >
+            ⚡ Pagar com Lightning
+          </button>
+          
+          <div id="qr-{{ plan.id }}" class="mt-4 hidden">
+            <div class="bg-white p-4 rounded-lg shadow-inner">
+              <img 
+                id="imgqr-{{ plan.id }}" 
+                class="mx-auto w-48 h-48 rounded-lg" 
+                src="" 
+                alt="QR Code"
+              >
+            </div>
+            <p id="code-{{ plan.id }}" class="text-xs mt-3 text-gray-600 dark:text-gray-400 break-all bg-gray-100 dark:bg-gray-800 p-2 rounded"></p>
+            <button 
+              onclick="copiar('{{ plan.id }}')" 
+              class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+            >
+              📋 Copiar Código
+            </button>
+          </div>
+
+        {% else %}
+          <!-- Plano Free: botão de doação livre -->
+          <button 
+            onclick="doarLivre()" 
+            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 rounded-lg shadow-lg transition"
+          >
+            💚 Doar (valor livre)
+          </button>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+<script>
+// Pagar plano específico
+async function pagar(planId){
+  const btn = document.getElementById('btn-'+planId);
+  const qr = document.getElementById('qr-'+planId);
+  const img = document.getElementById('imgqr-'+planId);
+  const code = document.getElementById('code-'+planId);
+  
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Gerando fatura...';
+  
+  try {
+    const r = await fetch('/api/invoice/'+planId, {method:'POST'});
+    const j = await r.json();
+    
+    if (j.status === 'ok' && j.bolt11) {
+      const bolt = j.bolt11;
+      const url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=lightning:'+encodeURIComponent(bolt);
+      img.src = url;
+      code.innerText = bolt;
+      qr.classList.remove('hidden');
+      btn.innerHTML = '✅ Fatura gerada!';
+    } else {
+      alert('❌ Erro: ' + (j.error || j.status));
+      btn.innerHTML = '⚡ Pagar com Lightning';
+    }
+  } catch (e) {
+    alert('❌ Falha: ' + e);
+    btn.innerHTML = '⚡ Pagar com Lightning';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Doação livre
+async function doarLivre(){
+  const valor = prompt('💚 Quanto você deseja doar? (em sats)', '1000');
+  if (!valor || isNaN(valor) || valor <= 0) {
+    alert('Valor inválido!');
+    return;
+  }
+  
+  try {
+    const r = await fetch('/api/invoice/create-donation', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({amount: parseInt(valor)})
+    });
+    const j = await r.json();
+    
+    if (j.bolt11) {
+      const url = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=lightning:'+encodeURIComponent(j.bolt11);
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+      modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+          <h3 class="text-2xl font-bold mb-4 text-center">💚 Obrigado pela doação!</h3>
+          <img src="${url}" class="mx-auto rounded-lg shadow-lg mb-4">
+          <p class="text-xs text-gray-600 dark:text-gray-400 break-all bg-gray-100 dark:bg-gray-800 p-3 rounded mb-4">${j.bolt11}</p>
+          <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">
+            Fechar
+          </button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } else {
+      alert('Erro ao gerar invoice: ' + JSON.stringify(j));
+    }
+  } catch (e) {
+    alert('Erro: ' + e);
+  }
+}
+
+// Copiar código
+function copiar(id){
+  const code = document.getElementById('code-'+id);
+  navigator.clipboard.writeText(code.innerText);
+  alert('✅ Código Lightning copiado!');
+}
+</script>
+
+{% endblock %}

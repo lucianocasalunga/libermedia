@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Cadastro{% endblock %}
+{% block content %}
+
+<div class="min-h-[70vh] flex items-center justify-center">
+  <div class="bg-white/95 dark:bg-gray-900/95 rounded-2xl shadow-2xl p-10 w-full max-w-md">
+    
+    <h1 class="text-3xl font-bold mb-6 text-center">Criar Identidade</h1>
+
+    <div id="a1">
+      <button onclick="gerar()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-lg">
+        🔑 Gerar Chaves
+      </button>
+    </div>
+
+    <div id="a2" class="hidden space-y-4">
+      <div class="bg-green-100 dark:bg-green-900/30 p-4 rounded">
+        <p class="font-bold mb-2">npub (hex simplificado):</p>
+        <code id="n" class="block text-xs bg-gray-800 text-green-400 p-2 rounded break-all"></code>
+        <button onclick="cp('n')" class="mt-2 text-sm underline">Copiar</button>
+      </div>
+
+      <div class="bg-red-100 dark:bg-red-900/30 p-4 rounded">
+        <p class="font-bold mb-2">nsec (hex simplificado):</p>
+        <code id="s" class="block text-xs bg-gray-800 text-red-400 p-2 rounded break-all"></code>
+        <button onclick="cp('s')" class="mt-2 text-sm underline">Copiar</button>
+        <p class="text-xs text-red-600 mt-2">⚠️ NUNCA compartilhe!</p>
+      </div>
+
+      <button onclick="salvar()" id="btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">
+        ✅ Continuar
+      </button>
+    </div>
+
+    <div class="mt-6 text-center">
+      <a href="/" class="text-sm hover:text-yellow-500">← Voltar</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let k={};
+
+function gerar(){
+  // Gera 64 caracteres hex aleatórios (256 bits)
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  const hex = Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+  
+  // Simplificado: usa mesmo hex pra ambos (apenas pra teste)
+  k.npub = 'npub1' + hex;
+  k.nsec = 'nsec1' + hex;
+  
+  document.getElementById('n').innerText = k.npub;
+  document.getElementById('s').innerText = k.nsec;
+  document.getElementById('a1').classList.add('hidden');
+  document.getElementById('a2').classList.remove('hidden');
+}
+
+function cp(id){
+  navigator.clipboard.writeText(document.getElementById(id).innerText);
+  alert('Copiado!');
+}
+
+async function salvar(){
+  if(!confirm('Salvou as chaves?')) return;
+  const btn=document.getElementById('btn');
+  btn.disabled=true;
+  btn.innerText='Salvando...';
+  
+  try {
+    localStorage.setItem('libermedia_npub', k.npub);
+    localStorage.setItem('libermedia_nsec', k.nsec);
+    
+    const r=await fetch('/api/auth/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({npub:k.npub,nsec:k.nsec,nome:'Usuário'})
+    });
+    
+    const d=await r.json();
+    
+    if(d.status==='ok'){
+      alert('✅ Conta criada!');
+      location.href='/dashboard';
+    }else{
+      alert('Erro: '+d.error);
+      btn.disabled=false;
+      btn.innerText='✅ Continuar';
+    }
+  }catch(e){
+    alert('Erro: '+e);
+    btn.disabled=false;
+    btn.innerText='✅ Continuar';
+  }
+}
+</script>
+
+{% endblock %}

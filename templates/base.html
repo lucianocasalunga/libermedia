@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>{% block title %}LiberMedia{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body.light-theme { 
+      background-image: url('/static/img/praiatemaclaro.jpg'); 
+    }
+    body.dark-theme { 
+      background-image: url('/static/img/praiatemaescuro.jpg'); 
+    }
+    body {
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      transition: background-image 0.3s ease;
+    }
+    body.dark-theme {
+      color: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="light-theme text-gray-900">
+
+  <header class="bg-gray-900/90 backdrop-blur-sm text-white py-3 md:py-4 fixed top-0 w-full z-50 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center px-4 md:px-6">
+      
+      <!-- Logo -->
+      <a href="/" class="flex items-center space-x-2 hover:opacity-80 transition">
+        <img 
+          src="/static/img/logo.jpg" 
+          alt="LiberMedia" 
+          class="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-md object-cover"
+          onerror="this.src='/static/img/logo_alt.png'"
+        >
+        <span class="text-lg md:text-xl font-bold hidden sm:inline">LiberMedia</span>
+      </a>
+
+      <!-- Navbar -->
+      <nav class="hidden md:flex space-x-4 lg:space-x-6 text-sm lg:text-base">
+        <a href="/" class="hover:text-yellow-400 transition">Início</a>
+        <a href="/planos" class="hover:text-yellow-400 transition">Planos</a>
+        <a href="/dashboard" class="hover:text-yellow-400 transition">Dashboard</a>
+        <a href="/sobre" class="hover:text-yellow-400 transition">Sobre</a>
+        <a href="/suporte" class="hover:text-yellow-400 transition">Suporte</a>
+      </nav>
+
+      <!-- Botão tema ÚNICO -->
+      <button 
+        id="themeToggle" 
+        class="bg-gray-800/70 hover:bg-gray-700 p-2 md:p-3 rounded-full transition shadow-lg flex items-center justify-center"
+        style="width: 44px; height: 44px;"
+      >
+        <span id="themeIcon" class="text-xl">☀️</span>
+      </button>
+
+    </div>
+  </header>
+
+  <main class="pt-20 md:pt-24 pb-10 px-4 min-h-screen">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-gray-900/90 backdrop-blur-sm text-gray-300 py-4 md:py-6 text-center text-sm">
+    <p>&copy; 2025 LiberMedia — Armazenamento descentralizado para Nostr</p>
+    <p class="mt-2">
+      <a href="/sobre" class="hover:text-yellow-400">Sobre</a> • 
+      <a href="/suporte" class="hover:text-yellow-400">Suporte</a>
+    </p>
+  </footer>
+
+  <script>
+    // Carrega tema inicial ANTES de mostrar a página
+    (function() {
+      const savedTheme = localStorage.getItem('libermedia_theme') || 'light';
+      document.body.className = savedTheme === 'dark' ? 'dark-theme text-gray-100' : 'light-theme text-gray-900';
+    })();
+
+    // Configura botão após carregar DOM
+    document.addEventListener('DOMContentLoaded', function() {
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const body = document.body;
+
+      // Atualiza ícone inicial
+      const currentTheme = localStorage.getItem('libermedia_theme') || 'light';
+      themeIcon.innerText = currentTheme === 'dark' ? '🌙' : '☀️';
+
+      // Toggle ao clicar
+      themeToggle.addEventListener('click', function() {
+        const isDark = body.classList.contains('dark-theme');
+        
+        if (isDark) {
+          body.className = 'light-theme text-gray-900';
+          localStorage.setItem('libermedia_theme', 'light');
+          themeIcon.innerText = '☀️';
+        } else {
+          body.className = 'dark-theme text-gray-100';
+          localStorage.setItem('libermedia_theme', 'dark');
+          themeIcon.innerText = '🌙';
+        }
+      });
+    });
+
+    // Proteção Dashboard
+    if (window.location.pathname === '/dashboard') {
+      const npub = localStorage.getItem('libermedia_npub');
+      if (!npub) {
+        alert('Você precisa fazer login primeiro!');
+        window.location.href = '/';
+      }
+    }
+  </script>
+
+</body>
+</html>

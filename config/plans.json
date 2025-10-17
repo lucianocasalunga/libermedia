@@ -1,0 +1,78 @@
+{
+  "currency": "sats",
+  "note": "LiberMedia Planos Oficiais - Lightning ⚡ - Atualizado 2025-10-09",
+  "plans": [
+    {
+      "id": "free",
+      "emoji": "🟢",
+      "name": "Free",
+      "storage_gb": 3,
+      "amount_sats": 0,
+      "wallet_address": "N/A",
+      "description": "Gratuito, para começar e apoiar o projeto voluntariamente."
+    },
+    {
+      "id": "alpha",
+      "emoji": "🟡",
+      "name": "Alpha",
+      "storage_gb": 6,
+      "amount_sats": 900,
+      "wallet_address": "",
+      "description": "Ideal para uso leve, com upload esporádico."
+    },
+    {
+      "id": "bravo",
+      "emoji": "🟠",
+      "name": "Bravo",
+      "storage_gb": 12,
+      "amount_sats": 1800,
+      "wallet_address": "",
+      "description": "Perfeito para usuários casuais e pequenos criadores."
+    },
+    {
+      "id": "charlie",
+      "emoji": "🔵",
+      "name": "Charlie",
+      "storage_gb": 24,
+      "amount_sats": 3600,
+      "wallet_address": "",
+      "description": "Armazenamento estável para uploads regulares."
+    },
+    {
+      "id": "delta",
+      "emoji": "🟣",
+      "name": "Delta",
+      "storage_gb": 48,
+      "amount_sats": 7200,
+      "wallet_address": "",
+      "description": "Criadores de conteúdo em ritmo constante."
+    },
+    {
+      "id": "echo",
+      "emoji": "🟤",
+      "name": "Echo",
+      "storage_gb": 96,
+      "amount_sats": 14400,
+      "wallet_address": "",
+      "description": "Profissionais que precisam de alta disponibilidade."
+    },
+    {
+      "id": "fox",
+      "emoji": "⚫",
+      "name": "Fox",
+      "storage_gb": 192,
+      "amount_sats": 28800,
+      "wallet_address": "",
+      "description": "Uploads intensivos, criadores de mídia."
+    },
+    {
+      "id": "golf",
+      "emoji": "⚪",
+      "name": "Golf",
+      "storage_gb": 384,
+      "amount_sats": 57600,
+      "wallet_address": "",
+      "description": "Armazenamento premium, prioridade total e suporte dedicado."
+    }
+  ]
+}

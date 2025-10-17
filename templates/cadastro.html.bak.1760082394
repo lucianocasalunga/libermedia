@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Cadastro / Acesso - LiberMedia{% endblock %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center bg-[url('/static/bg.jpg')] bg-cover bg-center py-12">
+  <div class="bg-white/95 rounded-2xl shadow-xl p-8 w-full max-w-3xl">
+    <h2 class="text-2xl font-bold text-center mb-1">Cadastro / Acesso</h2>
+    <p class="text-center text-gray-600 mb-8">Escolha uma das opções abaixo:</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Opção 1: Gerar chave local -->
+      <div class="rounded-xl border shadow p-6">
+        <h3 class="font-semibold text-lg mb-2">Gerar chave local (nsec)</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          Vamos criar sua identidade Nostr no seu navegador. <b>Nunca</b> enviaremos sua <code>nsec</code> ao servidor.
+        </p>
+        <button id="btn-gen" class="w-full py-2 rounded-lg bg-gray-900 text-white hover:bg-black transition">Gerar minha chave</button>
+
+        <div id="gen-out" class="mt-4 hidden">
+          <p class="text-xs text-gray-600 mb-2">Guarde a sua chave com segurança:</p>
+          <div class="text-xs bg-gray-100 p-3 rounded break-all">
+            <div><b>nsec:</b> <span id="out-nsec"></span></div>
+            <div class="mt-1"><b>npub:</b> <span id="out-npub"></span></div>
+          </div>
+          <button onclick="copyTxt('out-nsec')" class="mt-2 text-blue-600 text-sm hover:underline">Copiar nsec</button>
+          <button onclick="copyTxt('out-npub')" class="mt-2 ml-3 text-blue-600 text-sm hover:underline">Copiar npub</button>
+          <p class="text-xs text-green-700 mt-3">Chaves salvas no navegador. Você poderá entrar sem senha.</p>
+        </div>
+      </div>
+
+      <!-- Opção 2: Entrar com extensão NIP-07 -->
+      <div class="rounded-xl border shadow p-6">
+        <h3 class="font-semibold text-lg mb-2">Entrar com extensão (NIP-07)</h3>
+        <p class="text-sm text-gray-600 mb-4">Use sua carteira/extensão Nostr instalada no navegador.</p>
+        <button id="btn-nip07" class="w-full py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition">Entrar com extensão</button>
+        <p id="nip07-status" class="text-xs text-gray-600 mt-3"></p>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-gray-500 mt-6">
+      Dica: com nsec/npub você não precisa de senha. Sua chave é sua identidade.
+    </p>
+  </div>
+</div>
+
+<!-- libs client-side: nostr-tools para geração local -->
+<script src="https://unpkg.com/nostr-tools@2.8.1/lib/nostr.bundle.js"></script>
+<script>
+const { generateSecretKey, getPublicKey, nip19 } = window.NostrTools || {};
+
+function copyTxt(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(()=>{ /* ok */ });
+}
+
+document.getElementById('btn-gen').addEventListener('click', async ()=>{
+  if(!generateSecretKey || !getPublicKey || !nip19){
+    alert("Biblioteca nostr-tools não carregou. Tente recarregar a página.");
+    return;
+  }
+  // gera secret key (hex), deriva pubkey e codifica em bech32 (nsec/npub)
+  const sk = generateSecretKey();
+  const pk = getPublicKey(sk);
+  const nsec = nip19.nsecEncode(sk);
+  const npub = nip19.npubEncode(pk);
+
+  // salva localmente (apenas no navegador)
+  localStorage.setItem('libermedia_nsec', nsec);
+  localStorage.setItem('libermedia_npub', npub);
+
+  // mostra na tela
+  document.getElementById('out-nsec').textContent = nsec;
+  document.getElementById('out-npub').textContent = npub;
+  document.getElementById('gen-out').classList.remove('hidden');
+});
+
+document.getElementById('btn-nip07').addEventListener('click', async ()=>{
+  const status = document.getElementById('nip07-status');
+  if(!window.nostr){
+    status.textContent = "Extensão Nostr (NIP-07) não detectada.";
+    return;
+  }
+  try{
+    const pubkey = await window.nostr.getPublicKey();
+    localStorage.setItem('libermedia_pubkey', pubkey);
+    status.textContent = "Chave detectada. Redirecionando...";
+    // Aqui, futuramente: POST /api/auth/nostr (server-side).
+    setTimeout(()=>{ window.location.href = "/dashboard"; }, 800);
+  }catch(e){
+    status.textContent = "Não foi possível obter a chave da extensão.";
+  }
+});
+</script>
