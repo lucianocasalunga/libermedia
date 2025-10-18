@@ -1,155 +1,177 @@
-{% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
-{% block content %}
-
-<div class="container mx-auto px-4 py-6">
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    
-    <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-      <div class="text-center">
-        <img src="/static/img/avatar.png" class="w-20 h-20 mx-auto rounded-full border-4 border-yellow-500 mb-2">
-        <p class="font-bold text-gray-900 dark:text-white">Usuário</p>
-        <p id="npubShort" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
-      </div>
-      
-      <div class="flex gap-2">
-        <button onclick="location.href='/configuracoes'" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded">⚙️</button>
-        <button onclick="sair()" class="flex-1 bg-red-600 hover:bg-red-500 text-white p-2 rounded">🚪</button>
-      </div>
-      
-      <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-        <p class="text-sm text-gray-900 dark:text-white">📦 <strong id="total">0</strong> arquivos</p>
-      </div>
-      
-      <hr class="border-gray-300 dark:border-gray-600">
-      
-      <div>
-        <p class="font-bold text-gray-700 dark:text-gray-300 mb-2 text-sm">📁 Pastas</p>
-        <div class="space-y-1">
-          <button onclick="filtrar('Todas')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📂 Todas</button>
-          <button onclick="filtrar('Photos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📷 Photos</button>
-          <button onclick="filtrar('Videos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎥 Videos</button>
-          <button onclick="filtrar('Docs')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📄 Docs</button>
-          <button onclick="filtrar('Audio')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎵 Audio</button>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiberMedia Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-purple-600">LiberMedia</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600" id="npubDisplay"></span>
+                <button onclick="logout()" class="px-4 py-2 border rounded hover:bg-gray-50">Sair</button>
+            </div>
         </div>
-      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Upload Area -->
+        <section class="mb-8">
+            <div id="dropArea" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-white hover:border-purple-500 hover:bg-purple-50 transition cursor-pointer">
+                <input type="file" id="fileInput" multiple hidden>
+                <div onclick="document.getElementById('fileInput').click()">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <h3 class="mt-2 text-lg font-semibold">Arraste arquivos aqui</h3>
+                    <p class="text-gray-500">ou clique para selecionar</p>
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div id="progress" class="hidden mt-4 bg-white rounded-lg shadow p-4">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-medium">Enviando...</span>
+                    <span id="progressText" class="text-sm text-gray-500">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="bg-purple-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Files -->
+        <section>
+            <h2 class="text-2xl font-bold mb-4">Seus Arquivos (<span id="count">0</span>)</h2>
+            <div id="files" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            <div id="empty" class="hidden bg-white rounded-lg p-12 text-center">
+                <p class="text-gray-500">Nenhum arquivo ainda. Faça upload!</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50">
+        <p id="toastMsg" class="text-sm font-medium"></p>
     </div>
 
-    <div class="lg:col-span-3 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-      <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Seus Arquivos 📁</h1>
-      
-      <div id="drop" class="border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center cursor-pointer hover:border-yellow-500 mb-8 bg-gray-50 dark:bg-gray-900/30">
-        <input type="file" id="input" multiple class="hidden">
-        <p class="text-5xl mb-3">📤</p>
-        <p class="text-xl font-bold text-gray-900 dark:text-white mb-2">Arraste arquivos aqui</p>
-        <p class="text-sm text-gray-600 dark:text-gray-400">ou clique</p>
-      </div>
-
-      <div id="lista" class="space-y-3"></div>
-    </div>
-  </div>
-</div>
-
-<div id="modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onclick="fechar()">
-  <div class="relative max-w-6xl" onclick="event.stopPropagation()">
-    <button onclick="fechar()" class="absolute -top-12 right-0 text-white text-4xl hover:text-red-500">&times;</button>
-    <img id="img" src="" class="max-w-full max-h-screen rounded-lg shadow-2xl">
-    <p id="nome" class="text-white text-center mt-4 text-lg"></p>
-  </div>
-</div>
-
-<script>
-const npub=localStorage.getItem('libermedia_npub');
-if(!npub){alert('Faça login!');location.href='/';}
-document.getElementById('npubShort').innerText=npub.slice(0,20)+'...';
-
-const drop=document.getElementById('drop');
-const input=document.getElementById('input');
-let pasta='Todas';
-
-drop.onclick=()=>input.click();
-drop.ondragover=e=>{e.preventDefault();drop.classList.add('border-yellow-500');};
-drop.ondragleave=()=>drop.classList.remove('border-yellow-500');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('border-yellow-500');enviar(e.dataTransfer.files);};
-input.onchange=()=>enviar(input.files);
-
-async function enviar(files){
-  for(let f of files){
-    const fd=new FormData();
-    fd.append('file',f);
-    fd.append('npub',npub);
-    fd.append('pasta',pasta==='Todas'?'Geral':pasta);
-    try{
-      const r=await fetch('/api/upload',{method:'POST',body:fd});
-      if((await r.json()).status!=='ok')alert('Erro: '+f.name);
-    }catch{alert('Erro');}
-  }
-  carregar();
-}
-
-async function carregar(){
-  try{
-    let url='/api/arquivos?npub='+npub;
-    if(pasta!=='Todas')url+='&pasta='+pasta;
-    const r=await fetch(url);
-    const d=await r.json();
-    const lista=document.getElementById('lista');
-    
-    if(d.status!=='ok'||!d.arquivos.length){
-      lista.innerHTML='<p class="text-gray-600 dark:text-gray-400 text-center py-8">Nenhum arquivo.</p>';
-      document.getElementById('total').innerText='0';
-      return;
-    }
-    
-    document.getElementById('total').innerText=d.arquivos.length;
-    
-    let html='';
-    for(let a of d.arquivos){
-      const icone={'image':'🖼️','video':'🎥','audio':'🎵'}[a.tipo]||'📄';
-      const mb=(a.tamanho/1024/1024).toFixed(2);
-      
-      html+='<div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg flex justify-between items-center border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">';
-      html+='<div class="flex items-center gap-3">';
-      
-      if(a.tipo==='image'){
-        html+='<img src="'+a.url+'" class="w-16 h-16 object-cover rounded border-2 cursor-pointer hover:scale-105" onclick="ver(\''+a.url+'\',\''+a.nome+'\')">';
-      }else{
-        html+='<span class="text-4xl">'+icone+'</span>';
-      }
-      
-      html+='<div><p class="font-bold text-gray-900 dark:text-white">'+a.nome+'</p><p class="text-xs text-gray-600 dark:text-gray-400">'+mb+' MB • '+a.pasta+'</p></div></div>';
-      html+='<div class="flex gap-2">';
-      html+='<button onclick="copiar('+a.id+',\''+a.url+'\')" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 p-2 rounded" title="Copiar link">🔗</button>';
-      html+='<a href="'+a.url+'" download class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 p-2 rounded" title="Download">⬇️</a>';
-      html+='</div></div>';
-    }
-    lista.innerHTML=html;
-  }catch(e){console.error(e);}
-}
-
-async function copiar(id,url){
-  try{
-    const ext=url.split(".").pop();
-    const link=window.location.origin+"/f/"+id+"."+ext;
-    await navigator.clipboard.writeText(link);
-    mostrarToast("🔗 Link copiado: /f/"+id+"."+ext);
-  }catch{mostrarToast("❌ Erro");}
-}
-
-function mostrarToast(msg){
-  const t=document.createElement('div');
-  t.className='fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl z-50';
-  t.innerText=msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),2000);
-}
-
-function filtrar(p){pasta=p;carregar();}
-function ver(url,n){document.getElementById('img').src=url;document.getElementById('nome').innerText=n;document.getElementById('modal').classList.remove('hidden');}
-function fechar(){document.getElementById('modal').classList.add('hidden');}
-function sair(){if(confirm('Sair?')){localStorage.clear();location.href='/';}}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar();});
-carregar();
-</script>
-
-{% endblock %}
+    <script>
+        const npub = localStorage.getItem('libermedia_npub');
+        if (!npub) { alert('Faça login!'); location.href = '/'; }
+        
+        document.getElementById('npubDisplay').textContent = npub.slice(0, 20) + '...';
+        
+        // Upload
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        dropArea.ondragover = (e) => { e.preventDefault(); dropArea.classList.add('border-purple-500'); };
+        dropArea.ondragleave = () => dropArea.classList.remove('border-purple-500');
+        dropArea.ondrop = (e) => { 
+            e.preventDefault(); 
+            dropArea.classList.remove('border-purple-500');
+            upload(Array.from(e.dataTransfer.files)); 
+        };
+        fileInput.onchange = (e) => upload(Array.from(e.target.files));
+        
+        async function upload(files) {
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progress.classList.remove('hidden');
+            
+            for (let i = 0; i < files.length; i++) {
+                const fd = new FormData();
+                fd.append('file', files[i]);
+                fd.append('npub', npub);
+                fd.append('pasta', 'Geral');
+                
+                const xhr = new XMLHttpRequest();
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = pct + '%';
+                        progressText.textContent = `${i+1}/${files.length} - ${pct}%`;
+                    }
+                };
+                
+                await new Promise((resolve) => {
+                    xhr.onload = () => resolve();
+                    xhr.open('POST', '/api/upload');
+                    xhr.send(fd);
+                });
+            }
+            
+            progress.classList.add('hidden');
+            showToast(`${files.length} arquivo(s) enviado(s)!`);
+            loadFiles();
+        }
+        
+        // Load files
+        async function loadFiles() {
+            const res = await fetch(`/api/arquivos?npub=${npub}`);
+            const data = await res.json();
+            
+            const filesDiv = document.getElementById('files');
+            const emptyDiv = document.getElementById('empty');
+            const countSpan = document.getElementById('count');
+            
+            if (!data.arquivos || data.arquivos.length === 0) {
+                filesDiv.innerHTML = '';
+                emptyDiv.classList.remove('hidden');
+                countSpan.textContent = '0';
+                return;
+            }
+            
+            emptyDiv.classList.add('hidden');
+            countSpan.textContent = data.arquivos.length;
+            
+            filesDiv.innerHTML = data.arquivos.map(f => `
+                <div class="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
+                    <img src="https://libermedia.app/f/${f.id}" class="w-full h-48 object-cover bg-gray-100" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'none\\' viewBox=\\'0 0 24 24\\'%3E%3Cpath stroke=\\'%239ca3af\\' stroke-width=\\'2\\' d=\\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\\'/%3E%3C/svg%3E'">
+                    <div class="p-4">
+                        <h3 class="font-semibold text-sm truncate" title="${f.nome_original}">${f.nome_original}</h3>
+                        <p class="text-xs text-gray-500 mt-1">${formatSize(f.tamanho)}</p>
+                        <button onclick="copyLink('https://libermedia.app/f/${f.id}')" class="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded">
+                            Copiar Link
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function copyLink(link) {
+            navigator.clipboard.writeText(link);
+            showToast('Link copiado!');
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+        
+        function logout() {
+            localStorage.removeItem('libermedia_npub');
+            location.href = '/';
+        }
+        
+        // Load on start
+        loadFiles();
+    </script>
+</body>
+</html>
