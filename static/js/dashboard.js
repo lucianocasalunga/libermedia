@@ -1,407 +1,252 @@
-/* ====================================
-   LIBERMEDIA DASHBOARD JS
-   Sistema completo de gerenciamento
-   ==================================== */
+const npub = localStorage.getItem('libermedia_npub');
+if (!npub) { alert('Faça login!'); location.href = '/'; }
 
-// ===== CONFIGURAÇÕES GLOBAIS =====
-const CONFIG = {
-    apiBase: '/api',
-    maxFileSize: 100 * 1024 * 1024, // 100MB
-    allowedTypes: ['image/*', 'video/*', 'audio/*', 'application/pdf', 'application/msword'],
-    viewMode: 'grid' // 'grid' ou 'list'
+document.getElementById('npubShort').textContent = npub.slice(0, 20) + '...';
+
+let todosArquivos = [];
+let pastaAtual = 'Mesa';
+let viewMode = 'grade';
+let currentModalIndex = 0;
+let modalArquivos = [];
+
+const dropArea = document.getElementById('dropArea');
+const fileInput = document.getElementById('fileInput');
+
+dropArea.onclick = () => fileInput.click();
+dropArea.ondragover = (e) => { e.preventDefault(); dropArea.classList.add('border-yellow-500'); };
+dropArea.ondragleave = () => dropArea.classList.remove('border-yellow-500');
+dropArea.ondrop = (e) => { 
+  e.preventDefault(); 
+  dropArea.classList.remove('border-yellow-500');
+  upload(Array.from(e.dataTransfer.files)); 
 };
+fileInput.onchange = (e) => upload(Array.from(e.target.files));
 
-// ===== ESTADO DA APLICAÇÃO =====
-let files = [];
-let currentUser = null;
-
-// ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
-    setupEventListeners();
-    loadFiles();
-});
-
-async function initializeApp() {
-    try {
-        // Carregar informações do usuário
-        const response = await fetch('/api/user/me');
-        if (response.ok) {
-            currentUser = await response.json();
-            document.getElementById('username').textContent = currentUser.name || currentUser.pubkey.substring(0, 16);
-        }
-    } catch (error) {
-        console.error('Erro ao carregar usuário:', error);
-    }
-
-    // Restaurar modo de visualização
-    const savedView = localStorage.getItem('viewMode');
-    if (savedView) {
-        CONFIG.viewMode = savedView;
-        toggleView(savedView);
-    }
-}
-
-// ===== EVENT LISTENERS =====
-function setupEventListeners() {
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-
-    // Drag and drop
-    uploadArea.addEventListener('dragover', handleDragOver);
-    uploadArea.addEventListener('dragleave', handleDragLeave);
-    uploadArea.addEventListener('drop', handleDrop);
-
-    // File input
-    fileInput.addEventListener('change', handleFileSelect);
-
-    // Click no upload area
-    uploadArea.addEventListener('click', () => fileInput.click());
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('drag-over');
+async function upload(files) {
+  const progress = document.getElementById('progress');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  
+  progress.classList.remove('hidden');
+  
+  for (let i = 0; i < files.length; i++) {
+    const fd = new FormData();
+    fd.append('file', files[i]);
+    fd.append('npub', npub);
+    fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
     
-    const files = Array.from(e.dataTransfer.files);
-    uploadFiles(files);
-}
-
-function handleFileSelect(e) {
-    const files = Array.from(e.target.files);
-    uploadFiles(files);
-}
-
-// ===== UPLOAD DE ARQUIVOS =====
-async function uploadFiles(selectedFiles) {
-    if (selectedFiles.length === 0) return;
-
-    // Validar arquivos
-    const validFiles = selectedFiles.filter(file => {
-        if (file.size > CONFIG.maxFileSize) {
-            showToast(`Arquivo ${file.name} muito grande (máx 100MB)`, 'error');
-            return false;
-        }
-        return true;
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = `${i+1}/${files.length} - ${pct}%`;
+      }
+    };
+    
+    await new Promise((resolve) => {
+      xhr.onload = () => resolve();
+      xhr.open('POST', '/api/upload');
+      xhr.send(fd);
     });
-
-    if (validFiles.length === 0) return;
-
-    // Mostrar progresso
-    const progressContainer = document.getElementById('uploadProgress');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    progressContainer.classList.remove('hidden');
-
-    try {
-        for (let i = 0; i < validFiles.length; i++) {
-            const file = validFiles[i];
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Upload
-            const xhr = new XMLHttpRequest();
-            
-            xhr.upload.addEventListener('progress', (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percent + '%';
-                    progressText.textContent = `${i + 1}/${validFiles.length} - ${percent}%`;
-                }
-            });
-
-            await new Promise((resolve, reject) => {
-                xhr.onload = () => {
-                    if (xhr.status === 200) {
-                        resolve();
-                    } else {
-                        reject(new Error('Upload failed'));
-                    }
-                };
-                xhr.onerror = reject;
-                
-                xhr.open('POST', '/api/upload');
-                xhr.send(formData);
-            });
-        }
-
-        showToast(`${validFiles.length} arquivo(s) enviado(s) com sucesso!`, 'success');
-        loadFiles(); // Recarregar lista
-
-    } catch (error) {
-        console.error('Erro no upload:', error);
-        showToast('Erro ao enviar arquivo', 'error');
-    } finally {
-        progressContainer.classList.add('hidden');
-        progressBar.style.width = '0%';
-        document.getElementById('fileInput').value = '';
-    }
+  }
+  
+  progress.classList.add('hidden');
+  loadFiles();
 }
 
-// ===== CARREGAR ARQUIVOS =====
 async function loadFiles() {
-    try {
-        const response = await fetch('/api/files');
-        if (response.ok) {
-            files = await response.json();
-            renderFiles();
-            updateFileCount();
-        }
-    } catch (error) {
-        console.error('Erro ao carregar arquivos:', error);
-        showToast('Erro ao carregar arquivos', 'error');
-    }
+  const res = await fetch(`/api/arquivos?npub=${npub}`);
+  const data = await res.json();
+  
+  todosArquivos = data.arquivos || [];
+  document.getElementById('total').textContent = todosArquivos.length;
+  
+  renderFiles();
 }
 
-function updateFileCount() {
-    document.getElementById('fileCount').textContent = `(${files.length})`;
-}
-
-// ===== RENDERIZAR ARQUIVOS =====
-function renderFiles() {
-    const container = document.getElementById('filesContainer');
-    const emptyState = document.getElementById('emptyState');
-
-    if (files.length === 0) {
-        container.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-    }
-
-    emptyState.classList.add('hidden');
-
-    if (CONFIG.viewMode === 'grid') {
-        container.className = 'files-grid';
-        container.innerHTML = files.map(file => createFileCard(file)).join('');
-    } else {
-        container.className = 'files-list';
-        container.innerHTML = files.map(file => createFileItem(file)).join('');
-    }
-}
-
-function createFileCard(file) {
-    const fileType = getFileType(file.filename);
-    const thumbnail = getThumbnail(file);
-    const shortLink = `https://libermedia.app/f/${file.short_id}`;
-
-    return `
-        <div class="file-card" onclick="openFileModal('${file.id}')">
-            <img src="${thumbnail}" alt="${file.filename}" class="file-card-image" loading="lazy">
-            <div class="file-card-body">
-                <h3 class="file-card-title" title="${file.filename}">${file.filename}</h3>
-                <div class="file-card-meta">
-                    <span class="file-card-badge badge-${fileType}">${fileType}</span>
-                    <span>${formatFileSize(file.filesize)}</span>
-                </div>
-                <div class="file-card-actions">
-                    <button class="file-card-btn" onclick="event.stopPropagation(); copyLink('${shortLink}')">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                        Copiar
-                    </button>
-                    <button class="file-card-btn primary" onclick="event.stopPropagation(); window.open('${shortLink}', '_blank')">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                        Abrir
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createFileItem(file) {
-    const fileType = getFileType(file.filename);
-    const thumbnail = getThumbnail(file);
-    const shortLink = `https://libermedia.app/f/${file.short_id}`;
-
-    return `
-        <div class="file-item" onclick="openFileModal('${file.id}')">
-            <img src="${thumbnail}" alt="${file.filename}" class="file-item-thumb" loading="lazy">
-            <div class="file-item-info">
-                <div class="file-item-name" title="${file.filename}">${file.filename}</div>
-                <div class="file-item-meta">
-                    <span class="file-card-badge badge-${fileType}">${fileType}</span> • 
-                    ${formatFileSize(file.filesize)} • 
-                    ${formatDate(file.created_at)}
-                </div>
-            </div>
-            <div class="file-item-actions">
-                <button class="file-item-btn" onclick="event.stopPropagation(); copyLink('${shortLink}')">
-                    Copiar Link
-                </button>
-                <button class="file-item-btn" onclick="event.stopPropagation(); window.open('${shortLink}', '_blank')">
-                    Abrir
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// ===== TOGGLE VISUALIZAÇÃO =====
 function toggleView(mode) {
-    CONFIG.viewMode = mode;
-    localStorage.setItem('viewMode', mode);
-
-    // Atualizar botões
-    document.getElementById('btnGrid').classList.toggle('active', mode === 'grid');
-    document.getElementById('btnList').classList.toggle('active', mode === 'list');
-
-    // Re-renderizar
-    renderFiles();
+  viewMode = mode;
+  const wrapper = document.getElementById('filesWrapper');
+  const btnGrade = document.getElementById('btnGrade');
+  const btnLista = document.getElementById('btnLista');
+  
+  if (mode === 'grade') {
+    wrapper.className = 'view-grade';
+    btnGrade.className = 'px-4 py-2 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white font-semibold';
+    btnLista.className = 'px-4 py-2 rounded text-gray-600 dark:text-gray-300';
+  } else {
+    wrapper.className = 'view-lista';
+    btnLista.className = 'px-4 py-2 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white font-semibold';
+    btnGrade.className = 'px-4 py-2 rounded text-gray-600 dark:text-gray-300';
+  }
+  
+  renderFiles();
 }
 
-// ===== MODAL DE DETALHES =====
-function openFileModal(fileId) {
-    const file = files.find(f => f.id == fileId);
-    if (!file) return;
+function getExtensao(nome) {
+  if (!nome) return "file";
+  return nome.split('.').pop().toLowerCase();
+}
 
-    const modal = document.getElementById('fileModal');
-    const modalBody = document.getElementById('modalBody');
-    const thumbnail = getThumbnail(file);
-    const shortLink = `https://libermedia.app/f/${file.short_id}`;
-    const fileType = getFileType(file.filename);
-
-    modalBody.innerHTML = `
-        <img src="${thumbnail}" alt="${file.filename}" class="modal-image">
-        <div class="modal-info">
-            <div class="modal-info-item">
-                <span class="modal-info-label">Nome:</span>
-                <span class="modal-info-value">${file.filename}</span>
-            </div>
-            <div class="modal-info-item">
-                <span class="modal-info-label">Tipo:</span>
-                <span class="modal-info-value">${fileType}</span>
-            </div>
-            <div class="modal-info-item">
-                <span class="modal-info-label">Tamanho:</span>
-                <span class="modal-info-value">${formatFileSize(file.filesize)}</span>
-            </div>
-            <div class="modal-info-item">
-                <span class="modal-info-label">Criado:</span>
-                <span class="modal-info-value">${formatDate(file.created_at)}</span>
-            </div>
-            <div class="modal-info-item">
-                <span class="modal-info-label">Link Curto:</span>
-                <span class="modal-info-value">${shortLink}</span>
-            </div>
+function renderFiles() {
+  const filesDiv = document.getElementById('files');
+  const emptyDiv = document.getElementById('empty');
+  
+  let arquivosFiltrados = todosArquivos;
+  if (pastaAtual !== 'Mesa') {
+    arquivosFiltrados = todosArquivos.filter(f => f.pasta === pastaAtual);
+  }
+  
+  if (arquivosFiltrados.length === 0) {
+    filesDiv.innerHTML = '';
+    emptyDiv.classList.remove('hidden');
+    return;
+  }
+  
+  emptyDiv.classList.add('hidden');
+  
+  if (viewMode === 'grade') {
+    filesDiv.innerHTML = arquivosFiltrados.map(f => {
+      const ext = getExtensao(f.nome);
+      const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
+      return `
+      <div class="file-card bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden border border-gray-200 dark:border-gray-700">
+        <img src="${linkComExt}" 
+             class="w-full h-40 object-cover cursor-pointer" 
+             onclick="openModal(${f.id})"
+             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27%3E%3Cpath stroke=%27%239ca3af%27 stroke-width=%272%27 d=%27M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z%27/%3E%3C/svg%3E'">
+        <div class="p-3">
+          <h3 class="text-xs text-gray-600 dark:text-gray-400 truncate" title="${f.nome}">${f.nome}</h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">${formatSize(f.tamanho)}</p>
+          <button onclick="copyLink('${linkComExt}')" class="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-2 rounded">
+            Copiar
+          </button>
         </div>
-        <div class="flex gap-2 mt-6">
-            <button class="btn-secondary flex-1" onclick="copyLink('${shortLink}')">Copiar Link</button>
-            <button class="btn-primary flex-1" onclick="window.open('${shortLink}', '_blank')">Abrir Arquivo</button>
-        </div>
+      </div>
     `;
-
-    modal.classList.remove('hidden');
+    }).join('');
+  } else {
+    filesDiv.innerHTML = arquivosFiltrados.map(f => {
+      const ext = getExtensao(f.nome);
+      const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
+      return `
+      <div class="file-card bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
+        <img src="${linkComExt}" 
+             class="cursor-pointer"
+             onclick="openModal(${f.id})"
+             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27%3E%3Cpath stroke=%27%239ca3af%27 stroke-width=%272%27 d=%27M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z%27/%3E%3C/svg%3E'">
+        <div class="file-info">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">${f.nome}</h3>
+          <p class="text-xs text-gray-500">${formatSize(f.tamanho)}</p>
+        </div>
+        <div class="file-actions">
+          <button onclick="copyLink('${linkComExt}')" class="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title="Copiar link">
+            📋
+          </button>
+          <button onclick="showDetails(${f.id})" class="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" title="Mais opções">
+            ⋮
+          </button>
+        </div>
+      </div>
+    `;
+    }).join('');
+  }
 }
 
-function closeModal() {
-    document.getElementById('fileModal').classList.add('hidden');
+function filtrarPasta(pasta) {
+  pastaAtual = pasta;
+  renderFiles();
 }
 
-// ===== UTILITÁRIOS =====
-function getFileType(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return 'image';
-    if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) return 'video';
-    if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio';
-    return 'document';
+function criarPasta() {
+  const nome = prompt("Nome da nova pasta:");
+  if (!nome || nome.trim() === "") return;
+  
+  const pastaBtn = document.createElement("button");
+  pastaBtn.onclick = () => filtrarPasta(nome);
+  pastaBtn.className = "w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white";
+  pastaBtn.innerHTML = `📁 ${nome}`;
+  
+  const container = document.getElementById("pastasContainer");
+  const criarBtn = container.querySelector("button[onclick*='criarPasta']");
+  container.insertBefore(pastaBtn, criarBtn);
+  
+  alert(`Pasta "${nome}" criada!`);
 }
 
-function getThumbnail(file) {
-    const fileType = getFileType(file.filename);
-    if (fileType === 'image') {
-        return `https://libermedia.app/f/${file.short_id}`;
-    }
-    // Placeholder para outros tipos
-    return `/static/img/placeholder-${fileType}.png`;
-}
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) return 'Hoje';
-    if (days === 1) return 'Ontem';
-    if (days < 7) return `${days} dias atrás`;
-    
-    return date.toLocaleDateString('pt-BR');
+function formatSize(bytes) {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 function copyLink(link) {
-    navigator.clipboard.writeText(link).then(() => {
-        showToast('Link copiado!', 'success');
-    }).catch(() => {
-        showToast('Erro ao copiar link', 'error');
-    });
+  navigator.clipboard.writeText(link);
+  alert('Link copiado!');
 }
 
-// ===== TOAST NOTIFICATIONS =====
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toastMessage');
-    const toastIcon = document.getElementById('toastIcon');
-
-    const icons = {
-        success: `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>`,
-        error: `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>`,
-        info: `<svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>`
-    };
-
-    toastIcon.innerHTML = icons[type] || icons.info;
-    toastMessage.textContent = message;
-    toast.classList.remove('hidden');
-
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 3000);
+function openModal(fileId) {
+  modalArquivos = todosArquivos.filter(f => {
+    if (pastaAtual === 'Mesa') return true;
+    return f.pasta === pastaAtual;
+  });
+  currentModalIndex = modalArquivos.findIndex(f => f.id === fileId);
+  showModalImage();
 }
 
-// ===== LOGOUT =====
-async function logout() {
-    try {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        window.location.href = '/';
-    } catch (error) {
-        console.error('Erro ao fazer logout:', error);
-        window.location.href = '/';
-    }
+function showModalImage() {
+  if (currentModalIndex < 0 || currentModalIndex >= modalArquivos.length) return;
+  
+  const arquivo = modalArquivos[currentModalIndex];
+  const ext = getExtensao(arquivo.nome);
+  document.getElementById('modalImg').src = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  document.getElementById('modalNome').textContent = arquivo.nome;
+  document.getElementById('modalInfo').textContent = `${formatSize(arquivo.tamanho)} • ${currentModalIndex + 1}/${modalArquivos.length}`;
+  document.getElementById('modal').classList.remove('hidden');
 }
 
-// ===== FECHAR MODAL COM ESC =====
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
-    }
-});
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+}
+
+function prevImage() {
+  if (currentModalIndex > 0) {
+    currentModalIndex--;
+    showModalImage();
+  }
+}
+
+function nextImage() {
+  if (currentModalIndex < modalArquivos.length - 1) {
+    currentModalIndex++;
+    showModalImage();
+  }
+}
+
+function showDetails(fileId) {
+  const arquivo = todosArquivos.find(f => f.id === fileId);
+  if (!arquivo) return;
+  
+  const ext = getExtensao(arquivo.nome);
+  const linkComExt = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  
+  const detalhes = `
+📄 Nome: ${arquivo.nome}
+📦 Tamanho: ${formatSize(arquivo.tamanho)}
+📁 Pasta: ${arquivo.pasta}
+🔗 Link: ${linkComExt}
+  `;
+  
+  alert(detalhes);
+  copyLink(linkComExt);
+}
+
+function logout() {
+  localStorage.removeItem('libermedia_npub');
+  location.href = '/';
+}
+
+loadFiles();

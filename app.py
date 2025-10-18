@@ -484,6 +484,7 @@ def servir_arquivo(filename):
 
 @app.route("/f/<int:arquivo_id>")
 @app.route("/f/<int:arquivo_id>.<ext>")
+@app.route("/f/<int:arquivo_id>.<ext>")
 def short_link(arquivo_id, ext=None):
     """Redireciona link curto pro arquivo"""
     arquivo = Arquivo.query.get(arquivo_id)
