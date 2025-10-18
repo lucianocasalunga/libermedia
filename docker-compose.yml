@@ -9,6 +9,7 @@ services:
       - ./uploads:/app/uploads
       - ./app.py:/app/app.py
       - ./templates:/app/templates
+      - ./static:/app/static
       - ./.well-known:/.well-known
     environment:
       - FLASK_ENV=development
