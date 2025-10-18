@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiberMedia Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-purple-600">LiberMedia</h1>
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-700" id="username">Usuário</span>
+                    <button onclick="window.location.href='/'" class="px-4 py-2 border rounded">Sair</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Upload Area -->
+        <section class="mb-8">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*" hidden>
+                <div class="upload-content text-center">
+                    <svg class="upload-icon mx-auto mb-4 w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <h3 class="text-xl font-semibold mb-2">Arraste arquivos aqui</h3>
+                    <p class="text-gray-500 mb-4">ou clique para selecionar</p>
+                    <button class="btn-primary px-6 py-2 bg-purple-600 text-white rounded-lg" onclick="document.getElementById('fileInput').click()">
+                        Selecionar Arquivos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="hidden mt-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium">Enviando...</span>
+                        <span class="text-sm text-gray-500" id="progressText">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-purple-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View Controls -->
+        <section class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold">
+                Seus Arquivos <span class="text-gray-500 text-lg" id="fileCount">(0)</span>
+            </h2>
+
+            <div class="flex items-center gap-2 bg-white rounded-lg shadow p-1">
+                <button id="btnGrid" class="view-toggle active p-2 rounded" onclick="toggleView('grid')">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                </button>
+                <button id="btnList" class="view-toggle p-2 rounded" onclick="toggleView('list')">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Files Container -->
+        <section id="filesContainer" class="files-grid">
+            <!-- Carregado via JS -->
+        </section>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-16">
+            <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <h3 class="mt-4 text-lg font-medium">Nenhum arquivo ainda</h3>
+            <p class="mt-2 text-gray-500">Comece fazendo upload!</p>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 z-50 hidden">
+        <div class="bg-white shadow-lg rounded-lg p-4 flex items-center gap-3 min-w-[300px]">
+            <div id="toastIcon"></div>
+            <p id="toastMessage" class="text-sm font-medium"></p>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="fileModal" class="modal hidden fixed inset-0 z-100 flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0 bg-black bg-opacity-75" onclick="closeModal()"></div>
+        <div class="modal-content relative bg-white rounded-lg max-w-2xl w-full p-6">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Substituir dashboard.js por versão simplificada
+        console.log('Dashboard V2 carregado');
+        
+        // Mock de funções para não dar erro
+        function toggleView(mode) {
+            console.log('Toggle view:', mode);
+            document.getElementById('btnGrid').classList.toggle('active', mode === 'grid');
+            document.getElementById('btnList').classList.toggle('active', mode === 'list');
+        }
+        
+        function closeModal() {
+            document.getElementById('fileModal').classList.add('hidden');
+        }
+        
+        // Mostrar mensagem temporária
+        document.getElementById('emptyState').innerHTML = `
+            <h3 class="text-lg font-medium">Dashboard V2 está funcionando!</h3>
+            <p class="mt-2 text-gray-500">Próximo passo: integrar com backend</p>
+        `;
+    </script>
+</body>
+</html>

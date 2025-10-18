@@ -44,6 +44,11 @@ def login_page():
 def registro_page():
     return render_template("registro.html")
 
+@app.route("/dashboard-v2")
+def dashboard_v2():
+    return render_template("dashboard-v2.html")
+
+
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
@@ -591,3 +596,8 @@ def hex_to_npub_api():
         
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route("/novo")
+def novo():
+    return render_template("novo.html")
+
