@@ -7,8 +7,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- Configuração ---
 app = Flask(__name__)
-app.static_folder = "static"
-app.static_url_path = "/static"
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://libermedia:libermedia123@db:5432/libermedia"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
