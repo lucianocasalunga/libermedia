@@ -1,0 +1,1 @@
+    let url='/api/arquivos?npub='+npub;
