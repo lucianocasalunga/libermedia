@@ -50,8 +50,22 @@
   </div>
 </div>
 
-<script src="https://bundle.run/noble-curves@1.6.0"></script>
-<script src="https://bundle.run/noble-hashes@1.5.0"></script>
+async function loginManual(e) {
+  e.preventDefault();
+  const nsecInput = document.getElementById("nsec").value.trim();
+  if (!nsecInput.startsWith("nsec1")) { alert("❌ nsec inválida! Deve começar com nsec1"); return; }
+  try {
+    const { nip19, getPublicKey } = window.NostrTools;
+    const { type, data: privkey } = nip19.decode(nsecInput);
+    if (type !== "nsec") throw new Error("Tipo inválido");
+    const pubkey = getPublicKey(privkey);
+    const npub = nip19.npubEncode(pubkey);
+    localStorage.setItem("libermedia_npub", npub);
+    localStorage.setItem("libermedia_nsec", nsecInput);
+    location.href = "/dashboard";
+  } catch (error) { alert("❌ Erro: " + error.message); console.error(error); }
+}
+<script src="https://cdn.jsdelivr.net/npm/nostr-tools@2.3.0/lib/nostr.bundle.js"></script>
 
 <script>
 // Converte hex para npub
@@ -121,37 +135,18 @@ async function loginNIP07() {
 // LOGIN MANUAL (nsec)
 async function loginManual(e) {
   e.preventDefault();
-  
   const nsecInput = document.getElementById("nsec").value.trim();
-  
-  if (!nsecInput.startsWith("nsec1")) {
-    alert("❌ nsec inválida! Deve começar com nsec1");
-    return;
-  }
-  
+  if (!nsecInput.startsWith("nsec1")) { alert("❌ nsec inválida! Deve começar com nsec1"); return; }
   try {
-    const decoded = bech32Decode(nsecInput);
-    if (decoded.prefix !== "nsec") throw new Error("Prefixo inválido");
-    
-    const privkeyBytes = bech32FromWords(decoded.words);
-    const privkeyHex = Array.from(privkeyBytes).map(b => b.toString(16).padStart(2, "0")).join("");
-    
-    const { schnorr } = window.nobleSecp256k1;
-    const pubkeyHex = schnorr.getPublicKey(privkeyHex);
-    
-    const pubkeyBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-    const words = bech32ToWords(pubkeyBytes);
-    const npub = bech32Encode("npub", words);
-    
+    const { nip19, getPublicKey } = window.NostrTools;
+    const { type, data: privkey } = nip19.decode(nsecInput);
+    if (type !== "nsec") throw new Error("Tipo inválido");
+    const pubkey = getPublicKey(privkey);
+    const npub = nip19.npubEncode(pubkey);
     localStorage.setItem("libermedia_npub", npub);
     localStorage.setItem("libermedia_nsec", nsecInput);
-    
     location.href = "/dashboard";
-    
-  } catch (error) {
-    alert("❌ Erro ao processar nsec: " + error.message);
-    console.error(error);
-  }
+  } catch (error) { alert("❌ Erro: " + error.message); console.error(error); }
 }
 </script>
 

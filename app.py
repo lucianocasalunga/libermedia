@@ -155,10 +155,6 @@ def health():
 def login_nip07():
     return render_template("login_nip07.html")
 
-@app.route("/login-manual")
-def login_manual():
-    return render_template("login-manual.html")
-
 @app.route("/sobre")
 def sobre():
     return render_template("sobre.html")
@@ -634,3 +630,12 @@ def hex_to_npub_api():
 def novo():
     return render_template("novo.html")
 
+
+# Anti-cache headers
+@app.after_request
+def add_no_cache_headers(response):
+    if request.path.startswith('/login') or request.path.startswith('/static'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
