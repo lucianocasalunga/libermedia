@@ -122,19 +122,35 @@ async function loginNIP07() {
 async function loginManual(e) {
   e.preventDefault();
   
-  const nsec = document.getElementById('nsec').value.trim();
+  const nsecInput = document.getElementById("nsec").value.trim();
   
-  if (!nsec.startsWith('nsec1')) {
-    alert('❌ nsec inválida! Deve começar com nsec1');
+  if (!nsecInput.startsWith("nsec1")) {
+    alert("❌ nsec inválida! Deve começar com nsec1");
     return;
   }
   
   try {
-    // TODO: converter nsec para npub
-    alert('⚠️ Login manual em desenvolvimento. Use extensão NIP-07 por enquanto.');
+    const decoded = bech32Decode(nsecInput);
+    if (decoded.prefix !== "nsec") throw new Error("Prefixo inválido");
+    
+    const privkeyBytes = bech32FromWords(decoded.words);
+    const privkeyHex = Array.from(privkeyBytes).map(b => b.toString(16).padStart(2, "0")).join("");
+    
+    const { schnorr } = window.nobleSecp256k1;
+    const pubkeyHex = schnorr.getPublicKey(privkeyHex);
+    
+    const pubkeyBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const words = bech32ToWords(pubkeyBytes);
+    const npub = bech32Encode("npub", words);
+    
+    localStorage.setItem("libermedia_npub", npub);
+    localStorage.setItem("libermedia_nsec", nsecInput);
+    
+    location.href = "/dashboard";
     
   } catch (error) {
-    alert('❌ Erro: ' + error.message);
+    alert("❌ Erro ao processar nsec: " + error.message);
+    console.error(error);
   }
 }
 </script>
