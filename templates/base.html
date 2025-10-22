@@ -40,7 +40,7 @@
         <span class="text-lg md:text-xl font-bold hidden sm:inline">LiberMedia</span>
       </a>
 
-      <!-- Navbar -->
+      <!-- Menu Desktop -->
       <nav class="hidden md:flex space-x-4 lg:space-x-6 text-sm lg:text-base">
         <a href="/" class="hover:text-yellow-400 transition">Início</a>
         <a href="/planos" class="hover:text-yellow-400 transition">Planos</a>
@@ -49,17 +49,43 @@
         <a href="/suporte" class="hover:text-yellow-400 transition">Suporte</a>
       </nav>
 
-      <!-- Botão tema ÚNICO -->
-      <button 
-        id="themeToggle" 
-        class="bg-gray-800/70 hover:bg-gray-700 p-2 md:p-3 rounded-full transition shadow-lg flex items-center justify-center"
-        style="width: 44px; height: 44px;"
-      >
-        <span id="themeIcon" class="text-xl">☀️</span>
-      </button>
+      <!-- Botões direita -->
+      <div class="flex items-center space-x-2">
+        <!-- Botão tema -->
+        <button 
+          id="themeToggle" 
+          class="bg-gray-800/70 hover:bg-gray-700 p-2 md:p-3 rounded-full transition shadow-lg flex items-center justify-center"
+          style="width: 44px; height: 44px;"
+        >
+          <span id="themeIcon" class="text-xl">☀️</span>
+        </button>
+
+        <!-- Botão menu mobile -->
+        <button 
+          id="mobileMenuBtn" 
+          class="md:hidden bg-gray-800/70 hover:bg-gray-700 p-2 rounded-full text-2xl"
+          style="width: 44px; height: 44px;"
+        >
+          ☰
+        </button>
+      </div>
 
     </div>
   </header>
+
+  <!-- Menu Mobile Fullscreen -->
+  <nav id="mobileMenu" class="hidden fixed inset-0 bg-gray-900/98 backdrop-blur-md z-[100] flex flex-col items-center justify-center">
+    <button id="closeMobileMenu" class="absolute top-6 right-6 text-white text-5xl hover:text-yellow-400">
+      ×
+    </button>
+    <div class="flex flex-col items-center space-y-8 text-2xl text-white">
+      <a href="/" class="hover:text-yellow-400 transition">Início</a>
+      <a href="/planos" class="hover:text-yellow-400 transition">Planos</a>
+      <a href="/dashboard" class="hover:text-yellow-400 transition">Dashboard</a>
+      <a href="/sobre" class="hover:text-yellow-400 transition">Sobre</a>
+      <a href="/suporte" class="hover:text-yellow-400 transition">Suporte</a>
+    </div>
+  </nav>
 
   <main class="pt-20 md:pt-24 pb-10 px-4 min-h-screen">
     {% block content %}{% endblock %}
@@ -74,13 +100,12 @@
   </footer>
 
   <script>
-    // Carrega tema inicial ANTES de mostrar a página
+    // Carrega tema inicial
     (function() {
       const savedTheme = localStorage.getItem('libermedia_theme') || 'light';
       document.body.className = savedTheme === 'dark' ? 'dark-theme text-gray-100' : 'light-theme text-gray-900';
     })();
 
-    // Configura botão após carregar DOM
     document.addEventListener('DOMContentLoaded', function() {
       const themeToggle = document.getElementById('themeToggle');
       const themeIcon = document.getElementById('themeIcon');
@@ -90,7 +115,7 @@
       const currentTheme = localStorage.getItem('libermedia_theme') || 'light';
       themeIcon.innerText = currentTheme === 'dark' ? '🌙' : '☀️';
 
-      // Toggle ao clicar
+      // Toggle tema
       themeToggle.addEventListener('click', function() {
         const isDark = body.classList.contains('dark-theme');
         
@@ -103,6 +128,30 @@
           localStorage.setItem('libermedia_theme', 'dark');
           themeIcon.innerText = '🌙';
         }
+      });
+
+      // Menu mobile
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+          mobileMenu.classList.remove('hidden');
+        });
+      }
+
+      if (closeMobileMenu) {
+        closeMobileMenu.addEventListener('click', function() {
+          mobileMenu.classList.add('hidden');
+        });
+      }
+
+      // Fechar menu ao clicar em link
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function() {
+          mobileMenu.classList.add('hidden');
+        });
       });
     });
 

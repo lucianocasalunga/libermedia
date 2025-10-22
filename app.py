@@ -1,13 +1,26 @@
 import os
 import time
 import jwt
-from flask import Flask, request, jsonify, render_template, send_from_directory, redirect
+from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- Configuração ---
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://libermedia:libermedia123@db:5432/libermedia"
+app.secret_key = 'LiberMedia2025SecretKey!@#$%Sofia'
+
+# Proteção Admin
+ADMIN_PASSWORD = "Liber1010"
+
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("admin_logged"):
+            return redirect("/admin/login")
+        return f(*args, **kwargs)
+    return decorated_function
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://libermedia:libermedia123@libermedia-db:5432/libermedia"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
@@ -163,7 +176,7 @@ def planos():
     plans, meta = _load_plans_config()
     return render_template("planos.html", plans=plans, meta=meta)
 import os, json, requests
-from flask import jsonify, abort
+from flask import jsonify, abort, session
 def _load_lnbits_env():
     env_path = os.path.join(os.path.dirname(__file__), "secrets", "lnbits.env")
     cfg = {}
@@ -214,7 +227,7 @@ def api_invoice(plan_id):
     except Exception as e:
         return jsonify({"status":"error","error":str(e)}), 500
 import requests
-from flask import jsonify
+from flask import jsonify, session
 @app.route("/api/invoice/create/<plan_id>", methods=["POST"])
 def api_create_invoice(plan_id):
     try:
@@ -492,11 +505,28 @@ def short_link(arquivo_id, ext=None):
         return "Arquivo não encontrado", 404
     return redirect(f"/uploads/{arquivo.nome}")
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == ADMIN_PASSWORD:
+            session["admin_logged"] = True
+            return redirect("/admin")
+        return render_template("admin_login.html", error="Senha incorreta!")
+    return render_template("admin_login.html")
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logged", None)
+    return redirect("/")
+
 @app.route("/admin")
+@admin_required
 def admin_page():
     return render_template("admin.html")
 
 @app.route("/api/admin/usuarios", methods=["GET"])
+@admin_required
 def admin_usuarios():
     try:
         usuarios = Usuario.query.all()
@@ -515,6 +545,7 @@ def admin_usuarios():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route("/api/admin/arquivos", methods=["GET"])
+@admin_required
 def admin_arquivos():
     try:
         arquivos = Arquivo.query.all()
@@ -533,6 +564,7 @@ def admin_arquivos():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route("/api/admin/delete/<int:arquivo_id>", methods=["DELETE"])
+@admin_required
 def admin_delete(arquivo_id):
     try:
         arquivo = Arquivo.query.get(arquivo_id)

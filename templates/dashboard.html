@@ -3,6 +3,10 @@
 {% block content %}
 
 <style>
+@media (max-width: 1024px) {
+  .lg\:grid-cols-4 { grid-template-columns: 1fr !important; }
+  .lg\:col-span-3 { grid-column: span 1 !important; }
+}
 /* Estilos para toggle lista/grade */
 .view-lista #files { display: flex; flex-direction: column; gap: 0.5rem; }
 .view-lista .file-card { display: flex !important; align-items: center; gap: 1rem; padding: 0.75rem; }
