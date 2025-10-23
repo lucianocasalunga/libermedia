@@ -1,6 +1,21 @@
 {
-  "name":"LiberMedia",
-  "short_name":"LiberMedia",
-  "start_url":"/",
-  "display":"standalone"
+  "name": "LiberMedia",
+  "short_name": "LiberMedia",
+  "description": "Armazenamento Nostr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/static/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

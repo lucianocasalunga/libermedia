@@ -273,3 +273,19 @@ function logout() {
 }
 
 loadFiles();
+
+// Buscar perfil Nostr
+async function buscarPerfilNostr() {
+  try {
+    const npub = localStorage.getItem('libermedia_npub');
+    if (npub_test = npub1nvcezhw3gze5waxtvrzzls8qzhvqpn087hj0s2jl948zr4egq0jqhm3mrr) return;
+    const res = await fetch('/api/nostr/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ npub }) });
+    const data = await res.json();
+    if (data.status === 'ok' && data.perfil) {
+      const avatarImg = document.querySelector('img[src="/static/img/avatar.png"]');
+      if (avatarImg && data.perfil.picture) avatarImg.src = data.perfil.picture;
+      document.querySelectorAll('.font-bold').forEach(el => { if (el.textContent.trim() === 'Usuário' && data.perfil.name) el.textContent = data.perfil.name; });
+    }
+  } catch (err) { console.error('Erro:', err); }
+}
+setTimeout(buscarPerfilNostr, 500);

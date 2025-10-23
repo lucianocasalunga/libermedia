@@ -639,3 +639,71 @@ def add_no_cache_headers(response):
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
     return response
+
+# ============================================
+# BUSCAR PERFIL NOSTR
+# ============================================
+from nostr_sdk import Client, Filter, Kind, Nip19, RelayUrl
+from datetime import timedelta
+
+async def buscar_perfil_nostr_async(npub: str):
+    """Busca perfil (kind 0) de um npub nos relays"""
+    try:
+        decoded = Nip19.from_bech32(npub)
+        pubkey = decoded.as_enum().npub
+        
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+        
+        await client.connect()
+        
+        filter_obj = Filter().kind(Kind(0)).author(pubkey).limit(1)
+        events = await client.fetch_events(filter_obj, timeout=timedelta(seconds=10))
+        
+        if not events.is_empty():
+            event = events.first()
+            content = json.loads(event.content())
+            
+            return {
+                "name": content.get("name", "Usuário"),
+                "picture": content.get("picture", ""),
+                "about": content.get("about", ""),
+                "nip05": content.get("nip05", "")
+            }
+        
+        return None
+    except Exception as e:
+        print(f"Erro ao buscar perfil: {e}")
+        return None
+    finally:
+        try:
+            await client.disconnect()
+        except:
+            pass
+
+def buscar_perfil_nostr(npub: str):
+    """Wrapper síncrono"""
+    import asyncio
+    return asyncio.run(buscar_perfil_nostr_async(npub))
+
+@app.route("/api/nostr/profile", methods=["POST"])
+def api_nostr_profile():
+    """API para buscar perfil Nostr"""
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+        
+        perfil = buscar_perfil_nostr(npub)
+        
+        if perfil:
+            return jsonify({"status": "ok", "perfil": perfil})
+        else:
+            return jsonify({"status": "error", "error": "Perfil não encontrado"}), 404
+            
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
