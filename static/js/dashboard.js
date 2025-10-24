@@ -289,3 +289,50 @@ async function buscarPerfilNostr() {
   } catch (err) { console.error('Erro:', err); }
 }
 setTimeout(buscarPerfilNostr, 500);
+
+// Menu de tamanhos
+let tamanhoAtual = localStorage.getItem('grid_size') || 'grande';
+
+function toggleTamanhoMenu() {
+  const menu = document.getElementById('menuTamanho');
+  menu.classList.toggle('hidden');
+}
+
+function setTamanho(tamanho) {
+  tamanhoAtual = tamanho;
+  localStorage.setItem('grid_size', tamanho);
+  document.getElementById('tamanhoAtual').textContent = tamanho.charAt(0).toUpperCase() + tamanho.slice(1);
+  document.getElementById('menuTamanho').classList.add('hidden');
+  
+  // Aplicar classes CSS
+  const grid = document.getElementById('arquivosGrid');
+  grid.className = 'grid gap-4 ' + (
+    tamanho === 'grande' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+    tamanho === 'medio' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6' :
+    'grid-cols-3 md:grid-cols-6 lg:grid-cols-10'
+  );
+}
+
+// Aplicar tamanho salvo ao carregar
+setTimeout(() => {
+  setTamanho(tamanhoAtual);
+}, 100);
+
+// Fechar menu ao clicar fora
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#btnTamanho')) {
+    document.getElementById('menuTamanho')?.classList.add('hidden');
+  }
+});
+
+// Atualizar copyLink para aceitar parâmetro
+function copyLinkDiscrete(link) {
+  navigator.clipboard.writeText(link).then(() => {
+    // Toast discreto
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    toast.textContent = '✓ Link copiado!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  });
+}
