@@ -278,7 +278,6 @@ loadFiles();
 async function buscarPerfilNostr() {
   try {
     const npub = localStorage.getItem('libermedia_npub');
-    if (npub_test = npub1nvcezhw3gze5waxtvrzzls8qzhvqpn087hj0s2jl948zr4egq0jqhm3mrr) return;
     const res = await fetch('/api/nostr/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ npub }) });
     const data = await res.json();
     if (data.status === 'ok' && data.perfil) {
