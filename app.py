@@ -27,6 +27,8 @@ db = SQLAlchemy(app)
 JWT_SECRET = os.environ.get("JWT_SECRET", "libermedia-secret")
 JWT_ALGO = "HS256"
 
+
+
 # --- Modelo de usuário ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -707,3 +709,51 @@ def api_nostr_profile():
             
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+
+# Mapeamento de planos para limites (em bytes)
+LIMITES_PLANO = {
+    'free': 3 * 1024 * 1024 * 1024,      # 3 GB
+    'alpha': 6 * 1024 * 1024 * 1024,     # 6 GB
+    'bravo': 12 * 1024 * 1024 * 1024,    # 12 GB
+    'charlie': 24 * 1024 * 1024 * 1024,  # 24 GB
+    'delta': 48 * 1024 * 1024 * 1024,    # 48 GB
+    'echo': 96 * 1024 * 1024 * 1024,     # 96 GB
+    'fox': 192 * 1024 * 1024 * 1024,     # 192 GB
+    'golf': 384 * 1024 * 1024 * 1024     # 384 GB
+}
+
+@app.route('/api/uso', methods=['GET'])
+def get_uso():
+    try:
+        npub = request.args.get('npub')
+        if not npub:
+            return jsonify({'error': 'npub obrigatório'}), 400
+        
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({'error': 'Usuário não encontrado'}), 404
+        
+        total_usado = db.session.query(db.func.sum(Arquivo.tamanho)).filter_by(usuario_id=usuario.id).scalar() or 0
+        limite = LIMITES_PLANO.get(usuario.plano, LIMITES_PLANO['free'])
+        percentual = (total_usado / limite * 100) if limite > 0 else 0
+        
+        arquivos_por_tipo = db.session.query(
+            Arquivo.tipo, 
+            db.func.count(Arquivo.id),
+            db.func.sum(Arquivo.tamanho)
+        ).filter_by(usuario_id=usuario.id).group_by(Arquivo.tipo).all()
+        
+        tipos = {}
+        for tipo, count, size in arquivos_por_tipo:
+            tipos[tipo or 'outros'] = {'count': count, 'size': size or 0}
+        
+        return jsonify({
+            'usado': total_usado,
+            'limite': limite,
+            'percentual': round(percentual, 2),
+            'plano': usuario.plano,
+            'tipos': tipos
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

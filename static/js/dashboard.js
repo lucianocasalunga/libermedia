@@ -336,3 +336,76 @@ function copyLinkDiscrete(link) {
     setTimeout(() => toast.remove(), 2000);
   });
 }
+
+// Dashboard de Uso
+function carregarDashboardUso() {
+  const npub = localStorage.getItem('libermedia_npub');
+  fetch('/api/uso?npub=' + npub)
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      console.error('Erro ao carregar uso:', data.error);
+      return;
+    }
+    
+    // Converter para GB
+    const usadoGB = (data.usado / (1024 * 1024 * 1024)).toFixed(2);
+    const limiteGB = (data.limite / (1024 * 1024 * 1024)).toFixed(0);
+    
+    // Atualizar textos
+    document.getElementById('usoAtual').textContent = usadoGB + ' GB';
+    document.getElementById('usoLimite').textContent = limiteGB + ' GB';
+    document.getElementById('usoPercentual').textContent = data.percentual + '%';
+    document.getElementById('usoPlano').textContent = data.plano.toUpperCase();
+    
+    // Atualizar barra de progresso
+    const progressBar = document.getElementById('usoProgressBar');
+    progressBar.style.width = data.percentual + '%';
+    
+    // Cores baseadas no percentual
+    if (data.percentual < 50) {
+      progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-green-500';
+    } else if (data.percentual < 80) {
+      progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-yellow-500';
+    } else if (data.percentual < 95) {
+      progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-orange-500';
+    } else {
+      progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-red-500';
+    }
+    
+    // Breakdown por tipo
+    const tiposContainer = document.getElementById('usoTipos');
+    tiposContainer.innerHTML = '';
+    
+    const icones = {
+      'image': '🖼️',
+      'video': '🎬',
+      'audio': '🎵',
+      'document': '📄',
+      'outros': '📦'
+    };
+    
+    for (const [tipo, info] of Object.entries(data.tipos)) {
+      const sizeGB = (info.size / (1024 * 1024 * 1024)).toFixed(2);
+      const card = `
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">${icones[tipo] || '📦'}</div>
+          <div class="text-xs font-semibold text-gray-900 dark:text-white">${tipo}</div>
+          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${info.count} arquivo${info.count !== 1 ? 's' : ''}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">${sizeGB} GB</div>
+        </div>
+      `;
+      tiposContainer.innerHTML += card;
+    }
+  })
+  .catch(err => {
+    console.error('Erro ao carregar dashboard de uso:', err);
+  });
+}
+
+// Adicionar ao DOMContentLoaded existente
+const originalLoad = window.onload || (() => {});
+window.onload = function() {
+  originalLoad();
+  setTimeout(carregarDashboardUso, 1000);
+};

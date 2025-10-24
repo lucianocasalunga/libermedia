@@ -56,6 +56,24 @@
     <div class="lg:col-span-3 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
       
       <div class="flex items-center justify-between mb-6">
+      <!-- Dashboard de Uso -->
+      <div id="dashboardUso" class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">📊 Seu Uso de Armazenamento</h2>
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span id="usoAtual">0 GB</span> de <span id="usoLimite">0 GB</span>
+            </span>
+            <span id="usoPercentual" class="text-sm font-bold text-yellow-600 dark:text-yellow-500">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+            <div id="usoProgressBar" class="h-4 rounded-full transition-all duration-500 bg-green-500" style="width: 0%"></div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Plano: <span id="usoPlano" class="font-semibold uppercase">Free</span></p>
+        </div>
+        <div id="usoTipos" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4"></div>
+      </div>
+
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Seus Arquivos 📁</h1>
         
         <div class="flex gap-2 bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
