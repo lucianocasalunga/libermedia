@@ -407,7 +407,16 @@ def upload_arquivo():
         # Busca usuário
         usuario = Usuario.query.filter_by(pubkey=npub).first()
         if not usuario:
-            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+            # Criar usuário automaticamente
+            usuario = Usuario(
+                nome="Usuário Nostr",
+                pubkey=npub,
+                privkey="",
+                senha_hash="nostr_auth",
+                plano="free"
+            )
+            db.session.add(usuario)
+            db.session.commit()
         
         # Gera nome único
         ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
@@ -463,7 +472,16 @@ def listar_arquivos():
         
         usuario = Usuario.query.filter_by(pubkey=npub).first()
         if not usuario:
-            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+            # Criar usuário automaticamente
+            usuario = Usuario(
+                nome="Usuário Nostr",
+                pubkey=npub,
+                privkey="",
+                senha_hash="nostr_auth",
+                plano="free"
+            )
+            db.session.add(usuario)
+            db.session.commit()
         
         query = Arquivo.query.filter_by(usuario_id=usuario.id)
         
