@@ -180,16 +180,16 @@
 
 </body>
 
-<!-- PWA Service Worker Registration -->
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/service-worker.js')
-      .then(reg => console.log('✅ Service Worker registrado!', reg))
-      .catch(err => console.log('❌ Erro ao registrar SW:', err));
-  });
-}
-</script>
+<!-- DISABLED <!-- PWA Service Worker Registration -->
+<!-- DISABLED <script>
+<!-- DISABLED if ('serviceWorker' in navigator) {
+<!-- DISABLED   window.addEventListener('load', () => {
+<!-- DISABLED     navigator.serviceWorker.register('/static/service-worker.js')
+<!-- DISABLED       .then(reg => console.log('✅ Service Worker registrado!', reg))
+<!-- DISABLED       .catch(err => console.log('❌ Erro ao registrar SW:', err));
+<!-- DISABLED   });
+<!-- DISABLED }
+<!-- DISABLED </script> -->
 
 </body>
 </html>

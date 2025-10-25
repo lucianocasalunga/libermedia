@@ -39,19 +39,24 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/nostr-tools@2.3.0/lib/nostr.bundle.js"></script>
+
 <script>
 let k={};
 
 function gerar(){
-  // Gera 64 caracteres hex aleatórios (256 bits)
-  const arr = new Uint8Array(32);
-  crypto.getRandomValues(arr);
-  const hex = Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
-  
-  // Simplificado: usa mesmo hex pra ambos (apenas pra teste)
-  k.npub = 'npub1' + hex;
-  k.nsec = 'nsec1' + hex;
-  
+  const { nip19, getPublicKey, generateSecretKey } = window.NostrTools;
+
+  // Gera chave privada adequada (32 bytes)
+  const privkey = generateSecretKey();
+
+  // Deriva a chave pública da privada
+  const pubkey = getPublicKey(privkey);
+
+  // Encoding bech32 correto
+  k.nsec = nip19.nsecEncode(privkey);
+  k.npub = nip19.npubEncode(pubkey);
+
   document.getElementById('n').innerText = k.npub;
   document.getElementById('s').innerText = k.nsec;
   document.getElementById('a1').classList.add('hidden');
@@ -59,7 +64,13 @@ function gerar(){
 }
 
 function cp(id){
-  navigator.clipboard.writeText(document.getElementById(id).innerText);
+  const text = document.getElementById(id).innerText;
+  console.log('=== DEBUG COPIAR ===');
+  console.log('Element ID:', id);
+  console.log('Text being copied:', text);
+  console.log('Text length:', text.length);
+  console.log('===================');
+  navigator.clipboard.writeText(text);
   alert('Copiado!');
 }
 

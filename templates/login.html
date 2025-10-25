@@ -30,7 +30,7 @@
       <!-- Login manual (nsec) -->
       <form onsubmit="loginManual(event)" class="space-y-4">
         <input 
-          type="password" 
+          type="text" 
           id="nsec" 
           placeholder="Sua nsec (chave privada)" 
           class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
@@ -49,22 +49,56 @@
 
   </div>
 </div>
+<script>
 
 async function loginManual(e) {
   e.preventDefault();
+  console.log('=== LOGIN MANUAL DEBUG ===');
+  console.log('Function called');
+
   const nsecInput = document.getElementById("nsec").value.trim();
-  if (!nsecInput.startsWith("nsec1")) { alert("❌ nsec inválida! Deve começar com nsec1"); return; }
+  console.log('nsec input value:', nsecInput);
+  console.log('nsec length:', nsecInput.length);
+  console.log('nsec first 10 chars:', nsecInput.substring(0, 10));
+  console.log('nsec last 10 chars:', nsecInput.substring(nsecInput.length - 10));
+
+  if (!nsecInput.startsWith("nsec1")) {
+    console.error('Validation failed: nsec does not start with "nsec1"');
+    alert("❌ nsec inválida! Deve começar com nsec1");
+    return;
+  }
+
   try {
+    console.log('Attempting to decode nsec...');
     const { nip19, getPublicKey } = window.NostrTools;
     const { type, data: privkey } = nip19.decode(nsecInput);
+    console.log('Decoded type:', type);
+    console.log('Decoded privkey:', privkey);
+
     if (type !== "nsec") throw new Error("Tipo inválido");
+
     const pubkey = getPublicKey(privkey);
+    console.log('Generated pubkey:', pubkey);
+
     const npub = nip19.npubEncode(pubkey);
+    console.log('Encoded npub:', npub);
+
     localStorage.setItem("libermedia_npub", npub);
     localStorage.setItem("libermedia_nsec", nsecInput);
+    console.log('Saved to localStorage successfully');
+    console.log('=========================');
+
     location.href = "/dashboard";
-  } catch (error) { alert("❌ Erro: " + error.message); console.error(error); }
+  } catch (error) {
+    console.error('=== LOGIN ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error:', error);
+    console.error('===================');
+    alert("❌ Erro: " + error.message);
+  }
 }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/nostr-tools@2.3.0/lib/nostr.bundle.js"></script>
 
 <script>
@@ -130,23 +164,6 @@ async function loginNIP07() {
     console.error(error);
     alert('❌ Erro ao conectar com extensão: ' + error.message);
   }
-}
-
-// LOGIN MANUAL (nsec)
-async function loginManual(e) {
-  e.preventDefault();
-  const nsecInput = document.getElementById("nsec").value.trim();
-  if (!nsecInput.startsWith("nsec1")) { alert("❌ nsec inválida! Deve começar com nsec1"); return; }
-  try {
-    const { nip19, getPublicKey } = window.NostrTools;
-    const { type, data: privkey } = nip19.decode(nsecInput);
-    if (type !== "nsec") throw new Error("Tipo inválido");
-    const pubkey = getPublicKey(privkey);
-    const npub = nip19.npubEncode(pubkey);
-    localStorage.setItem("libermedia_npub", npub);
-    localStorage.setItem("libermedia_nsec", nsecInput);
-    location.href = "/dashboard";
-  } catch (error) { alert("❌ Erro: " + error.message); console.error(error); }
 }
 </script>
 
