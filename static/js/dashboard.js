@@ -449,3 +449,25 @@ if (window.innerWidth <= 1024) {
     });
   }
 }
+
+// Mobile: Toggle sidebar drawer
+document.addEventListener('DOMContentLoaded', function() {
+  const menuToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.querySelector('.sidebar-drawer');
+  
+  if (menuToggle && sidebar) {
+    menuToggle.addEventListener('click', function() {
+      sidebar.classList.toggle('-translate-x-full');
+    });
+    
+    // Fecha ao clicar fora
+    document.addEventListener('click', function(e) {
+      if (window.innerWidth < 768) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidebar.classList.add('-translate-x-full');
+        }
+      }
+    });
+  }
+});
+

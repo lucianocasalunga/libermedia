@@ -18,19 +18,21 @@
 .view-grade #files { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
 </style>
 
+<button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg text-white text-xl shadow-lg">👤</button>
+
 <div class="container mx-auto">
-  <div class="flex flex-col lg:grid lg:grid-cols-4 gap-6">
+  <div class="flex flex-col gap-6 md:grid md:grid-cols-4">
     
     <!-- SIDEBAR -->
-    <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+    <div style="overflow-x: hidden !important; contain: layout !important;" class="sidebar-drawer fixed md:relative left-0 top-0 h-full w-80 md:w-auto transform -translate-x-full md:translate-x-0 transition-transform z-40 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4 sidebar-mobile">
       <div class="text-center">
-        <img src="/static/img/avatar.png" class="w-20 h-20 mx-auto rounded-full border-4 border-yellow-500 mb-2 object-cover">
+        <img src="/static/img/avatar.png" class="w-24 h-24 mx-auto rounded-full border-4 border-yellow-500 mb-2 object-cover">
         <p class="font-bold text-gray-900 dark:text-white">Usuário</p>
         <p id="npubShort" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
       </div>
       
       <div class="flex gap-2">
-        <button onclick="logout()" class="flex-1 bg-red-600 hover:bg-red-500 text-white p-2 rounded">🚪</button>
+        <button class="flex-1 bg-red-600 hover:bg-red-500 text-white p-2 rounded">🚪</button>
       </div>
       
       <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
@@ -42,22 +44,19 @@
       <div>
         <p class="font-bold text-gray-700 dark:text-gray-300 mb-2 text-sm">📁 Pastas</p>
         <div class="space-y-1" id="pastasContainer">
-          <button onclick="filtrarPasta('Mesa')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📂 Mesa</button>
-          <button onclick="filtrarPasta('Photos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📷 Photos</button>
-          <button onclick="filtrarPasta('Videos')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎥 Videos</button>
-          <button onclick="filtrarPasta('Docs')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📄 Docs</button>
-          <button onclick="filtrarPasta('Audio')" class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎵 Audio</button>
-          <button onclick="criarPasta()" class="w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold mt-2">➕ Criar Pasta</button>
+          <button class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📂 Mesa</button>
+          <button class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📷 Photos</button>
+          <button class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎥 Videos</button>
+          <button class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">📄 Docs</button>
+          <button class="w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white">🎵 Audio</button>
+          <button class="w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold mt-2">➕ Criar Pasta</button>
         </div>
       </div>
-    </div>
 
-    <!-- MAIN CONTENT -->
-    <div class="lg:col-span-3 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
-      
-      <div class="flex items-center justify-between mb-6">
+      <hr class="border-gray-300 dark:border-gray-600">
+
       <!-- Dashboard de Uso -->
-      <div id="dashboardUso" class="mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow p-3 border border-gray-200 dark:border-gray-700">
+      <div id="dashboardUso" style="max-width: 100% !important; overflow: hidden !important;" class="mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow p-3 border border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between gap-6">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-2">
@@ -72,12 +71,15 @@
               <div id="usoProgressBar" class="h-2 rounded-full transition-all duration-500 bg-green-500" style="width: 0%"></div>
             </div>
           </div>
-          <div id="usoTipos" class="flex gap-4"></div>
+          <div id="usoTipos" style="flex-direction: column !important; width: 100% !important;" class="flex gap-4"></div>
         </div>
       </div>
+    </div>
 
-
-        
+    <!-- MAIN CONTENT -->
+    <div class="lg:col-span-3 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+      
+      <div class="flex items-center justify-between mb-6">
       </div>
       
       <!-- Upload Area -->
@@ -91,7 +93,7 @@
       <!-- Seletor de Tamanho -->
       <div class="flex justify-center mb-6">
         <div class="relative inline-block">
-          <button id="btnTamanho" onclick="toggleTamanhoMenu()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
+          <button id="btnTamanho" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
@@ -99,9 +101,9 @@
             <span class="text-xs">▼</span>
           </button>
           <div id="menuTamanho" class="hidden absolute left-1/2 transform -translate-x-1/2 mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50">
-            <button onclick="setTamanho('grande')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg text-gray-900 dark:text-white">Grande</button>
-            <button onclick="setTamanho('medio')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white">Médio</button>
-            <button onclick="setTamanho('pequeno')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white">Pequeno</button>
+            <button class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg text-gray-900 dark:text-white">Grande</button>
+            <button class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white">Médio</button>
+            <button class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white">Pequeno</button>
           </div>
         </div>
       </div>
@@ -130,12 +132,12 @@
 </div>
 
 <!-- Modal com Navegação -->
-<div id="modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onclick="closeModal()">
-  <div class="max-w-6xl w-full relative" onclick="event.stopPropagation()">
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-3xl hover:text-yellow-400 z-10">&times;</button>
+<div id="modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+  <div class="max-w-6xl w-full relative">
+    <button class="absolute top-4 right-4 text-white text-3xl hover:text-yellow-400 z-10">&times;</button>
     
-    <button onclick="prevImage()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full text-2xl">‹</button>
-    <button onclick="nextImage()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full text-2xl">›</button>
+    <button class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full text-2xl">‹</button>
+    <button class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full text-2xl">›</button>
     
     <img id="modalImg" src="" class="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl">
     
