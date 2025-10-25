@@ -1,20 +1,24 @@
+# 🔴 PENDÊNCIAS DASHBOARD
 
-## 🎨 Melhorias no Dashboard (Solicitadas)
+## 📱 MOBILE - URGENTE
+- [ ] **Ícones armazenamento cortados** na sidebar (metade visível)
+  - Localização: linha 74 #usoTipos
+  - Problema: overflow-x não está funcionando 100%
 
-### 10. 🔍 Menu de Tamanho de Imagens
-- [ ] Remover botões "Grade" e "Lista"
-- [ ] Criar dropdown: "Pequeno, Médio, Grande"
-- [ ] Implementar 3 tamanhos de thumbnail
+## 🎨 SIDEBAR
+- [ ] Botão sair discreto (ícone porta vermelha)
+- [ ] Botão config (editar perfil)
+- [ ] **Pastas permanentes** (não somem no logoff) - CRÍTICO
+- [ ] Criar pasta com ícone + nome customizado
 
-### 11. 🔗 Ícone de Link Discreto
-- [ ] Substituir botão "Copiar" grande
-- [ ] Adicionar ícone pequeno de link (🔗)
-- [ ] Posicionar de forma discreta
+## 📂 ÁREA PRINCIPAL
+- [ ] Botão gerar link por arquivo
+- [ ] Menu contexto ⋮ (detalhes + deletar)
+- [ ] Seleção múltipla + deletar lote
+- [ ] Filtro por tipo (img/vídeo/doc/áudio)
+- [ ] Controle tamanho thumbnails
 
-### 12. ⋮ Menu de Detalhes da Imagem
-- [ ] Adicionar três pontinhos no canto superior
-- [ ] Menu dropdown com:
-  - Nome do arquivo
-  - Link completo
-  - Tamanho do arquivo
-  - Formato/extensão
+## 🔧 BACKEND
+- [ ] Rota: criar pasta permanente
+- [ ] Rota: gerar link compartilhável
+- [ ] Rota: deletar múltiplos
