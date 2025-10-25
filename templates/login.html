@@ -29,11 +29,16 @@
 
       <!-- Login manual (nsec) -->
       <form onsubmit="loginManual(event)" class="space-y-4">
-        <input 
-          type="text" 
-          id="nsec" 
-          placeholder="Sua nsec (chave privada)" 
+        <input
+          type="text"
+          id="nsec" style="-webkit-text-security: disc; text-security: disc;"
+          name="nsec-key"
+          spellcheck="false"
+          inputmode="text"
+          placeholder="Sua nsec (chave privada)"
           class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+          autocomplete="off"
+          data-lpignore="true"
           required
         >
         <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-4 px-6 rounded-xl transition-all">
@@ -50,6 +55,12 @@
   </div>
 </div>
 <script>
+document.getElementById('nsec').addEventListener('paste', function(e) {
+  e.preventDefault();
+  const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+  this.value = pastedText.trim();
+  console.log('Paste intercepted, length:', pastedText.trim().length);
+});
 
 async function loginManual(e) {
   e.preventDefault();
@@ -102,6 +113,12 @@ async function loginManual(e) {
 <script src="https://cdn.jsdelivr.net/npm/nostr-tools@2.3.0/lib/nostr.bundle.js"></script>
 
 <script>
+document.getElementById('nsec').addEventListener('paste', function(e) {
+  e.preventDefault();
+  const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+  this.value = pastedText.trim();
+  console.log('Paste intercepted, length:', pastedText.trim().length);
+});
 // Converte hex para npub
 function hexToNpub(hex) {
   const data = new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));

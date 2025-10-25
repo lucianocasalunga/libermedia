@@ -308,6 +308,7 @@ async function buscarPerfilNostr() {
   try {
     const npub = localStorage.getItem('libermedia_npub');
     const res = await fetch('/api/nostr/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ npub }) });
+    if (!res.ok) { console.warn("Perfil Nostr não disponível"); return; }
     const data = await res.json();
     if (data.status === 'ok' && data.perfil) {
       const avatarImg = document.querySelector('img[src="/static/img/avatar.png"]');
@@ -334,6 +335,7 @@ function setTamanho(tamanho) {
   
   // Aplicar classes CSS
   const grid = document.getElementById('arquivosGrid');
+    if (!grid) { console.warn("Grid não encontrado"); return; }
   grid.className = 'grid gap-4 ' + (
     tamanho === 'grande' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
     tamanho === 'medio' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6' :
