@@ -439,3 +439,13 @@ window.onload = function() {
   originalLoad();
   setTimeout(carregarDashboardUso, 1000);
 };
+
+// Mobile: Toggle sidebar ao tocar
+if (window.innerWidth <= 1024) {
+  const sidebar = document.querySelector('.flex.flex-col.lg\\:grid.lg\\:grid-cols-4 > div:first-child');
+  if (sidebar) {
+    sidebar.addEventListener('click', function() {
+      this.classList.toggle('expanded');
+    });
+  }
+}

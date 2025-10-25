@@ -465,3 +465,46 @@ body {
         padding: 2rem 1rem;
     }
 }
+
+/* Mobile: Inverte ordem e compacta sidebar */
+@media (max-width: 1024px) {
+  .grid.grid-cols-1.lg\:grid-cols-4 {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+  }
+  
+  .grid.grid-cols-1.lg\:grid-cols-4 > div:first-child {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    max-height: 80px;
+    overflow: hidden;
+  }
+  
+  .grid.grid-cols-1.lg\:grid-cols-4 > div:first-child:hover {
+    max-height: 400px;
+  }
+}
+/* Mobile: Remove grid lateral e usa coluna única */
+@media (max-width: 1024px) {
+  .flex.flex-col.lg\:grid.lg\:grid-cols-4 {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .flex.flex-col.lg\:grid.lg\:grid-cols-4 > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Sidebar compacta no topo */
+  .flex.flex-col.lg\:grid.lg\:grid-cols-4 > div:first-child {
+    max-height: 120px;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+  
+  .flex.flex-col.lg\:grid.lg\:grid-cols-4 > div:first-child.expanded {
+    max-height: 500px;
+  }
+}
