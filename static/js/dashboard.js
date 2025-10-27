@@ -449,7 +449,8 @@ function closeConfirmModal() {
 }
 
 function executeDelete() {
-  fetch(`/api/admin/delete/${currentFileId}`, { method: 'DELETE' })
+  const npub = localStorage.getItem('libermedia_npub');
+  fetch(`/api/arquivo/delete/${currentFileId}?npub=${npub}`, { method: 'DELETE' })
     .then(r => r.json())
     .then(data => {
       if (data.status === 'ok') {
@@ -459,6 +460,9 @@ function executeDelete() {
       } else {
         showToast('❌ Erro ao deletar: ' + data.error, 'error');
       }
+    })
+    .catch(err => {
+      showToast('❌ Erro ao deletar: ' + err.message, 'error');
     });
 }
 

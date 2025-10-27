@@ -579,6 +579,38 @@ def admin_arquivos():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
+# Deletar arquivo (validação por npub)
+@app.route("/api/arquivo/delete/<int:arquivo_id>", methods=["DELETE"])
+def delete_arquivo(arquivo_id):
+    try:
+        npub = request.args.get('npub')
+        if not npub:
+            return jsonify({"status": "error", "error": "npub não fornecido"}), 401
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        arquivo = Arquivo.query.get(arquivo_id)
+        if not arquivo:
+            return jsonify({"status": "error", "error": "Arquivo não encontrado"}), 404
+
+        # Verifica se o arquivo pertence ao usuário
+        if arquivo.usuario_id != usuario.id:
+            return jsonify({"status": "error", "error": "Sem permissão"}), 403
+
+        import os
+        caminho = f"uploads/{arquivo.nome}"
+        if os.path.exists(caminho):
+            os.remove(caminho)
+
+        db.session.delete(arquivo)
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 @app.route("/api/admin/delete/<int:arquivo_id>", methods=["DELETE"])
 @admin_required
 def admin_delete(arquivo_id):
