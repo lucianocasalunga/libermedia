@@ -334,7 +334,7 @@ function setTamanho(tamanho) {
   document.getElementById('menuTamanho').classList.add('hidden');
   
   // Aplicar classes CSS
-  const grid = document.getElementById('arquivosGrid');
+  const grid = document.getElementById('files');
     if (!grid) { console.warn("Grid não encontrado"); return; }
   grid.className = 'grid gap-4 ' + (
     tamanho === 'grande' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
