@@ -110,6 +110,9 @@ function renderMediaPreview(arquivo) {
                 title="Copiar link">
           🔗
         </button>
+        <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
+                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full text-lg leading-none"
+                title="Mais opções">⋮</button>
       </div>
     `;
   }
@@ -128,6 +131,9 @@ function renderMediaPreview(arquivo) {
                 title="Copiar link">
           🔗
         </button>
+        <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
+                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full text-lg leading-none"
+                title="Mais opções">⋮</button>
       </div>
     `;
   }
@@ -154,6 +160,9 @@ function renderMediaPreview(arquivo) {
                 title="Copiar link">
           🔗
         </button>
+        <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
+                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full text-lg leading-none"
+                title="Mais opções">⋮</button>
       </div>
     `;
   }
@@ -167,6 +176,9 @@ function renderMediaPreview(arquivo) {
               title="Copiar link">
         🔗
       </button>
+      <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
+              class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full text-lg leading-none"
+              title="Mais opções">⋮</button>
     </div>
   `;
 }
@@ -389,6 +401,73 @@ function copyLinkDiscrete(link) {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
   });
+}
+
+// Menu ⋮ Funções
+let currentFileId = null;
+
+function toggleFileMenu(fileId) {
+  currentFileId = fileId;
+  const modal = document.getElementById('fileMenuModal');
+  const content = document.getElementById('fileMenuContent');
+  const button = event.target.getBoundingClientRect();
+
+  content.style.top = (button.top + button.height) + 'px';
+  content.style.left = (button.left - 200 + button.width) + 'px';
+
+  modal.classList.remove('hidden');
+}
+
+function closeFileMenu() {
+  document.getElementById('fileMenuModal').classList.add('hidden');
+}
+
+function copyFileLink() {
+  const arquivo = todosArquivos.find(f => f.id === currentFileId);
+  const ext = getExtensao(arquivo.nome);
+  const link = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  copyLinkDiscrete(link);
+  closeFileMenu();
+}
+
+function showFileDetails() {
+  const arquivo = todosArquivos.find(f => f.id === currentFileId);
+  const ext = getExtensao(arquivo.nome);
+  const link = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+
+  alert(`📄 Nome: ${arquivo.nome}\n📦 Tamanho: ${formatSize(arquivo.tamanho)}\n📁 Pasta: ${arquivo.pasta}\n🔗 Link: ${link}`);
+  closeFileMenu();
+}
+
+function confirmDelete() {
+  closeFileMenu();
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirmModal').classList.add('hidden');
+}
+
+function executeDelete() {
+  fetch(`/api/admin/delete/${currentFileId}`, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        showToast('✓ Arquivo deletado com sucesso!', 'success');
+        closeConfirmModal();
+        loadFiles(); // Recarrega lista
+      } else {
+        showToast('❌ Erro ao deletar: ' + data.error, 'error');
+      }
+    });
+}
+
+function showToast(message, type) {
+  const toast = document.createElement('div');
+  toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 // Dashboard de Uso
