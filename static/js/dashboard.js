@@ -92,25 +92,46 @@ function getExtensao(nome) {
 function renderMediaPreview(arquivo) {
   const ext = getExtensao(arquivo.nome);
   const linkComExt = `https://libermedia.app/f/${arquivo.id}.${ext}`;
-  
+
   // VÍDEO
+  const videoMimeTypes = {
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'mov': 'video/quicktime',
+    'avi': 'video/x-msvideo'
+  };
+
   if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) {
-    return `<video class="w-full aspect-square object-cover" controls><source src="${linkComExt}" type="video/${ext}"></video>`;
+    return `
+      <div class="relative w-full aspect-square overflow-hidden bg-gray-100 dark:bg-gray-900">
+        <video class="w-full h-full object-cover" controls><source src="${linkComExt}" type="${videoMimeTypes[ext]}"></video>
+        <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
+                class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
+                title="Copiar link">
+          🔗
+        </button>
+      </div>
+    `;
   }
-  
+
   // ÁUDIO
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
-      <div class="w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex flex-col items-center justify-center p-4">
+      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex flex-col items-center justify-center p-4">
         <p class="text-5xl mb-2">🎵</p>
         <p class="text-white text-xs mb-2 truncate w-full text-center px-2">${arquivo.nome}</p>
         <audio controls class="w-full" style="max-width: 90%;">
           <source src="${linkComExt}" type="audio/${ext}">
         </audio>
+        <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
+                class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
+                title="Copiar link">
+          🔗
+        </button>
       </div>
     `;
   }
-  
+
   // DOCUMENTOS
   const docIcons = {
     'pdf': '📕',
@@ -121,21 +142,26 @@ function renderMediaPreview(arquivo) {
     'zip': '🗜️', 'rar': '🗜️',
     'csv': '📋'
   };
-  
+
   if (docIcons[ext]) {
     return `
-      <div class="w-full aspect-square bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center">
+      <div class="relative w-full aspect-square bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center">
         <p class="text-6xl mb-2">${docIcons[ext]}</p>
         <p class="text-xs text-gray-600 dark:text-gray-400 px-4 text-center truncate w-full">${arquivo.nome}</p>
+        <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
+                class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
+                title="Copiar link">
+          🔗
+        </button>
       </div>
     `;
   }
-  
+
   // IMAGEM (padrão)
   return `
     <div class="relative w-full aspect-square overflow-hidden bg-gray-100 dark:bg-gray-900">
       <img src="${linkComExt}" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" onclick="openModal(${arquivo.id})" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27%3E%3Cpath stroke=%27%239ca3af%27 stroke-width=%272%27 d=%27M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z%27/%3E%3C/svg%3E'" loading="lazy">
-      <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')" 
+      <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
               class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
               title="Copiar link">
         🔗
@@ -171,9 +197,6 @@ function renderFiles() {
         <div class="p-3">
           <h3 class="text-xs text-gray-600 dark:text-gray-400 truncate" title="${f.nome}">${f.nome}</h3>
           <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">${formatSize(f.tamanho)}</p>
-          <button onclick="copyLink('${linkComExt}')" class="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-2 rounded">
-            Copiar
-          </button>
         </div>
       </div>
     `;
