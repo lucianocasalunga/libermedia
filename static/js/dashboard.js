@@ -418,11 +418,11 @@ function carregarDashboardUso() {
     for (const [tipo, info] of Object.entries(data.tipos)) {
       const sizeGB = (info.size / (1024 * 1024 * 1024)).toFixed(2);
       const card = `
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-          <div class="text-2xl mb-1">${icones[tipo] || '📦'}</div>
-          <div class="text-xs font-semibold text-gray-900 dark:text-white">${tipo}</div>
-          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${info.count} arquivo${info.count !== 1 ? 's' : ''}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">${sizeGB} GB</div>
+        <div class="bg-gray-50 dark:bg-gray-700 rounded text-center" style="width: 116px; padding: 6px; overflow: hidden; box-sizing: border-box;">
+          <div style="font-size: 14px; line-height: 14px; margin-bottom: 4px;">${icones[tipo] || '📦'}</div>
+          <div class="text-xs font-semibold text-gray-900 dark:text-white truncate">${tipo}</div>
+          <div class="text-xs text-gray-600 dark:text-gray-300">${info.count} arq</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">${sizeGB}GB</div>
         </div>
       `;
       tiposContainer.innerHTML += card;

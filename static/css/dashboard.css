@@ -560,7 +560,7 @@ body {
   .sidebar-drawer {
     width: 85vw !important;
     max-width: 320px !important;
-    height: 100vh !important;
+    /* height removida - usar h-[calc(100vh-6rem)] do HTML */
     overflow-y: auto !important;
   }
 }

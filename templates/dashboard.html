@@ -24,9 +24,9 @@
   <div class="flex flex-col gap-6 md:grid md:grid-cols-4">
     
     <!-- SIDEBAR -->
-    <div style="overflow-x: hidden !important; contain: layout !important;" class="sidebar-drawer fixed md:relative left-0 top-0 h-full w-80 md:w-auto transform -translate-x-full md:translate-x-0 transition-transform z-40 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4 sidebar-mobile">
+    <div class="sidebar-drawer fixed md:relative top-0 left-0 h-screen md:h-full w-80 md:w-auto transform -translate-x-full md:translate-x-0 transition-transform z-40 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl pt-8 md:pt-6 px-6 pb-6 border border-gray-200 dark:border-gray-700 space-y-4 sidebar-mobile overflow-y-auto">
       <div class="text-center">
-        <img src="/static/img/avatar.png" class="w-24 h-24 mx-auto rounded-full border-4 border-yellow-500 mb-2 object-cover">
+        <img src="/static/img/avatar.png" class="w-16 h-16 mx-auto rounded-full border-2 border-yellow-500 mb-2 object-cover">
         <p class="font-bold text-gray-900 dark:text-white">Usuário</p>
         <p id="npubShort" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
       </div>
@@ -53,13 +53,13 @@
         </div>
       </div>
 
+      <!-- BLOCO DE ARMAZENAMENTO TEMPORARIAMENTE DESABILITADO
       <hr class="border-gray-300 dark:border-gray-600">
 
-      <!-- Dashboard de Uso -->
-      <div id="dashboardUso" style="max-width: 100% !important; overflow: hidden !important;" class="mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow p-3 border border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between gap-6">
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-2">
+      <div id="dashboardUso" class="mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow p-3 border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="space-y-3">
+          <div>
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Armazenamento:</span>
               <span class="text-xs text-gray-600 dark:text-gray-400">
                 <span id="usoAtual">0 GB</span> / <span id="usoLimite">0 GB</span>
@@ -71,9 +71,10 @@
               <div id="usoProgressBar" class="h-2 rounded-full transition-all duration-500 bg-green-500" style="width: 0%"></div>
             </div>
           </div>
-          <div id="usoTipos" style="flex-direction: column !important; width: 100% !important;" class="flex gap-4"></div>
+          <div id="usoTipos" class="grid grid-cols-2 gap-2 max-w-full" style="grid-template-columns: repeat(2, minmax(0, 1fr));"></div>
         </div>
       </div>
+      FIM DO BLOCO DE ARMAZENAMENTO -->
     </div>
 
     <!-- MAIN CONTENT -->
@@ -148,6 +149,6 @@
   </div>
 </div>
 
-<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/dashboard.js?v={{ timestamp }}"></script>
 
 {% endblock %}

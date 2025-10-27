@@ -66,7 +66,7 @@ def dashboard_v2():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", timestamp=int(time.time()))
 
 # --- API Registro ---
 @app.route("/api/register", methods=["POST"])
