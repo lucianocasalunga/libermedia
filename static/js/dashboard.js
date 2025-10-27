@@ -139,6 +139,7 @@ function renderMediaPreview(arquivo) {
     'xls': '📊', 'xlsx': '📊',
     'ppt': '📙', 'pptx': '📙',
     'txt': '📄',
+    'md': '📝',
     'zip': '🗜️', 'rar': '🗜️',
     'csv': '📋'
   };
