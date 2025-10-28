@@ -506,6 +506,33 @@ def listar_arquivos():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
+# Listar pastas únicas do usuário
+@app.route("/api/pastas", methods=["GET"])
+def listar_pastas():
+    try:
+        npub = request.args.get('npub')
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub não informado"}), 400
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "ok", "pastas": []})
+
+        # Busca pastas únicas usando DISTINCT
+        pastas_query = db.session.query(Arquivo.pasta).filter_by(usuario_id=usuario.id).distinct().all()
+
+        # Extrai os nomes das pastas e remove 'Geral' (Mesa mostra tudo)
+        pastas = [p[0] for p in pastas_query if p[0] and p[0] != 'Geral']
+
+        return jsonify({
+            "status": "ok",
+            "pastas": pastas
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 # Servir arquivos
 @app.route("/uploads/<filename>")
 def servir_arquivo(filename):

@@ -58,11 +58,84 @@ async function upload(files) {
 async function loadFiles() {
   const res = await fetch(`/api/arquivos?npub=${npub}`);
   const data = await res.json();
-  
+
   todosArquivos = data.arquivos || [];
   document.getElementById('total').textContent = todosArquivos.length;
-  
+
   renderFiles();
+}
+
+// GERENCIAMENTO DE PASTAS
+async function loadPastas() {
+  try {
+    // Busca pastas do backend
+    const res = await fetch(`/api/pastas?npub=${npub}`);
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      let pastas = data.pastas || [];
+
+      // Merge com pastas do localStorage (pastas criadas mas sem arquivos ainda)
+      const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+      pastasLocal.forEach(p => {
+        if (!pastas.includes(p)) pastas.push(p);
+      });
+
+      // Atualiza localStorage com lista completa
+      localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastas));
+
+      renderPastas(pastas);
+    }
+  } catch (err) {
+    console.error('Erro ao carregar pastas:', err);
+    // Fallback: usa localStorage
+    const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+    renderPastas(pastasLocal);
+  }
+}
+
+function renderPastas(pastas) {
+  const container = document.getElementById('pastasContainer');
+
+  // Pastas padrão (hardcoded)
+  const pastasDefault = [
+    { nome: 'Mesa', emoji: '📂' },
+    { nome: 'Photos', emoji: '📷' },
+    { nome: 'Videos', emoji: '🎥' },
+    { nome: 'Docs', emoji: '📄' },
+    { nome: 'Audio', emoji: '🎵' }
+  ];
+
+  // Limpa container
+  container.innerHTML = '';
+
+  // Renderiza pastas padrão
+  pastasDefault.forEach(p => {
+    const btn = document.createElement('button');
+    btn.onclick = () => filtrarPasta(p.nome);
+    btn.className = 'w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white';
+    btn.innerHTML = `${p.emoji} ${p.nome}`;
+    container.appendChild(btn);
+  });
+
+  // Renderiza pastas customizadas
+  pastas.forEach(nome => {
+    // Não duplica pastas padrão
+    if (pastasDefault.find(p => p.nome === nome)) return;
+
+    const btn = document.createElement('button');
+    btn.onclick = () => filtrarPasta(nome);
+    btn.className = 'w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white';
+    btn.innerHTML = `📁 ${nome}`;
+    container.appendChild(btn);
+  });
+
+  // Botão "Criar Pasta"
+  const btnCriar = document.createElement('button');
+  btnCriar.onclick = criarPasta;
+  btnCriar.className = 'w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold mt-2';
+  btnCriar.innerHTML = '➕ Criar Pasta';
+  container.appendChild(btnCriar);
 }
 
 function toggleView(mode) {
@@ -264,17 +337,20 @@ function filtrarPasta(pasta) {
 function criarPasta() {
   const nome = prompt("Nome da nova pasta:");
   if (!nome || nome.trim() === "") return;
-  
-  const pastaBtn = document.createElement("button");
-  pastaBtn.onclick = () => filtrarPasta(nome);
-  pastaBtn.className = "w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white";
-  pastaBtn.innerHTML = `📁 ${nome}`;
-  
-  const container = document.getElementById("pastasContainer");
-  const criarBtn = container.querySelector("button[onclick*='criarPasta']");
-  container.insertBefore(pastaBtn, criarBtn);
-  
-  alert(`Pasta "${nome}" criada!`);
+
+  // Salva em localStorage
+  const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+  if (!pastasLocal.includes(nome.trim())) {
+    pastasLocal.push(nome.trim());
+    localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastasLocal));
+  }
+
+  // Recarrega e renderiza pastas
+  loadPastas().then(() => {
+    // Seleciona a pasta recém-criada
+    filtrarPasta(nome.trim());
+    alert(`Pasta "${nome}" criada!`);
+  });
 }
 
 function formatSize(bytes) {
@@ -377,8 +453,11 @@ function logout() {
   location.href = '/';
 }
 
+// Inicialização
+loadPastas().then(() => {
+  filtrarPasta('Mesa'); // Destaca pasta inicial
+});
 loadFiles();
-filtrarPasta('Mesa'); // Destaca pasta inicial
 
 // Buscar perfil Nostr
 async function buscarPerfilNostr() {
