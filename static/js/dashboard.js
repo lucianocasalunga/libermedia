@@ -314,6 +314,32 @@ function nextImage() {
   }
 }
 
+// Navegação por teclado (setas ← →)
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('modal');
+  if (!modal.classList.contains('hidden')) {
+    if (e.key === 'ArrowLeft') prevImage();
+    else if (e.key === 'ArrowRight') nextImage();
+    else if (e.key === 'Escape') closeModal();
+  }
+});
+
+// Swipe gestures para mobile
+let touchStartX = 0;
+let touchEndX = 0;
+const modalElement = document.getElementById('modal');
+
+modalElement.addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+}, false);
+
+modalElement.addEventListener('touchend', (e) => {
+  touchEndX = e.changedTouches[0].screenX;
+  const swipeThreshold = 50;
+  if (touchEndX < touchStartX - swipeThreshold) nextImage();
+  if (touchEndX > touchStartX + swipeThreshold) prevImage();
+}, false);
+
 function showDetails(fileId) {
   const arquivo = todosArquivos.find(f => f.id === fileId);
   if (!arquivo) return;
