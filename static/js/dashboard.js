@@ -244,6 +244,20 @@ function renderFiles() {
 
 function filtrarPasta(pasta) {
   pastaAtual = pasta;
+
+  // Destaca botão ativo visualmente
+  const container = document.getElementById("pastasContainer");
+  const botoes = container.querySelectorAll("button");
+  botoes.forEach(btn => {
+    if (btn.textContent.includes(pasta)) {
+      btn.className = "w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-semibold";
+    } else if (btn.textContent.includes("Criar Pasta")) {
+      btn.className = "w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold mt-2";
+    } else {
+      btn.className = "w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded text-gray-900 dark:text-white";
+    }
+  });
+
   renderFiles();
 }
 
@@ -364,6 +378,7 @@ function logout() {
 }
 
 loadFiles();
+filtrarPasta('Mesa'); // Destaca pasta inicial
 
 // Buscar perfil Nostr
 async function buscarPerfilNostr() {
