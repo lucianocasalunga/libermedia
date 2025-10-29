@@ -241,22 +241,6 @@
       <button onclick="closeConfigModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">&times;</button>
     </div>
 
-    <!-- Tema -->
-    <div class="mb-6">
-      <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">🎨 Aparência</h4>
-      <div class="flex gap-2">
-        <button onclick="setTema('light')" id="btnTemaLight" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded border-2 border-transparent">
-          ☀️ Claro
-        </button>
-        <button onclick="setTema('dark')" id="btnTemaDark" class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded border-2 border-transparent">
-          🌙 Escuro
-        </button>
-        <button onclick="setTema('auto')" id="btnTemaAuto" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded border-2 border-transparent">
-          🔄 Auto
-        </button>
-      </div>
-    </div>
-
     <!-- Perfil Nostr -->
     <div class="mb-6">
       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">👤 Perfil Nostr</h4>
@@ -269,7 +253,7 @@
           <label class="text-xs text-gray-600 dark:text-gray-400">URL do Avatar</label>
           <input type="text" id="configAvatar" placeholder="https://..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400">💡 Essas configurações são locais e não afetam seu perfil Nostr real.</p>
+        <p class="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">⚠️ Temporário: Configurações locais. Em breve sincronizaremos com seu perfil Nostr (NIP-01).</p>
       </div>
     </div>
 
