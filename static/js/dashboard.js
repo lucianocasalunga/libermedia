@@ -562,7 +562,18 @@ function showDetails(fileId) {
 }
 
 function logout() {
+  const npub = localStorage.getItem('libermedia_npub');
+
+  // Remove todas as chaves relacionadas ao libermedia
   localStorage.removeItem('libermedia_npub');
+  localStorage.removeItem('libermedia_pastas_' + npub);
+  localStorage.removeItem('grid_size');
+
+  // Limpa seleções em memória
+  arquivosSelecionados = [];
+  todosArquivos = [];
+
+  // Redireciona para login
   location.href = '/';
 }
 
