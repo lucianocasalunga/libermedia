@@ -14,6 +14,13 @@
 .view-lista .file-info { flex: 1; }
 .view-lista .file-actions { display: flex; gap: 0.5rem; }
 .view-lista .file-card > div:first-of-type { display: none; }
+
+/* Estilos para filtro por tipo */
+.tipo-btn { padding: 0.5rem 1rem; border-radius: 9999px; background: #f3f4f6; color: #1f2937; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.dark .tipo-btn { background: #374151; color: #fff; }
+.tipo-btn:hover { background: #e5e7eb; }
+.dark .tipo-btn:hover { background: #4b5563; }
+.tipo-btn.active { background: #eab308; color: #fff; font-weight: 600; }
 </style>
 
 <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg text-white text-xl shadow-lg">👤</button>
@@ -101,6 +108,29 @@
           </div>
         </div>
       </div>
+
+      <!-- Filtro por Tipo -->
+      <div class="flex justify-center gap-2 mb-6 flex-wrap" id="tipoFilterContainer">
+        <button onclick="filtrarTipo('todos')" data-tipo="todos" class="tipo-btn active">📦 Todos</button>
+        <button onclick="filtrarTipo('image')" data-tipo="image" class="tipo-btn">🖼️ Imagens</button>
+        <button onclick="filtrarTipo('video')" data-tipo="video" class="tipo-btn">🎬 Vídeos</button>
+        <button onclick="filtrarTipo('document')" data-tipo="document" class="tipo-btn">📄 Docs</button>
+        <button onclick="filtrarTipo('audio')" data-tipo="audio" class="tipo-btn">🎵 Áudio</button>
+      </div>
+
+      <!-- Seleção Múltipla -->
+      <div class="flex justify-center gap-2 mb-4 flex-wrap items-center">
+        <button onclick="selectAll()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded text-sm">
+          ☑️ Selecionar Todos
+        </button>
+        <button onclick="deselectAll()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded text-sm">
+          ⬜ Desmarcar
+        </button>
+        <button id="btnDeleteSelected" onclick="confirmDeleteSelected()" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold">
+          🗑️ Deletar <span id="selectedCount">0</span> selecionado(s)
+        </button>
+      </div>
+
       <!-- Progress -->
       <div id="progress" class="hidden mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div class="flex justify-between mb-2">
@@ -166,6 +196,22 @@
     <div class="flex gap-2">
       <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600">Cancelar</button>
       <button onclick="executeDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Deletar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão em Lote -->
+<div id="confirmBatchDeleteModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onclick="closeBatchDeleteModal()">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">⚠️ Confirmar exclusão em lote</h3>
+    <p class="text-gray-600 dark:text-gray-400 mb-4">
+      Tem certeza que deseja deletar <strong id="batchDeleteCount">0</strong> arquivo(s)?
+      <br><br>
+      Esta ação não pode ser desfeita.
+    </p>
+    <div class="flex gap-2">
+      <button onclick="closeBatchDeleteModal()" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600">Cancelar</button>
+      <button onclick="executeBatchDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold">Deletar Todos</button>
     </div>
   </div>
 </div>

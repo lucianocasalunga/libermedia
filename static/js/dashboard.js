@@ -6,8 +6,10 @@ document.getElementById('npubShort').textContent = npub.slice(0, 20) + '...';
 let todosArquivos = [];
 let pastaAtual = 'Mesa';
 let viewMode = 'grade';
+let tipoAtual = 'todos';
 let currentModalIndex = 0;
 let modalArquivos = [];
+let arquivosSelecionados = [];
 
 const dropArea = document.getElementById('dropArea');
 const fileInput = document.getElementById('fileInput');
@@ -262,9 +264,14 @@ function renderFiles() {
   
   let arquivosFiltrados = todosArquivos;
   if (pastaAtual !== 'Mesa') {
-    arquivosFiltrados = todosArquivos.filter(f => f.pasta === pastaAtual);
+    arquivosFiltrados = arquivosFiltrados.filter(f => f.pasta === pastaAtual);
   }
-  
+
+  // Filtro por tipo
+  if (tipoAtual !== 'todos') {
+    arquivosFiltrados = arquivosFiltrados.filter(f => f.tipo === tipoAtual);
+  }
+
   if (arquivosFiltrados.length === 0) {
     filesDiv.innerHTML = '';
     emptyDiv.classList.remove('hidden');
@@ -277,8 +284,14 @@ function renderFiles() {
     filesDiv.innerHTML = arquivosFiltrados.map(f => {
       const ext = getExtensao(f.nome);
       const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
+      const isSelected = arquivosSelecionados.includes(f.id);
       return `
-      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden border ${isSelected ? 'border-yellow-500 border-2' : 'border-gray-200 dark:border-gray-700'} relative">
+        <input type="checkbox"
+               onchange="toggleSelection(${f.id})"
+               ${isSelected ? 'checked' : ''}
+               class="absolute top-2 left-2 z-10 w-5 h-5 cursor-pointer accent-yellow-500"
+               onclick="event.stopPropagation()">
         ${renderMediaPreview(f)}
         <div class="p-3">
           <h3 class="text-xs text-gray-600 dark:text-gray-400 truncate" title="${f.nome}">${f.nome}</h3>
@@ -332,6 +345,106 @@ function filtrarPasta(pasta) {
   });
 
   renderFiles();
+}
+
+function filtrarTipo(tipo) {
+  tipoAtual = tipo;
+
+  // Visual feedback nos botões
+  document.querySelectorAll('.tipo-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tipo === tipo);
+  });
+
+  renderFiles();
+}
+
+// SELEÇÃO MÚLTIPLA
+function toggleSelection(fileId) {
+  const index = arquivosSelecionados.indexOf(fileId);
+  if (index === -1) {
+    arquivosSelecionados.push(fileId);
+  } else {
+    arquivosSelecionados.splice(index, 1);
+  }
+  updateSelectionUI();
+  renderFiles();
+}
+
+function selectAll() {
+  let arquivosFiltrados = todosArquivos;
+  if (pastaAtual !== 'Mesa') {
+    arquivosFiltrados = arquivosFiltrados.filter(f => f.pasta === pastaAtual);
+  }
+  if (tipoAtual !== 'todos') {
+    arquivosFiltrados = arquivosFiltrados.filter(f => f.tipo === tipoAtual);
+  }
+  arquivosSelecionados = arquivosFiltrados.map(f => f.id);
+  updateSelectionUI();
+  renderFiles();
+}
+
+function deselectAll() {
+  arquivosSelecionados = [];
+  updateSelectionUI();
+  renderFiles();
+}
+
+function updateSelectionUI() {
+  const count = arquivosSelecionados.length;
+  const btnDelete = document.getElementById('btnDeleteSelected');
+  const countSpan = document.getElementById('selectedCount');
+
+  if (count > 0) {
+    btnDelete.classList.remove('hidden');
+    countSpan.textContent = count;
+  } else {
+    btnDelete.classList.add('hidden');
+  }
+}
+
+function confirmDeleteSelected() {
+  if (arquivosSelecionados.length === 0) return;
+
+  const modal = document.getElementById('confirmBatchDeleteModal');
+  const count = document.getElementById('batchDeleteCount');
+  count.textContent = arquivosSelecionados.length;
+  modal.classList.remove('hidden');
+}
+
+function closeBatchDeleteModal() {
+  document.getElementById('confirmBatchDeleteModal').classList.add('hidden');
+}
+
+async function executeBatchDelete() {
+  const npub = localStorage.getItem('libermedia_npub');
+  const total = arquivosSelecionados.length;
+  let sucesso = 0;
+  let erros = 0;
+
+  for (const fileId of arquivosSelecionados) {
+    try {
+      const res = await fetch(`/api/arquivo/delete/${fileId}?npub=${npub}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        sucesso++;
+      } else {
+        erros++;
+      }
+    } catch (err) {
+      erros++;
+    }
+  }
+
+  closeBatchDeleteModal();
+  arquivosSelecionados = [];
+  updateSelectionUI();
+  loadFiles();
+
+  if (erros === 0) {
+    showToast(`✓ ${sucesso} arquivo${sucesso > 1 ? 's' : ''} deletado${sucesso > 1 ? 's' : ''} com sucesso!`, 'success');
+  } else {
+    showToast(`⚠️ ${sucesso} deletados, ${erros} erro${erros > 1 ? 's' : ''}`, 'error');
+  }
 }
 
 function criarPasta() {
