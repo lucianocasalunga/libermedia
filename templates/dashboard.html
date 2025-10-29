@@ -91,8 +91,9 @@
         <p class="text-sm text-gray-600 dark:text-gray-400">ou clique</p>
       </div>
 
-      <!-- Seletor de Tamanho -->
-      <div class="flex justify-center mb-6">
+      <!-- Controles: Tamanho e Seleção -->
+      <div class="flex justify-center mb-6 gap-3">
+        <!-- Seletor de Tamanho -->
         <div class="relative inline-block">
           <button id="btnTamanho" onclick="toggleTamanhoMenu()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,6 +108,27 @@
             <button onclick="setTamanho('pequeno')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white">Pequeno</button>
           </div>
         </div>
+
+        <!-- Menu de Seleção -->
+        <div class="relative inline-block">
+          <button id="btnSelecao" onclick="toggleSelecaoMenu()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
+            <span class="text-base">☑️</span>
+            <span>Seleção</span>
+            <span class="text-xs">▼</span>
+          </button>
+          <div id="menuSelecao" class="hidden absolute left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50">
+            <button onclick="toggleModoSelecao()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <span>✓</span> Modo Seleção
+            </button>
+            <hr class="border-gray-200 dark:border-gray-600">
+            <button onclick="selectAll()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white flex items-center gap-2">
+              <span>☑️</span> Selecionar Todos
+            </button>
+            <button onclick="deselectAll()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <span>⬜</span> Desmarcar
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Filtro por Tipo -->
@@ -118,15 +140,9 @@
         <button onclick="filtrarTipo('audio')" data-tipo="audio" class="tipo-btn">🎵 Áudio</button>
       </div>
 
-      <!-- Seleção Múltipla -->
-      <div class="flex justify-center gap-2 mb-4 flex-wrap items-center">
-        <button onclick="selectAll()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded text-sm">
-          ☑️ Selecionar Todos
-        </button>
-        <button onclick="deselectAll()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded text-sm">
-          ⬜ Desmarcar
-        </button>
-        <button id="btnDeleteSelected" onclick="confirmDeleteSelected()" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-semibold">
+      <!-- Botão Deletar Flutuante (aparece apenas em modo seleção) -->
+      <div class="flex justify-center mb-4">
+        <button id="btnDeleteSelected" onclick="confirmDeleteSelected()" class="hidden px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-lg">
           🗑️ Deletar <span id="selectedCount">0</span> selecionado(s)
         </button>
       </div>
