@@ -837,16 +837,128 @@ if (window.innerWidth <= 1024) {
   }
 }
 
+// CONFIGURAÇÕES
+function openConfigModal() {
+  // Carrega valores salvos
+  const tema = localStorage.getItem('libermedia_tema') || 'auto';
+  const nome = localStorage.getItem('libermedia_nome') || '';
+  const avatar = localStorage.getItem('libermedia_avatar') || '';
+
+  document.getElementById('configNome').value = nome;
+  document.getElementById('configAvatar').value = avatar;
+
+  // Destaca botão do tema atual
+  updateTemaButtons(tema);
+
+  document.getElementById('configModal').classList.remove('hidden');
+}
+
+function closeConfigModal() {
+  document.getElementById('configModal').classList.add('hidden');
+}
+
+function saveConfig() {
+  const nome = document.getElementById('configNome').value.trim();
+  const avatar = document.getElementById('configAvatar').value.trim();
+
+  // Salva no localStorage
+  if (nome) localStorage.setItem('libermedia_nome', nome);
+  if (avatar) localStorage.setItem('libermedia_avatar', avatar);
+
+  // Atualiza UI imediatamente
+  if (nome) {
+    document.querySelectorAll('.font-bold').forEach(el => {
+      if (el.textContent.trim() === 'Usuário' || el.classList.contains('user-name')) {
+        el.textContent = nome;
+        el.classList.add('user-name');
+      }
+    });
+  }
+
+  if (avatar) {
+    const avatarImg = document.querySelector('img[src="/static/img/avatar.png"], img[src^="https://"]');
+    if (avatarImg) avatarImg.src = avatar;
+  }
+
+  showToast('✓ Configurações salvas!', 'success');
+  closeConfigModal();
+}
+
+function setTema(tema) {
+  localStorage.setItem('libermedia_tema', tema);
+  updateTemaButtons(tema);
+  applyTema(tema);
+}
+
+function updateTemaButtons(tema) {
+  // Remove bordas de todos
+  document.getElementById('btnTemaLight').classList.remove('border-yellow-500');
+  document.getElementById('btnTemaDark').classList.remove('border-yellow-500');
+  document.getElementById('btnTemaAuto').classList.remove('border-yellow-500');
+
+  // Adiciona borda no ativo
+  if (tema === 'light') {
+    document.getElementById('btnTemaLight').classList.add('border-yellow-500');
+  } else if (tema === 'dark') {
+    document.getElementById('btnTemaDark').classList.add('border-yellow-500');
+  } else {
+    document.getElementById('btnTemaAuto').classList.add('border-yellow-500');
+  }
+}
+
+function applyTema(tema) {
+  const html = document.documentElement;
+
+  if (tema === 'light') {
+    html.classList.remove('dark');
+  } else if (tema === 'dark') {
+    html.classList.add('dark');
+  } else {
+    // Auto: detecta preferência do sistema
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }
+}
+
+// Aplica tema salvo ao carregar página
+const temaSalvo = localStorage.getItem('libermedia_tema') || 'auto';
+applyTema(temaSalvo);
+
+// Carrega nome e avatar salvos
+const nomeSalvo = localStorage.getItem('libermedia_nome');
+const avatarSalvo = localStorage.getItem('libermedia_avatar');
+
+if (nomeSalvo) {
+  setTimeout(() => {
+    document.querySelectorAll('.font-bold').forEach(el => {
+      if (el.textContent.trim() === 'Usuário') {
+        el.textContent = nomeSalvo;
+        el.classList.add('user-name');
+      }
+    });
+  }, 500);
+}
+
+if (avatarSalvo) {
+  setTimeout(() => {
+    const avatarImg = document.querySelector('img[src="/static/img/avatar.png"]');
+    if (avatarImg) avatarImg.src = avatarSalvo;
+  }, 500);
+}
+
 // Mobile: Toggle sidebar drawer
 document.addEventListener('DOMContentLoaded', function() {
   const menuToggle = document.getElementById('sidebarToggle');
   const sidebar = document.querySelector('.sidebar-drawer');
-  
+
   if (menuToggle && sidebar) {
     menuToggle.addEventListener('click', function() {
       sidebar.classList.toggle('-translate-x-full');
     });
-    
+
     // Fecha ao clicar fora
     document.addEventListener('click', function(e) {
       if (window.innerWidth < 768) {
