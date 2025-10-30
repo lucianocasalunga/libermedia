@@ -227,4 +227,39 @@
 
 ---
 
+## 🔔 PENDÊNCIAS PARA PRÓXIMA SESSÃO (31/Out/2025)
+
+### ⚠️ BUGS A VERIFICAR:
+1. **Ícone de áudio thumbnail** - Reportado como esticado
+   - Status: **CORRIGIDO** no commit 2f7d5e6
+   - Aplicado: `width: 64px; height: 64px` fixo com `flex-shrink-0`
+   - **Ação:** Verificar se correção funcionou com o usuário
+
+2. **Sincronização NIP-01 em outros usuários**
+   - Status: ⚠️ **FUNCIONA NO PERFIL DO DONO, MAS NÃO EM OUTROS USUÁRIOS**
+   - Testado com: npub1nvcezhw3gze5waxtvrzzls8qzhvqpn087hj0s2jl948zr4egq0jqhm3mrr (Luciano Barak)
+   - **Ação:** Testar com outros perfis Nostr amanhã
+   - Possíveis causas:
+     - [ ] Relays não retornando dados de outros usuários
+     - [ ] Timeout curto (10s)
+     - [ ] Problema de permissão/CORS
+     - [ ] Evento kind 0 não publicado para esses usuários
+
+### 📋 PROCEDIMENTOS OBRIGATÓRIOS:
+- **ANTES de cada tarefa crítica:** Fazer backup completo
+  ```bash
+  cp -r /opt/libermedia /opt/libermedia_backup_$(date +%Y%m%d_%H%M)
+  ```
+- **DEPOIS de concluir sessão:** Limpar backups antigos (manter apenas últimos 3)
+  ```bash
+  ls -dt /opt/libermedia_backup_* | tail -n +4 | xargs rm -rf
+  ```
+
+### 🎯 PRÓXIMAS TAREFAS:
+1. Investigar sincronização em outros perfis
+2. Verificar correção do ícone de áudio
+3. Decidir próximo NIP (78, 98, ou 96)
+
+---
+
 **FIM DA MEMÓRIA - ARQUIVO VIVO (atualizar conforme progresso)**
