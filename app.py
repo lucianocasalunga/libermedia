@@ -884,18 +884,25 @@ def api_nostr_profile():
     try:
         data = request.get_json()
         npub = data.get("npub")
-        
+
+        print(f"[DEBUG] Buscando perfil para npub: {npub}")
+
         if not npub:
             return jsonify({"status": "error", "error": "npub obrigatório"}), 400
-        
+
         perfil = buscar_perfil_nostr(npub)
-        
+
+        print(f"[DEBUG] Perfil encontrado: {perfil}")
+
         if perfil:
             return jsonify({"status": "ok", "perfil": perfil})
         else:
             return jsonify({"status": "error", "error": "Perfil não encontrado"}), 404
-            
+
     except Exception as e:
+        print(f"[ERROR] Erro ao buscar perfil: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"status": "error", "error": str(e)}), 500
 
 

@@ -1,3 +1,195 @@
+// ============================================
+// BIBLIOTECA NOSTR (NIP-01) - INLINE
+// Movido para dentro do dashboard.js para evitar problemas de cache
+// ============================================
+
+// Configuração de relays
+const NOSTR_RELAYS = [
+  'wss://relay.damus.io',
+  'wss://nos.lol',
+  'wss://relay.nostr.band'
+];
+
+/**
+ * Busca perfil Nostr (kind 0) do usuário via backend
+ */
+async function buscarPerfilNostr(npub) {
+  try {
+    const response = await fetch('/api/nostr/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ npub })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok' && data.perfil) {
+      return {
+        name: data.perfil.name || '',
+        picture: data.perfil.picture || '',
+        about: data.perfil.about || '',
+        display_name: data.perfil.display_name || '',
+        banner: data.perfil.banner || '',
+        website: data.perfil.website || '',
+        nip05: data.perfil.nip05 || '',
+        lud16: data.perfil.lud16 || ''
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[Nostr] Erro ao buscar perfil:', error);
+    return null;
+  }
+}
+
+/**
+ * Publica perfil Nostr (kind 0) usando NIP-07 (window.nostr)
+ */
+async function publicarPerfilNostr(profileData) {
+  try {
+    if (!window.nostr) {
+      throw new Error('Extensão Nostr não encontrada. Instale Alby, nos2x ou outra extensão compatível.');
+    }
+
+    const content = JSON.stringify({
+      name: profileData.name || '',
+      display_name: profileData.display_name || '',
+      about: profileData.about || '',
+      picture: profileData.picture || '',
+      banner: profileData.banner || '',
+      website: profileData.website || '',
+      nip05: profileData.nip05 || '',
+      lud16: profileData.lud16 || ''
+    });
+
+    const event = {
+      kind: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: content
+    };
+
+    const signedEvent = await window.nostr.signEvent(event);
+    const publishResults = await publicarEventoNostr(signedEvent);
+
+    return {
+      success: true,
+      event: signedEvent,
+      relays: publishResults
+    };
+
+  } catch (error) {
+    console.error('[Nostr] Erro ao publicar perfil:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Publica evento em múltiplos relays
+ */
+async function publicarEventoNostr(signedEvent) {
+  const results = [];
+
+  for (const relay of NOSTR_RELAYS) {
+    try {
+      const ws = new WebSocket(relay);
+
+      const result = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          ws.close();
+          reject(new Error('Timeout'));
+        }, 10000);
+
+        ws.onopen = () => {
+          ws.send(JSON.stringify(['EVENT', signedEvent]));
+        };
+
+        ws.onmessage = (msg) => {
+          clearTimeout(timeout);
+          const response = JSON.parse(msg.data);
+
+          if (response[0] === 'OK') {
+            resolve({
+              relay: relay,
+              success: response[1],
+              message: response[2] || ''
+            });
+          } else {
+            reject(new Error(response[2] || 'Erro desconhecido'));
+          }
+
+          ws.close();
+        };
+
+        ws.onerror = (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        };
+      });
+
+      results.push(result);
+    } catch (error) {
+      results.push({
+        relay: relay,
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Sincroniza perfil: busca do Nostr e salva localmente
+ */
+async function sincronizarPerfilNostr(npub) {
+  try {
+    const perfil = await buscarPerfilNostr(npub);
+
+    if (perfil) {
+      localStorage.setItem('libermedia_nome', perfil.name || perfil.display_name || '');
+      localStorage.setItem('libermedia_display_name', perfil.display_name || '');
+      localStorage.setItem('libermedia_avatar', perfil.picture || '');
+      localStorage.setItem('libermedia_about', perfil.about || '');
+      localStorage.setItem('libermedia_banner', perfil.banner || '');
+      localStorage.setItem('libermedia_website', perfil.website || '');
+      localStorage.setItem('libermedia_nip05', perfil.nip05 || '');
+      localStorage.setItem('libermedia_lud16', perfil.lud16 || '');
+      localStorage.setItem('libermedia_last_sync', Date.now().toString());
+
+      return perfil;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[Nostr] Erro ao sincronizar perfil:', error);
+    return null;
+  }
+}
+
+/**
+ * Verifica se perfil está desatualizado (mais de 1 hora)
+ */
+function precisaSincronizar() {
+  const lastSync = localStorage.getItem('libermedia_last_sync');
+
+  if (!lastSync) return true;
+
+  const umahora = 60 * 60 * 1000;
+  const tempoDecorrido = Date.now() - parseInt(lastSync);
+
+  return tempoDecorrido > umahora;
+}
+
+// ============================================
+// FIM BIBLIOTECA NOSTR
+// ============================================
+
 const npub = localStorage.getItem('libermedia_npub');
 if (!npub) { alert('Faça login!'); location.href = '/'; }
 
@@ -230,9 +422,9 @@ function renderMediaPreview(arquivo) {
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
       <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex flex-col items-center justify-center p-4">
-        <p class="text-5xl mb-2">🎵</p>
-        <p class="text-white text-xs mb-2 truncate w-full text-center px-2">${arquivo.nome}</p>
-        <audio controls class="w-full" style="max-width: 90%;">
+        <div class="flex-shrink-0 mb-3" style="width: 64px; height: 64px; font-size: 64px; line-height: 64px;">🎵</div>
+        <p class="text-white text-xs mb-3 truncate w-full text-center px-2 flex-shrink-0">${arquivo.nome}</p>
+        <audio controls class="w-full flex-shrink-0" style="max-width: 90%;">
           <source src="${linkComExt}" type="audio/${ext}">
         </audio>
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
@@ -1253,7 +1445,7 @@ async function saveConfig() {
   // Publica no Nostr usando NIP-07
   showToast('📡 Publicando no Nostr...', 'info');
 
-  const result = await window.NostrLib.publicarPerfilNostr(profileData);
+  const result = await publicarPerfilNostr(profileData);
 
   if (result.success) {
     localStorage.setItem('libermedia_last_sync', Date.now().toString());
@@ -1282,10 +1474,11 @@ async function sincronizarPerfil() {
 
   showToast('🔄 Sincronizando perfil...', 'info');
 
-  const perfil = await window.NostrLib.sincronizarPerfilNostr(npub);
+  const perfil = await sincronizarPerfilNostr(npub);
 
   if (perfil) {
     // Atualiza campos do modal
+    console.log('[Dashboard] Atualizando campos do modal...');
     document.getElementById('configNome').value = perfil.name || '';
     document.getElementById('configDisplayName').value = perfil.display_name || '';
     document.getElementById('configAvatar').value = perfil.picture || '';
@@ -1295,6 +1488,8 @@ async function sincronizarPerfil() {
     document.getElementById('configNip05').value = perfil.nip05 || '';
     document.getElementById('configLud16').value = perfil.lud16 || '';
 
+    console.log('[Dashboard] Campos atualizados');
+
     // Atualiza UI
     atualizarPerfilUI(perfil);
 
@@ -1303,12 +1498,13 @@ async function sincronizarPerfil() {
 
     showToast('✓ Perfil sincronizado!', 'success');
   } else {
+    console.log('[Dashboard] Perfil não foi encontrado');
     showToast('⚠️ Perfil não encontrado no Nostr', 'error');
   }
 }
 
 function atualizarStatusSync() {
-  const precisaSync = window.NostrLib.precisaSincronizar();
+  const precisaSync = precisaSincronizar();
   const syncIcon = document.getElementById('syncIcon');
   const syncText = document.getElementById('syncText');
   const lastSync = localStorage.getItem('libermedia_last_sync');
@@ -1368,13 +1564,13 @@ if (avatarSalvo) {
 // Sincronização automática ao carregar página
 async function sincronizacaoAutomatica() {
   // Só sincroniza se estiver desatualizado (> 1 hora)
-  if (window.NostrLib && window.NostrLib.precisaSincronizar()) {
+  if (precisaSincronizar()) {
     const npub = localStorage.getItem('libermedia_npub');
 
     if (npub) {
       console.log('🔄 Sincronização automática iniciada...');
 
-      const perfil = await window.NostrLib.sincronizarPerfilNostr(npub);
+      const perfil = await sincronizarPerfilNostr(npub);
 
       if (perfil) {
         console.log('✅ Perfil sincronizado automaticamente');
