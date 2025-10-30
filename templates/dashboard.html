@@ -403,26 +403,63 @@
 
 <!-- Modal de Configurações -->
 <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onclick="closeConfigModal()">
-  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-xl font-bold text-gray-900 dark:text-white">⚙️ Configurações</h3>
       <button onclick="closeConfigModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl">&times;</button>
     </div>
 
-    <!-- Perfil Nostr -->
-    <div class="mb-6">
-      <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">👤 Perfil Nostr</h4>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-gray-600 dark:text-gray-400">Nome</label>
-          <input type="text" id="configNome" placeholder="Seu nome" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
-        </div>
-        <div>
-          <label class="text-xs text-gray-600 dark:text-gray-400">URL do Avatar</label>
-          <input type="text" id="configAvatar" placeholder="https://..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
-        </div>
-        <p class="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">⚠️ Temporário: Configurações locais. Em breve sincronizaremos com seu perfil Nostr (NIP-01).</p>
+    <!-- Status de Sincronização -->
+    <div id="syncStatus" class="mb-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span id="syncIcon">🔄</span>
+        <span id="syncText" class="text-sm text-gray-700 dark:text-gray-300">Verificando sincronização...</span>
       </div>
+      <button onclick="sincronizarPerfil()" class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-semibold">
+        🔄 Sincronizar
+      </button>
+    </div>
+
+    <!-- Perfil Nostr (NIP-01) -->
+    <div class="mb-6">
+      <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">👤 Perfil Nostr (NIP-01)</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-600 dark:text-gray-400">Nome <span class="text-red-500">*</span></label>
+          <input type="text" id="configNome" placeholder="satoshi" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600 dark:text-gray-400">Nome de Exibição</label>
+          <input type="text" id="configDisplayName" placeholder="Satoshi Nakamoto" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-600 dark:text-gray-400">Sobre / Bio</label>
+          <textarea id="configAbout" placeholder="Descreva-se brevemente..." rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm resize-none"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-600 dark:text-gray-400">URL do Avatar (picture)</label>
+          <input type="url" id="configAvatar" placeholder="https://exemplo.com/avatar.jpg" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-600 dark:text-gray-400">URL do Banner</label>
+          <input type="url" id="configBanner" placeholder="https://exemplo.com/banner.jpg" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600 dark:text-gray-400">Website</label>
+          <input type="url" id="configWebsite" placeholder="https://exemplo.com" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600 dark:text-gray-400">NIP-05 (Verificação)</label>
+          <input type="text" id="configNip05" placeholder="nome@dominio.com" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-600 dark:text-gray-400">Lightning Address (lud16)</label>
+          <input type="text" id="configLud16" placeholder="nome@getalby.com" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm">
+        </div>
+      </div>
+      <p class="text-xs text-blue-500 dark:text-blue-400 mt-2">
+        💡 Suas configurações serão publicadas no Nostr usando sua extensão (Alby, nos2x, etc)
+      </p>
     </div>
 
     <!-- Botões -->
@@ -431,12 +468,13 @@
         Cancelar
       </button>
       <button onclick="saveConfig()" class="flex-1 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded font-semibold">
-        💾 Salvar
+        💾 Salvar e Publicar
       </button>
     </div>
   </div>
 </div>
 
+<script src="/static/js/nostr.js?v={{ timestamp }}"></script>
 <script src="/static/js/dashboard.js?v={{ timestamp }}"></script>
 
 {% endblock %}

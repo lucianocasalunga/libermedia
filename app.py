@@ -851,12 +851,16 @@ async def buscar_perfil_nostr_async(npub: str):
         if not events.is_empty():
             event = events.first()
             content = json.loads(event.content())
-            
+
             return {
-                "name": content.get("name", "Usuário"),
+                "name": content.get("name", ""),
+                "display_name": content.get("display_name", ""),
                 "picture": content.get("picture", ""),
                 "about": content.get("about", ""),
-                "nip05": content.get("nip05", "")
+                "banner": content.get("banner", ""),
+                "website": content.get("website", ""),
+                "nip05": content.get("nip05", ""),
+                "lud16": content.get("lud16", "")
             }
         
         return None

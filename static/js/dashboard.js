@@ -1198,14 +1198,20 @@ if (window.innerWidth <= 1024) {
   }
 }
 
-// CONFIGURAÇÕES
+// CONFIGURAÇÕES NOSTR (NIP-01)
 function openConfigModal() {
-  // Carrega valores salvos
-  const nome = localStorage.getItem('libermedia_nome') || '';
-  const avatar = localStorage.getItem('libermedia_avatar') || '';
+  // Carrega valores salvos do localStorage
+  document.getElementById('configNome').value = localStorage.getItem('libermedia_nome') || '';
+  document.getElementById('configDisplayName').value = localStorage.getItem('libermedia_display_name') || '';
+  document.getElementById('configAvatar').value = localStorage.getItem('libermedia_avatar') || '';
+  document.getElementById('configAbout').value = localStorage.getItem('libermedia_about') || '';
+  document.getElementById('configBanner').value = localStorage.getItem('libermedia_banner') || '';
+  document.getElementById('configWebsite').value = localStorage.getItem('libermedia_website') || '';
+  document.getElementById('configNip05').value = localStorage.getItem('libermedia_nip05') || '';
+  document.getElementById('configLud16').value = localStorage.getItem('libermedia_lud16') || '';
 
-  document.getElementById('configNome').value = nome;
-  document.getElementById('configAvatar').value = avatar;
+  // Atualiza status de sincronização
+  atualizarStatusSync();
 
   document.getElementById('configModal').classList.remove('hidden');
 }
@@ -1214,31 +1220,127 @@ function closeConfigModal() {
   document.getElementById('configModal').classList.add('hidden');
 }
 
-function saveConfig() {
+async function saveConfig() {
   const nome = document.getElementById('configNome').value.trim();
-  const avatar = document.getElementById('configAvatar').value.trim();
+
+  if (!nome) {
+    showToast('⚠️ Nome é obrigatório', 'error');
+    return;
+  }
+
+  // Coleta todos os dados do perfil
+  const profileData = {
+    name: nome,
+    display_name: document.getElementById('configDisplayName').value.trim(),
+    picture: document.getElementById('configAvatar').value.trim(),
+    about: document.getElementById('configAbout').value.trim(),
+    banner: document.getElementById('configBanner').value.trim(),
+    website: document.getElementById('configWebsite').value.trim(),
+    nip05: document.getElementById('configNip05').value.trim(),
+    lud16: document.getElementById('configLud16').value.trim()
+  };
 
   // Salva no localStorage
-  if (nome) localStorage.setItem('libermedia_nome', nome);
-  if (avatar) localStorage.setItem('libermedia_avatar', avatar);
+  localStorage.setItem('libermedia_nome', profileData.name);
+  localStorage.setItem('libermedia_display_name', profileData.display_name);
+  localStorage.setItem('libermedia_avatar', profileData.picture);
+  localStorage.setItem('libermedia_about', profileData.about);
+  localStorage.setItem('libermedia_banner', profileData.banner);
+  localStorage.setItem('libermedia_website', profileData.website);
+  localStorage.setItem('libermedia_nip05', profileData.nip05);
+  localStorage.setItem('libermedia_lud16', profileData.lud16);
 
-  // Atualiza UI imediatamente
-  if (nome) {
-    document.querySelectorAll('.font-bold').forEach(el => {
-      if (el.textContent.trim() === 'Usuário' || el.classList.contains('user-name')) {
-        el.textContent = nome;
-        el.classList.add('user-name');
-      }
-    });
+  // Publica no Nostr usando NIP-07
+  showToast('📡 Publicando no Nostr...', 'info');
+
+  const result = await window.NostrLib.publicarPerfilNostr(profileData);
+
+  if (result.success) {
+    localStorage.setItem('libermedia_last_sync', Date.now().toString());
+    showToast('✓ Perfil salvo e publicado no Nostr!', 'success');
+
+    // Atualiza UI
+    atualizarPerfilUI(profileData);
+
+    closeConfigModal();
+  } else {
+    showToast('⚠️ Erro ao publicar: ' + result.error, 'error');
+
+    // Mesmo com erro, salva localmente
+    showToast('💾 Salvo localmente', 'info');
+    atualizarPerfilUI(profileData);
+  }
+}
+
+async function sincronizarPerfil() {
+  const npub = localStorage.getItem('libermedia_npub');
+
+  if (!npub) {
+    showToast('⚠️ NPub não encontrado', 'error');
+    return;
   }
 
-  if (avatar) {
+  showToast('🔄 Sincronizando perfil...', 'info');
+
+  const perfil = await window.NostrLib.sincronizarPerfilNostr(npub);
+
+  if (perfil) {
+    // Atualiza campos do modal
+    document.getElementById('configNome').value = perfil.name || '';
+    document.getElementById('configDisplayName').value = perfil.display_name || '';
+    document.getElementById('configAvatar').value = perfil.picture || '';
+    document.getElementById('configAbout').value = perfil.about || '';
+    document.getElementById('configBanner').value = perfil.banner || '';
+    document.getElementById('configWebsite').value = perfil.website || '';
+    document.getElementById('configNip05').value = perfil.nip05 || '';
+    document.getElementById('configLud16').value = perfil.lud16 || '';
+
+    // Atualiza UI
+    atualizarPerfilUI(perfil);
+
+    // Atualiza status
+    atualizarStatusSync();
+
+    showToast('✓ Perfil sincronizado!', 'success');
+  } else {
+    showToast('⚠️ Perfil não encontrado no Nostr', 'error');
+  }
+}
+
+function atualizarStatusSync() {
+  const precisaSync = window.NostrLib.precisaSincronizar();
+  const syncIcon = document.getElementById('syncIcon');
+  const syncText = document.getElementById('syncText');
+  const lastSync = localStorage.getItem('libermedia_last_sync');
+
+  if (!lastSync) {
+    syncIcon.textContent = '⚠️';
+    syncText.textContent = 'Nunca sincronizado';
+  } else if (precisaSync) {
+    syncIcon.textContent = '🟡';
+    syncText.textContent = 'Desatualizado (sincronize novamente)';
+  } else {
+    syncIcon.textContent = '✅';
+    const tempo = Math.floor((Date.now() - parseInt(lastSync)) / 60000);
+    syncText.textContent = `Sincronizado há ${tempo} min`;
+  }
+}
+
+function atualizarPerfilUI(perfil) {
+  // Atualiza nome na sidebar
+  const nomeExibicao = perfil.display_name || perfil.name || 'Usuário';
+  document.querySelectorAll('.font-bold').forEach(el => {
+    if (el.textContent.trim() === 'Usuário' || el.classList.contains('user-name')) {
+      el.textContent = nomeExibicao;
+      el.classList.add('user-name');
+    }
+  });
+
+  // Atualiza avatar
+  if (perfil.picture) {
     const avatarImg = document.querySelector('img[src="/static/img/avatar.png"], img[src^="https://"]');
-    if (avatarImg) avatarImg.src = avatar;
+    if (avatarImg) avatarImg.src = perfil.picture;
   }
-
-  showToast('✓ Configurações salvas!', 'success');
-  closeConfigModal();
 }
 
 // Carrega nome e avatar salvos
@@ -1262,6 +1364,30 @@ if (avatarSalvo) {
     if (avatarImg) avatarImg.src = avatarSalvo;
   }, 500);
 }
+
+// Sincronização automática ao carregar página
+async function sincronizacaoAutomatica() {
+  // Só sincroniza se estiver desatualizado (> 1 hora)
+  if (window.NostrLib && window.NostrLib.precisaSincronizar()) {
+    const npub = localStorage.getItem('libermedia_npub');
+
+    if (npub) {
+      console.log('🔄 Sincronização automática iniciada...');
+
+      const perfil = await window.NostrLib.sincronizarPerfilNostr(npub);
+
+      if (perfil) {
+        console.log('✅ Perfil sincronizado automaticamente');
+
+        // Atualiza UI silenciosamente
+        atualizarPerfilUI(perfil);
+      }
+    }
+  }
+}
+
+// Executa sincronização automática 2 segundos após carregar
+setTimeout(sincronizacaoAutomatica, 2000);
 
 // Mobile: Toggle sidebar drawer
 document.addEventListener('DOMContentLoaded', function() {
