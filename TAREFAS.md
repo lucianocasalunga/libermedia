@@ -35,7 +35,7 @@
 ## 🔴 PRIORIDADE ALTA
 
 ### 🌐 SINCRONIZAÇÃO NOSTR - NIP-01 (CRÍTICO)
-**Status:** ⏳ Aguardando implementação
+**Status:** ✅ **IMPLEMENTADO** (30/Out/2025 - commit 5499375)
 
 #### 📖 Sobre o NIP-01:
 - **NIP-01** define o protocolo básico do Nostr
@@ -50,32 +50,32 @@
   - `nip05` - Verificação DNS
   - `lud16` - Lightning Address
 
-#### 🎯 Tarefas:
-- [ ] **Implementar leitura de perfil Nostr (NIP-01)**
+#### ✅ Tarefas Concluídas:
+- ✅ **Implementar leitura de perfil Nostr (NIP-01)**
   - Buscar evento kind 0 do usuário via relays
-  - Extrair: name, picture, about, display_name
+  - Extrair: name, picture, about, display_name, banner, website, nip05, lud16
   - Substituir dados locais por dados do Nostr
 
-- [ ] **Implementar escrita de perfil Nostr (NIP-01)**
+- ✅ **Implementar escrita de perfil Nostr (NIP-01)**
   - Formulário completo no modal Config
   - Criar evento kind 0 ao salvar
   - Publicar evento em relays Nostr
   - Usar NIP-07 (window.nostr) para assinatura
 
-- [ ] **Sincronização automática**
-  - Buscar perfil ao fazer login
+- ✅ **Sincronização automática**
+  - Buscar perfil ao fazer login (2s após carregar)
   - Atualizar UI com dados do Nostr
-  - Cache local com sincronização periódica
+  - Cache local com sincronização periódica (1x por hora)
   - Detectar mudanças e atualizar automaticamente
 
-- [ ] **Modal Config atualizado**
-  - Adicionar campo "about" (bio)
-  - Adicionar campo "banner" (URL)
-  - Adicionar campo "website"
-  - Adicionar campo "nip05" (verificação)
-  - Adicionar campo "lud16" (Lightning)
+- ✅ **Modal Config atualizado**
+  - Campo "about" (bio)
+  - Campo "banner" (URL)
+  - Campo "website"
+  - Campo "nip05" (verificação)
+  - Campo "lud16" (Lightning)
   - Botão "🔄 Sincronizar com Nostr"
-  - Status: "Sincronizado" / "Desatualizado"
+  - Status: "Sincronizado" / "Desatualizado" / "Nunca sincronizado"
 
 #### 🔧 Arquivos a modificar:
 - `app.py` - Novo endpoint `/api/nostr/profile/update`

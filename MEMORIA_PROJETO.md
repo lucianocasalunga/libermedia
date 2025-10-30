@@ -5,7 +5,7 @@
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (30/Out/2025)
+## 🎯 SITUAÇÃO ATUAL (30/Out/2025 - 19:30 UTC)
 
 ### ✅ FUNCIONALIDADES IMPLEMENTADAS HOJE:
 1. ✅ Busca de arquivos por nome (filtro em tempo real)
@@ -14,8 +14,10 @@
 4. ✅ Renomear/Deletar pastas customizadas
 5. ✅ Layout mobile otimizado (3 botões compactos lado a lado)
 6. ✅ Compartilhamento público com links temporários (1h/24h/7d/30d)
+7. ✅ **NIP-01: Sincronização completa de perfil Nostr** 🎉
 
 ### 📊 COMMITS RECENTES:
+- `5499375` - feat: Implementa sincronização completa de perfil Nostr (NIP-01)
 - `7a139df` - feat: 4 funcionalidades (busca, ordenação, mover, renomear/deletar)
 - `21dcc1d` - feat: Compartilhamento público + melhorias mobile
 - `433646e` - fix: Corrigir NameError (LinkPublico)
@@ -27,10 +29,16 @@
 ### ⚠️ PRIORIDADE ALTA - MENCIONADOS ONTEM:
 
 #### **NIP-01: Basic Protocol Flow**
-- Status: ✅ PARCIALMENTE IMPLEMENTADO
-- O que falta:
-  - [ ] Sincronizar metadados de perfil (kind 0) completos
-  - [ ] Publicar eventos de atividade do usuário
+- Status: ✅ **IMPLEMENTADO COMPLETAMENTE**
+- Implementado em: 30/Out/2025 (commit 5499375)
+- Funcionalidades:
+  - ✅ Sincronizar metadados de perfil (kind 0) completos
+  - ✅ Publicar perfil usando NIP-07 (window.nostr)
+  - ✅ Todos os campos: name, display_name, about, picture, banner, website, nip05, lud16
+  - ✅ Sincronização automática (1x por hora)
+  - ✅ Publicação em múltiplos relays
+- Próximos passos:
+  - [ ] Publicar eventos de atividade do usuário (kind 1)
   - [ ] Melhorar tratamento de eventos recebidos
 
 #### **NIP-07: window.nostr Capability**
