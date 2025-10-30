@@ -533,6 +533,60 @@ def listar_pastas():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
+# Renomear pasta (atualiza todos os arquivos)
+@app.route("/api/pasta/rename", methods=["PUT"])
+def renomear_pasta():
+    try:
+        npub = request.args.get('npub')
+        data = request.get_json()
+        pasta_antiga = data.get('pasta_antiga')
+        pasta_nova = data.get('pasta_nova')
+
+        if not npub or not pasta_antiga or not pasta_nova:
+            return jsonify({"status": "error", "error": "Dados incompletos"}), 400
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Atualiza todos os arquivos da pasta antiga
+        arquivos = Arquivo.query.filter_by(usuario_id=usuario.id, pasta=pasta_antiga).all()
+        for arquivo in arquivos:
+            arquivo.pasta = pasta_nova
+
+        db.session.commit()
+
+        return jsonify({"status": "ok", "arquivos_atualizados": len(arquivos)})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+# Deletar pasta (valida se está vazia)
+@app.route("/api/pasta/delete", methods=["DELETE"])
+def deletar_pasta():
+    try:
+        npub = request.args.get('npub')
+        pasta = request.args.get('pasta')
+
+        if not npub or not pasta:
+            return jsonify({"status": "error", "error": "Dados incompletos"}), 400
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Verifica se há arquivos na pasta
+        count = Arquivo.query.filter_by(usuario_id=usuario.id, pasta=pasta).count()
+
+        if count > 0:
+            return jsonify({"status": "error", "error": f"Pasta contém {count} arquivo(s). Mova ou delete os arquivos primeiro."}), 400
+
+        return jsonify({"status": "ok", "message": "Pasta pode ser deletada"})
+
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 # Servir arquivos
 @app.route("/uploads/<filename>")
 def servir_arquivo(filename):
@@ -604,6 +658,42 @@ def admin_arquivos():
             } for a in arquivos]
         })
     except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+# Mover arquivo para outra pasta
+@app.route("/api/arquivo/move/<int:arquivo_id>", methods=["PUT"])
+def move_arquivo(arquivo_id):
+    try:
+        npub = request.args.get('npub')
+        data = request.get_json()
+        nova_pasta = data.get('pasta')
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub não fornecido"}), 401
+
+        if not nova_pasta:
+            return jsonify({"status": "error", "error": "pasta não fornecida"}), 400
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        arquivo = Arquivo.query.get(arquivo_id)
+        if not arquivo:
+            return jsonify({"status": "error", "error": "Arquivo não encontrado"}), 404
+
+        # Verifica se o arquivo pertence ao usuário
+        if arquivo.usuario_id != usuario.id:
+            return jsonify({"status": "error", "error": "Sem permissão"}), 403
+
+        # Atualiza a pasta
+        arquivo.pasta = nova_pasta
+        db.session.commit()
+
+        return jsonify({"status": "ok", "nova_pasta": nova_pasta})
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"status": "error", "error": str(e)}), 500
 
 # Deletar arquivo (validação por npub)

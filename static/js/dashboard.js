@@ -7,6 +7,8 @@ let todosArquivos = [];
 let pastaAtual = 'Mesa';
 let viewMode = 'grade';
 let tipoAtual = 'todos';
+let termoBusca = '';
+let ordenacaoAtual = 'data_desc'; // padrão: mais recente
 let currentModalIndex = 0;
 let modalArquivos = [];
 let arquivosSelecionados = [];
@@ -136,11 +138,26 @@ function renderPastas(pastas) {
     // Não duplica pastas padrão
     if (pastasDefault.find(p => p.nome === nome)) return;
 
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative group';
+
     const btn = document.createElement('button');
     btn.onclick = () => filtrarPasta(nome);
     btn.className = 'w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white flex items-center transition-colors';
     btn.innerHTML = `${icons.folder}${nome}`;
-    container.appendChild(btn);
+
+    // Botão de menu (três pontinhos)
+    const menuBtn = document.createElement('button');
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      togglePastaMenu(nome, e);
+    };
+    menuBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded p-1 text-xs';
+    menuBtn.innerHTML = '⋮';
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(menuBtn);
+    container.appendChild(wrapper);
   });
 
   // Botão "Criar Pasta"
@@ -278,8 +295,10 @@ function renderMediaPreview(arquivo) {
 function renderFiles() {
   const filesDiv = document.getElementById('files');
   const emptyDiv = document.getElementById('empty');
-  
+
   let arquivosFiltrados = todosArquivos;
+
+  // Filtro por pasta
   if (pastaAtual !== 'Mesa') {
     arquivosFiltrados = arquivosFiltrados.filter(f => f.pasta === pastaAtual);
   }
@@ -287,6 +306,29 @@ function renderFiles() {
   // Filtro por tipo
   if (tipoAtual !== 'todos') {
     arquivosFiltrados = arquivosFiltrados.filter(f => f.tipo === tipoAtual);
+  }
+
+  // Filtro por busca (nome do arquivo)
+  if (termoBusca.trim() !== '') {
+    const termo = termoBusca.toLowerCase();
+    arquivosFiltrados = arquivosFiltrados.filter(f =>
+      f.nome.toLowerCase().includes(termo)
+    );
+  }
+
+  // Ordenação
+  if (ordenacaoAtual === 'data_desc') {
+    arquivosFiltrados.sort((a, b) => b.created_at - a.created_at);
+  } else if (ordenacaoAtual === 'data_asc') {
+    arquivosFiltrados.sort((a, b) => a.created_at - b.created_at);
+  } else if (ordenacaoAtual === 'nome_asc') {
+    arquivosFiltrados.sort((a, b) => a.nome.localeCompare(b.nome));
+  } else if (ordenacaoAtual === 'nome_desc') {
+    arquivosFiltrados.sort((a, b) => b.nome.localeCompare(a.nome));
+  } else if (ordenacaoAtual === 'tamanho_desc') {
+    arquivosFiltrados.sort((a, b) => b.tamanho - a.tamanho);
+  } else if (ordenacaoAtual === 'tamanho_asc') {
+    arquivosFiltrados.sort((a, b) => a.tamanho - b.tamanho);
   }
 
   if (arquivosFiltrados.length === 0) {
@@ -371,6 +413,35 @@ function filtrarTipo(tipo) {
   document.querySelectorAll('.tipo-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tipo === tipo);
   });
+
+  renderFiles();
+}
+
+function buscarArquivos(termo) {
+  termoBusca = termo;
+  renderFiles();
+}
+
+// ORDENAÇÃO
+function toggleOrdenacaoMenu() {
+  const menu = document.getElementById('menuOrdenacao');
+  menu.classList.toggle('hidden');
+}
+
+function setOrdenacao(tipo) {
+  ordenacaoAtual = tipo;
+
+  const labels = {
+    'data_desc': 'Mais Recente',
+    'data_asc': 'Mais Antigo',
+    'nome_asc': 'Nome (A-Z)',
+    'nome_desc': 'Nome (Z-A)',
+    'tamanho_desc': 'Maior Tamanho',
+    'tamanho_asc': 'Menor Tamanho'
+  };
+
+  document.getElementById('ordenacaoAtual').textContent = labels[tipo];
+  document.getElementById('menuOrdenacao').classList.add('hidden');
 
   renderFiles();
 }
@@ -513,6 +584,125 @@ function criarPasta() {
     filtrarPasta(nome.trim());
     alert(`Pasta "${nome}" criada!`);
   });
+}
+
+// MENU CONTEXTUAL DE PASTAS
+let currentPastaMenu = null;
+
+function togglePastaMenu(nomePasta, event) {
+  closePastaMenu(); // Fecha menu anterior
+
+  const menu = document.createElement('div');
+  menu.id = 'pastaMenuContextual';
+  menu.className = 'fixed bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-600 py-2 min-w-[180px] z-50';
+  menu.style.left = event.clientX + 'px';
+  menu.style.top = event.clientY + 'px';
+
+  menu.innerHTML = `
+    <button onclick="renomearPasta('${nomePasta}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white flex items-center gap-2">
+      <span>✏️</span> Renomear
+    </button>
+    <button onclick="deletarPasta('${nomePasta}')" class="w-full text-left px-4 py-2 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 flex items-center gap-2">
+      <span>🗑️</span> Deletar
+    </button>
+  `;
+
+  document.body.appendChild(menu);
+  currentPastaMenu = menu;
+
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', closePastaMenu, { once: true });
+  }, 100);
+}
+
+function closePastaMenu() {
+  if (currentPastaMenu) {
+    currentPastaMenu.remove();
+    currentPastaMenu = null;
+  }
+}
+
+async function renomearPasta(pastaAntiga) {
+  closePastaMenu();
+
+  const pastaNova = prompt(`Renomear pasta "${pastaAntiga}" para:`, pastaAntiga);
+  if (!pastaNova || pastaNova.trim() === '' || pastaNova === pastaAntiga) return;
+
+  try {
+    const res = await fetch(`/api/pasta/rename?npub=${npub}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pasta_antiga: pastaAntiga, pasta_nova: pastaNova.trim() })
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      showToast(`✓ Pasta renomeada! ${data.arquivos_atualizados} arquivo(s) atualizados`, 'success');
+
+      // Atualiza localStorage
+      const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+      const index = pastasLocal.indexOf(pastaAntiga);
+      if (index !== -1) {
+        pastasLocal[index] = pastaNova.trim();
+        localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastasLocal));
+      }
+
+      // Recarrega interface
+      loadPastas();
+      loadFiles();
+
+      // Se estava na pasta antiga, muda para a nova
+      if (pastaAtual === pastaAntiga) {
+        filtrarPasta(pastaNova.trim());
+      }
+    } else {
+      showToast('❌ Erro: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showToast('❌ Erro: ' + err.message, 'error');
+  }
+}
+
+async function deletarPasta(nomePasta) {
+  closePastaMenu();
+
+  // Pastas padrão não podem ser deletadas
+  const pastasProtegidas = ['Mesa', 'Photos', 'Videos', 'Docs', 'Audio'];
+  if (pastasProtegidas.includes(nomePasta)) {
+    showToast('❌ Pastas padrão não podem ser deletadas', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/pasta/delete?npub=${npub}&pasta=${nomePasta}`, {
+      method: 'DELETE'
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      // Remove do localStorage
+      const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+      const novaLista = pastasLocal.filter(p => p !== nomePasta);
+      localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(novaLista));
+
+      showToast('✓ Pasta deletada com sucesso!', 'success');
+
+      // Recarrega interface
+      loadPastas();
+
+      // Se estava na pasta deletada, volta pra Mesa
+      if (pastaAtual === nomePasta) {
+        filtrarPasta('Mesa');
+      }
+    } else {
+      showToast('❌ ' + data.error, 'error');
+    }
+  } catch (err) {
+    showToast('❌ Erro: ' + err.message, 'error');
+  }
 }
 
 function formatSize(bytes) {
@@ -682,6 +872,9 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('#btnTamanho')) {
     document.getElementById('menuTamanho')?.classList.add('hidden');
   }
+  if (!e.target.closest('#btnOrdenacao')) {
+    document.getElementById('menuOrdenacao')?.classList.add('hidden');
+  }
   if (!e.target.closest('#btnSelecao')) {
     document.getElementById('menuSelecao')?.classList.add('hidden');
   }
@@ -738,6 +931,63 @@ function showFileDetails() {
 function confirmDelete() {
   closeFileMenu();
   document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+// MOVER ARQUIVO
+function openMoveModal() {
+  closeFileMenu();
+
+  // Carrega pastas disponíveis
+  const container = document.getElementById('movePastasContainer');
+  container.innerHTML = '';
+
+  // Pastas padrão
+  const pastasDefault = ['Mesa', 'Photos', 'Videos', 'Docs', 'Audio'];
+
+  // Pastas customizadas do localStorage
+  const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+
+  // Combina tudo
+  const todasPastas = [...new Set([...pastasDefault, ...pastasLocal])];
+
+  // Renderiza botões
+  todasPastas.forEach(pasta => {
+    const btn = document.createElement('button');
+    btn.onclick = () => executarMovimento(pasta);
+    btn.className = 'w-full text-left px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-yellow-100 dark:hover:bg-yellow-900 rounded-lg text-gray-900 dark:text-white transition-colors';
+    btn.innerHTML = `📁 ${pasta}`;
+    container.appendChild(btn);
+  });
+
+  document.getElementById('moveModal').classList.remove('hidden');
+}
+
+function closeMoveModal() {
+  document.getElementById('moveModal').classList.add('hidden');
+}
+
+async function executarMovimento(novaPasta) {
+  const npub = localStorage.getItem('libermedia_npub');
+
+  try {
+    const res = await fetch(`/api/arquivo/move/${currentFileId}?npub=${npub}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pasta: novaPasta })
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      showToast(`✓ Arquivo movido para ${novaPasta}!`, 'success');
+      closeMoveModal();
+      loadFiles(); // Recarrega lista
+    } else {
+      showToast('❌ Erro ao mover: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showToast('❌ Erro ao mover: ' + err.message, 'error');
+  }
 }
 
 function closeConfirmModal() {

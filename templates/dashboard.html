@@ -106,8 +106,20 @@
         <p class="text-sm text-gray-600 dark:text-gray-400">ou clique para selecionar</p>
       </div>
 
-      <!-- Controles: Tamanho e Seleção -->
-      <div class="flex justify-center mb-6 gap-3">
+      <!-- Barra de Busca -->
+      <div class="flex justify-center mb-4">
+        <div class="relative w-full max-w-md">
+          <input type="text" id="searchInput" placeholder="🔍 Buscar arquivos..."
+                 oninput="buscarArquivos(this.value)"
+                 class="w-full px-4 py-3 pl-10 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-2 border-transparent focus:border-yellow-500 focus:outline-none transition-colors">
+          <svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Controles: Tamanho, Ordenação e Seleção -->
+      <div class="flex justify-center mb-6 gap-3 flex-wrap">
         <!-- Seletor de Tamanho -->
         <div class="relative inline-block">
           <button id="btnTamanho" onclick="toggleTamanhoMenu()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
@@ -121,6 +133,37 @@
             <button onclick="setTamanho('grande')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg text-gray-900 dark:text-white">Grande</button>
             <button onclick="setTamanho('medio')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white">Médio</button>
             <button onclick="setTamanho('pequeno')" class="w-full text-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white">Pequeno</button>
+          </div>
+        </div>
+
+        <!-- Seletor de Ordenação -->
+        <div class="relative inline-block">
+          <button id="btnOrdenacao" onclick="toggleOrdenacaoMenu()" class="px-6 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium flex items-center gap-2 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+            </svg>
+            <span id="ordenacaoAtual">Mais Recente</span>
+            <span class="text-xs">▼</span>
+          </button>
+          <div id="menuOrdenacao" class="hidden absolute left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 z-50">
+            <button onclick="setOrdenacao('data_desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <span>⏰</span> Mais Recente
+            </button>
+            <button onclick="setOrdenacao('data_asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white flex items-center gap-2">
+              <span>⏳</span> Mais Antigo
+            </button>
+            <button onclick="setOrdenacao('nome_asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white flex items-center gap-2">
+              <span>🔤</span> Nome (A-Z)
+            </button>
+            <button onclick="setOrdenacao('nome_desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white flex items-center gap-2">
+              <span>🔡</span> Nome (Z-A)
+            </button>
+            <button onclick="setOrdenacao('tamanho_desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white flex items-center gap-2">
+              <span>📦</span> Maior Tamanho
+            </button>
+            <button onclick="setOrdenacao('tamanho_asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <span>📄</span> Menor Tamanho
+            </button>
           </div>
         </div>
 
@@ -237,6 +280,9 @@
     <button onclick="showFileDetails()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-white">
       <span>ℹ️</span> Detalhes
     </button>
+    <button onclick="openMoveModal()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-white">
+      <span>📁</span> Mover para...
+    </button>
     <hr class="my-1 border-gray-200 dark:border-gray-600">
     <button onclick="confirmDelete()" class="w-full text-left px-4 py-2 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 flex items-center gap-2">
       <span>🗑️</span> Deletar
@@ -268,6 +314,24 @@
     <div class="flex gap-2">
       <button onclick="closeBatchDeleteModal()" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600">Cancelar</button>
       <button onclick="executeBatchDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold">Deletar Todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Mover Arquivo -->
+<div id="moveModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onclick="closeMoveModal()">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">📁 Mover para pasta</h3>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Selecione a pasta de destino:</p>
+
+    <div id="movePastasContainer" class="space-y-2 max-h-64 overflow-y-auto mb-4">
+      <!-- Pastas serão carregadas aqui via JavaScript -->
+    </div>
+
+    <div class="flex gap-2">
+      <button onclick="closeMoveModal()" class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+        Cancelar
+      </button>
     </div>
   </div>
 </div>
