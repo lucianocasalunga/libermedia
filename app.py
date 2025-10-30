@@ -41,6 +41,9 @@ class Usuario(db.Model):
 
 with app.app_context():
     db.create_all()
+    # Remove links expirados ao iniciar
+    LinkPublico.query.filter(LinkPublico.expira_em < int(time.time())).delete()
+    db.session.commit()
 
 # --- Rotas principais ---
 @app.route("/")
@@ -388,6 +391,15 @@ class Arquivo(db.Model):
     tamanho = db.Column(db.Integer)  # bytes
     pasta = db.Column(db.String(100), default='Geral')
     caminho = db.Column(db.String(512), nullable=False)
+    created_at = db.Column(db.Integer, default=lambda: int(time.time()))
+
+# Modelo de Link Público
+class LinkPublico(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    arquivo_id = db.Column(db.Integer, db.ForeignKey('arquivo.id'), nullable=False)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    expira_em = db.Column(db.Integer, nullable=False)  # timestamp
+    acessos = db.Column(db.Integer, default=0)
     created_at = db.Column(db.Integer, default=lambda: int(time.time()))
 
 # Rota de upload
@@ -896,25 +908,25 @@ def get_uso():
         npub = request.args.get('npub')
         if not npub:
             return jsonify({'error': 'npub obrigatório'}), 400
-        
+
         usuario = Usuario.query.filter_by(pubkey=npub).first()
         if not usuario:
             return jsonify({'error': 'Usuário não encontrado'}), 404
-        
+
         total_usado = db.session.query(db.func.sum(Arquivo.tamanho)).filter_by(usuario_id=usuario.id).scalar() or 0
         limite = LIMITES_PLANO.get(usuario.plano, LIMITES_PLANO['free'])
         percentual = (total_usado / limite * 100) if limite > 0 else 0
-        
+
         arquivos_por_tipo = db.session.query(
-            Arquivo.tipo, 
+            Arquivo.tipo,
             db.func.count(Arquivo.id),
             db.func.sum(Arquivo.tamanho)
         ).filter_by(usuario_id=usuario.id).group_by(Arquivo.tipo).all()
-        
+
         tipos = {}
         for tipo, count, size in arquivos_por_tipo:
             tipos[tipo or 'outros'] = {'count': count, 'size': size or 0}
-        
+
         return jsonify({
             'usado': total_usado,
             'limite': limite,
@@ -924,3 +936,121 @@ def get_uso():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ============================================
+# COMPARTILHAMENTO PÚBLICO
+# ============================================
+import secrets
+
+@app.route("/api/arquivo/share/<int:arquivo_id>", methods=["POST"])
+def criar_link_publico(arquivo_id):
+    try:
+        npub = request.args.get('npub')
+        data = request.get_json()
+        duracao = data.get('duracao', 3600)  # padrão: 1 hora
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub não fornecido"}), 401
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        arquivo = Arquivo.query.get(arquivo_id)
+        if not arquivo:
+            return jsonify({"status": "error", "error": "Arquivo não encontrado"}), 404
+
+        if arquivo.usuario_id != usuario.id:
+            return jsonify({"status": "error", "error": "Sem permissão"}), 403
+
+        # Verifica se já existe link ativo
+        link_existente = LinkPublico.query.filter_by(arquivo_id=arquivo_id).filter(
+            LinkPublico.expira_em > int(time.time())
+        ).first()
+
+        if link_existente:
+            return jsonify({
+                "status": "ok",
+                "token": link_existente.token,
+                "expira_em": link_existente.expira_em,
+                "url": f"https://libermedia.app/share/{link_existente.token}"
+            })
+
+        # Cria novo link
+        token = secrets.token_urlsafe(32)
+        expira_em = int(time.time()) + duracao
+
+        novo_link = LinkPublico(
+            arquivo_id=arquivo_id,
+            token=token,
+            expira_em=expira_em
+        )
+        db.session.add(novo_link)
+        db.session.commit()
+
+        return jsonify({
+            "status": "ok",
+            "token": token,
+            "expira_em": expira_em,
+            "url": f"https://libermedia.app/share/{token}"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route("/share/<token>")
+def acessar_link_publico(token):
+    """Página pública de download"""
+    try:
+        link = LinkPublico.query.filter_by(token=token).first()
+
+        if not link:
+            return render_template("erro.html", mensagem="Link não encontrado"), 404
+
+        # Verifica expiração
+        if link.expira_em < int(time.time()):
+            db.session.delete(link)
+            db.session.commit()
+            return render_template("erro.html", mensagem="Link expirado"), 410
+
+        # Incrementa contador
+        link.acessos += 1
+        db.session.commit()
+
+        arquivo = Arquivo.query.get(link.arquivo_id)
+        if not arquivo:
+            return render_template("erro.html", mensagem="Arquivo não encontrado"), 404
+
+        # Renderiza página de compartilhamento
+        return render_template("share.html", arquivo=arquivo, link=link)
+
+    except Exception as e:
+        return render_template("erro.html", mensagem=str(e)), 500
+
+@app.route("/api/arquivo/share/<int:arquivo_id>", methods=["DELETE"])
+def revogar_link_publico(arquivo_id):
+    """Revoga/cancela link público"""
+    try:
+        npub = request.args.get('npub')
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub não fornecido"}), 401
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        arquivo = Arquivo.query.get(arquivo_id)
+        if not arquivo or arquivo.usuario_id != usuario.id:
+            return jsonify({"status": "error", "error": "Sem permissão"}), 403
+
+        # Deleta links ativos
+        LinkPublico.query.filter_by(arquivo_id=arquivo_id).delete()
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500

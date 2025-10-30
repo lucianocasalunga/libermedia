@@ -440,7 +440,19 @@ function setOrdenacao(tipo) {
     'tamanho_asc': 'Menor Tamanho'
   };
 
+  const icons = {
+    'data_desc': '⏰',
+    'data_asc': '⏳',
+    'nome_asc': '🔤',
+    'nome_desc': '🔡',
+    'tamanho_desc': '📦',
+    'tamanho_asc': '📄'
+  };
+
   document.getElementById('ordenacaoAtual').textContent = labels[tipo];
+  const mobileIcon = document.getElementById('ordenacaoAtualMobile');
+  if (mobileIcon) mobileIcon.textContent = icons[tipo];
+
   document.getElementById('menuOrdenacao').classList.add('hidden');
 
   renderFiles();
@@ -849,9 +861,25 @@ function toggleTamanhoMenu() {
 function setTamanho(tamanho) {
   tamanhoAtual = tamanho;
   localStorage.setItem('grid_size', tamanho);
-  document.getElementById('tamanhoAtual').textContent = tamanho.charAt(0).toUpperCase() + tamanho.slice(1);
+
+  const labels = {
+    'grande': 'Grande',
+    'medio': 'Médio',
+    'pequeno': 'Pequeno'
+  };
+
+  const icons = {
+    'grande': '📏',
+    'medio': '📐',
+    'pequeno': '📌'
+  };
+
+  document.getElementById('tamanhoAtual').textContent = labels[tamanho];
+  const mobileIcon = document.getElementById('tamanhoAtualMobile');
+  if (mobileIcon) mobileIcon.textContent = icons[tamanho];
+
   document.getElementById('menuTamanho').classList.add('hidden');
-  
+
   // Aplicar classes CSS
   const grid = document.getElementById('files');
     if (!grid) { console.warn("Grid não encontrado"); return; }
@@ -931,6 +959,73 @@ function showFileDetails() {
 function confirmDelete() {
   closeFileMenu();
   document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+// COMPARTILHAR PUBLICAMENTE
+let currentShareUrl = '';
+
+function openShareModal() {
+  closeFileMenu();
+  document.getElementById('shareModal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.add('hidden');
+}
+
+function closeShareLinkModal() {
+  document.getElementById('shareLinkModal').classList.add('hidden');
+}
+
+async function gerarLinkPublico(duracao) {
+  const npub = localStorage.getItem('libermedia_npub');
+
+  try {
+    const res = await fetch(`/api/arquivo/share/${currentFileId}?npub=${npub}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ duracao: duracao })
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      closeShareModal();
+
+      // Mostra modal com link gerado
+      currentShareUrl = data.url;
+      document.getElementById('shareLinkUrl').textContent = data.url;
+
+      // Calcula tempo de expiração
+      const expiraDate = new Date(data.expira_em * 1000);
+      const agora = new Date();
+      const diffMs = expiraDate - agora;
+      const diffHoras = Math.round(diffMs / 1000 / 60 / 60);
+
+      let expiraTexto = '';
+      if (diffHoras < 24) {
+        expiraTexto = `${diffHoras} hora${diffHoras > 1 ? 's' : ''}`;
+      } else {
+        const dias = Math.floor(diffHoras / 24);
+        expiraTexto = `${dias} dia${dias > 1 ? 's' : ''}`;
+      }
+
+      document.getElementById('shareExpira').textContent = expiraTexto;
+      document.getElementById('shareLinkModal').classList.remove('hidden');
+
+      showToast('✓ Link público gerado com sucesso!', 'success');
+    } else {
+      showToast('❌ Erro: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showToast('❌ Erro: ' + err.message, 'error');
+  }
+}
+
+function copyShareLink() {
+  navigator.clipboard.writeText(currentShareUrl).then(() => {
+    showToast('✓ Link copiado para a área de transferência!', 'success');
+  });
 }
 
 // MOVER ARQUIVO

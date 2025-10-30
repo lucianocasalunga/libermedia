@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ arquivo.nome_original }} - LiberMedia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
+        <!-- Logo -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">LiberMedia</h1>
+            <p class="text-sm text-gray-600">Compartilhamento Descentralizado</p>
+        </div>
+
+        <!-- Preview -->
+        <div class="mb-6 bg-gray-100 rounded-lg p-6 text-center">
+            {% if arquivo.tipo == 'image' %}
+                <img src="/uploads/{{ arquivo.nome }}" class="max-w-full h-auto max-h-96 mx-auto rounded-lg shadow-lg" alt="{{ arquivo.nome_original }}">
+            {% elif arquivo.tipo == 'video' %}
+                <video controls class="max-w-full h-auto max-h-96 mx-auto rounded-lg shadow-lg">
+                    <source src="/uploads/{{ arquivo.nome }}">
+                </video>
+            {% elif arquivo.tipo == 'audio' %}
+                <div class="text-6xl mb-4">🎵</div>
+                <audio controls class="w-full">
+                    <source src="/uploads/{{ arquivo.nome }}">
+                </audio>
+            {% else %}
+                <div class="text-8xl mb-4">
+                    {% if arquivo.nome_original.endswith('.pdf') %}📕
+                    {% elif arquivo.nome_original.endswith(('.doc', '.docx')) %}📘
+                    {% elif arquivo.nome_original.endswith(('.xls', '.xlsx')) %}📊
+                    {% elif arquivo.nome_original.endswith('.zip') %}🗜️
+                    {% else %}📄{% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="mb-6 space-y-3">
+            <div class="flex items-center justify-between border-b pb-2">
+                <span class="text-gray-600 text-sm">Nome:</span>
+                <span class="font-semibold text-gray-900 truncate max-w-xs">{{ arquivo.nome_original }}</span>
+            </div>
+            <div class="flex items-center justify-between border-b pb-2">
+                <span class="text-gray-600 text-sm">Tamanho:</span>
+                <span class="font-semibold text-gray-900">{{ (arquivo.tamanho / 1024 / 1024) | round(2) }} MB</span>
+            </div>
+            <div class="flex items-center justify-between border-b pb-2">
+                <span class="text-gray-600 text-sm">Acessos:</span>
+                <span class="font-semibold text-gray-900">{{ link.acessos }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600 text-sm">Expira em:</span>
+                <span class="font-semibold text-red-600" id="expiraEm"></span>
+            </div>
+        </div>
+
+        <!-- Download Button -->
+        <a href="/uploads/{{ arquivo.nome }}" download="{{ arquivo.nome_original }}" class="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-lg text-center transition-all shadow-lg hover:shadow-xl">
+            ⬇️ Baixar Arquivo
+        </a>
+
+        <!-- Footer -->
+        <p class="text-center text-gray-500 text-xs mt-6">
+            Hospedado de forma descentralizada via Nostr
+        </p>
+    </div>
+
+    <script>
+        // Countdown timer
+        const expiraEm = {{ link.expira_em }};
+        const elem = document.getElementById('expiraEm');
+
+        function updateCountdown() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = expiraEm - now;
+
+            if (diff <= 0) {
+                elem.textContent = 'EXPIRADO';
+                elem.classList.add('line-through');
+                return;
+            }
+
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            elem.textContent = `${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
