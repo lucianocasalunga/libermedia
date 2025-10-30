@@ -1,6 +1,6 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 30/Outubro/2025 14:02 UTC
+**Última atualização:** 30/Outubro/2025 20:00 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
@@ -17,10 +17,10 @@
 7. ✅ **NIP-01: Sincronização completa de perfil Nostr** 🎉
 
 ### 📊 COMMITS RECENTES:
+- `2f7d5e6` - feat: NIP-01 completo com código inline (solução definitiva) ✅
+- `b97f7e8` - docs: Atualiza documentação com NIP-01 implementado
 - `5499375` - feat: Implementa sincronização completa de perfil Nostr (NIP-01)
 - `7a139df` - feat: 4 funcionalidades (busca, ordenação, mover, renomear/deletar)
-- `21dcc1d` - feat: Compartilhamento público + melhorias mobile
-- `433646e` - fix: Corrigir NameError (LinkPublico)
 
 ---
 
@@ -29,14 +29,18 @@
 ### ⚠️ PRIORIDADE ALTA - MENCIONADOS ONTEM:
 
 #### **NIP-01: Basic Protocol Flow**
-- Status: ✅ **IMPLEMENTADO COMPLETAMENTE**
-- Implementado em: 30/Out/2025 (commit 5499375)
+- Status: ✅ **IMPLEMENTADO E TESTADO COM SUCESSO**
+- Implementado em: 30/Out/2025 (commits 5499375, 2f7d5e6)
+- Solução final: Código inline no dashboard.js (evita cache)
 - Funcionalidades:
   - ✅ Sincronizar metadados de perfil (kind 0) completos
   - ✅ Publicar perfil usando NIP-07 (window.nostr)
   - ✅ Todos os campos: name, display_name, about, picture, banner, website, nip05, lud16
   - ✅ Sincronização automática (1x por hora)
-  - ✅ Publicação em múltiplos relays
+  - ✅ Publicação em múltiplos relays (Damus, nos.lol, relay.band)
+  - ✅ Modal expandido com 8 campos editáveis
+  - ✅ Indicador de status de sincronização
+  - ✅ Funciona sem cache do usuário
 - Próximos passos:
   - [ ] Publicar eventos de atividade do usuário (kind 1)
   - [ ] Melhorar tratamento de eventos recebidos
