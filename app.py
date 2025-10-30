@@ -41,9 +41,6 @@ class Usuario(db.Model):
 
 with app.app_context():
     db.create_all()
-    # Remove links expirados ao iniciar
-    LinkPublico.query.filter(LinkPublico.expira_em < int(time.time())).delete()
-    db.session.commit()
 
 # --- Rotas principais ---
 @app.route("/")
@@ -401,6 +398,14 @@ class LinkPublico(db.Model):
     expira_em = db.Column(db.Integer, nullable=False)  # timestamp
     acessos = db.Column(db.Integer, default=0)
     created_at = db.Column(db.Integer, default=lambda: int(time.time()))
+
+# Limpa links expirados após definir as classes
+with app.app_context():
+    try:
+        LinkPublico.query.filter(LinkPublico.expira_em < int(time.time())).delete()
+        db.session.commit()
+    except:
+        pass  # Tabela pode não existir ainda
 
 # Rota de upload
 @app.route("/api/upload", methods=["POST"])
