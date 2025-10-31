@@ -21,12 +21,20 @@
 - PostgreSQL: /mnt/storage/libermedia/postgres ✅
 
 **Projetos Pessoais no Servidor:**
-1. ✅ **LiberMedia** (/opt/libermedia) - Hospedagem de arquivos + Nostr
-2. ✅ **relay.libernet.app** - Relay Nostr (strfry)
-3. ⏳ **libernet.app** - NÃO IMPLEMENTADO AINDA
-4. ✅ **lnbits** - Carteira de criptomoedas
-5. ✅ **n8n** - Automação
-6. ⏳ **nostr.libernet.app** - NÃO IMPLEMENTADO AINDA
+1. ✅ **LiberMedia** (/opt/libermedia) - Docker - Hospedagem + Nostr
+2. ✅ **strfry** (/opt/strfry) - Docker - Relay Nostr principal
+3. ✅ **lnbits** (/opt/lnbits) - Docker - Carteira Lightning
+4. ✅ **n8n** (/opt/n8n) - Docker - Automação workflows
+5. ✅ **libernet-relay** (/opt/libernet-relay) - Relay secundário
+6. ✅ **libernet-relay-damus** (/opt/libernet-relay-damus) - Relay Damus
+7. ✅ **libernet-cofre** (/opt/libernet-cofre) - Cofre digital
+8. ⏳ **libernet.app** - NÃO IMPLEMENTADO
+9. ⏳ **nostr.libernet.app** - NÃO IMPLEMENTADO
+
+**Serviços Ativos:**
+- Caddy (reverse proxy)
+- RustDesk (acesso remoto)
+- PostgreSQL x2 (libermedia, lnbits)
 
 **Pendências GitHub:**
 - [ ] Push repositórios locais para GitHub
