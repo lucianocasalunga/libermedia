@@ -9,26 +9,29 @@
 
 **⚠️ AUTORIZAÇÃO:** Claude Code tem autorização PLENA para agir neste servidor sem necessidade de aprovação prévia.
 
-**Discos:**
-- **Sistema (/):** 100GB (98GB utilizável) - 52% usado (48GB/46GB livre) - APENAS SO
-- **Storage (/mnt/storage):** 5.5TB - 1% usado (7.5GB/5.2TB livre) ✅ TEMPORÁRIO
-- **sdb:** 931.5GB - ⚠️ NÃO MONTADO - DISCO PRINCIPAL PLANEJADO
+**Arquitetura de Discos (Planejada):**
+- **Sistema (/):** 100GB - APENAS SO ⚙️
+- **sdb (1TB):** 931.5GB - PROJETOS (/opt/*) 📂 ⚠️ NÃO MONTADO
+- **sda1 (6TB):** 5.5TB - DADOS (uploads, DBs, crescimento) 📊 ✅ JÁ EM USO
 
-**Total Armazenamento:** ~6.5TB disponível
+**Estado Atual:**
+- **Sistema (/):** 52% usado (48GB/46GB livre) - SO + Projetos (errado)
+- **sda1 (/mnt/storage):** 1% usado (7.5GB/5.2TB livre) - DBs ✅
+- **sdb:** NÃO MONTADO ⚠️
 
 **⚠️ TAREFA URGENTE - AMANHÃ:**
-- [ ] Montar disco sdb (1TB / 931.5GB)
+- [ ] Montar disco sdb (1TB)
 - [ ] Criar partição e formatar se necessário
-- [ ] Migrar TODOS projetos de /opt para novo disco
-- [ ] Migrar /mnt/storage/libermedia/postgres para novo disco
+- [ ] Migrar projetos: /opt/* → /sdb/opt/ (ou /mnt/projetos)
 - [ ] Atualizar docker-compose.yml com novos paths
 - [ ] Atualizar fstab para mount automático
-- [ ] Liberar espaço em / (partição 100GB só para SO)
+- [ ] Liberar espaço em / (100GB só para SO)
+- [ ] PostgreSQL e uploads permanecem em /mnt/storage (6TB) ✅
 
-**Localização Dados Atual:**
-- LiberMedia uploads: /opt/libermedia/uploads (em /)
-- PostgreSQL: /mnt/storage/libermedia/postgres (em sda1)
-- Projetos: /opt/* (em /)
+**Localização Atual vs Planejada:**
+- Projetos: `/opt/*` (em /) → `/mnt/projetos/*` (em sdb) 📂
+- Uploads: `/opt/libermedia/uploads` → `/mnt/storage/uploads` 📊
+- PostgreSQL: `/mnt/storage/libermedia/postgres` ✅ JÁ CORRETO
 
 **Projetos Pessoais no Servidor:**
 1. ✅ **LiberMedia** (/opt/libermedia) - Docker - Hospedagem + Nostr
