@@ -387,11 +387,12 @@ function renderPastas(pastas) {
     if (pastasDefault.find(p => p.nome === nome)) return;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'relative group';
+    wrapper.className = 'relative group w-full';
+    wrapper.style.display = 'block';
 
     const btn = document.createElement('button');
     btn.onclick = () => filtrarPasta(nome);
-    btn.className = 'w-full text-left p-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white flex items-center transition-colors';
+    btn.className = 'w-full text-left p-2 pr-8 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white flex items-center transition-colors';
     btn.innerHTML = `${icons.folder}${nome}`;
 
     // Botão de menu (três pontinhos)
@@ -400,7 +401,7 @@ function renderPastas(pastas) {
       e.stopPropagation();
       togglePastaMenu(nome, e);
     };
-    menuBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded p-1 text-xs';
+    menuBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded p-1 text-xs z-10';
     menuBtn.innerHTML = '⋮';
 
     wrapper.appendChild(btn);
@@ -477,10 +478,17 @@ function renderMediaPreview(arquivo) {
   // ÁUDIO
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
-      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center overflow-hidden">
-        <svg class="text-white" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-        </svg>
+      <div class="relative w-full bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden flex flex-col">
+        <div class="w-full aspect-square flex items-center justify-center flex-shrink-0">
+          <svg class="text-white" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        </div>
+        <div class="w-full bg-black/20 px-3 py-2">
+          <audio controls class="w-full" style="height: 32px;">
+            <source src="${linkComExt}" type="audio/${ext}">
+          </audio>
+        </div>
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
                 title="Copiar link">
@@ -536,6 +544,13 @@ function renderMediaPreview(arquivo) {
               title="Mais opções">${cardIcons.menu}</button>
     </div>
   `;
+}
+
+// Debouncing para evitar renderizações excessivas
+let renderTimeout = null;
+function scheduleRender() {
+  if (renderTimeout) clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(() => renderFiles(), 50);
 }
 
 function renderFiles() {
@@ -656,12 +671,12 @@ function filtrarTipo(tipo) {
     btn.classList.toggle('active', btn.dataset.tipo === tipo);
   });
 
-  renderFiles();
+  scheduleRender(); // Usa debouncing para filtro rápido
 }
 
 function buscarArquivos(termo) {
   termoBusca = termo;
-  renderFiles();
+  scheduleRender(); // Usa debouncing para busca em tempo real
 }
 
 // ORDENAÇÃO

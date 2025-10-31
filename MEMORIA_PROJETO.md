@@ -266,11 +266,36 @@
 
 ## 🔔 PENDÊNCIAS PARA PRÓXIMA SESSÃO (31/Out/2025)
 
+### 🚨 BUGS CRÍTICOS (31/Out/2025 - 19:10 UTC):
+
+1. **🔴 Player de áudio não funciona mais**
+   - Status: ❌ **QUEBRADO**
+   - Causa: Correção do ícone de áudio (commit 2f7d5e6) quebrou o plugin
+   - Sintoma: Plugin de áudio não executa mais ao clicar
+   - **Ação:** Investigar e restaurar funcionalidade do player mantendo ícone correto
+
+2. **🔴 Botão de 3 pontinhos das pastas desalinhado**
+   - Status: ❌ **QUEBRADO**
+   - Sintoma: Ao criar pasta, botão "⋮" aparece na linha ABAIXO ao invés de no final da linha
+   - Layout esperado: `[📁 Nome da Pasta] [⋮]` (mesma linha)
+   - Layout atual: `[📁 Nome da Pasta]`
+                   `[⋮]` (linha abaixo)
+   - **Ação:** Corrigir CSS/layout do botão de opções das pastas
+
+3. **🔴 Sistema muito lento após últimas atualizações**
+   - Status: ⚠️ **PERFORMANCE DEGRADADA**
+   - Sintoma: Lentidão geral após commits recentes
+   - **Ações:**
+     - [ ] Investigar causas (JS bloqueante, requests desnecessários, loops)
+     - [ ] Verificar recursos do servidor (CPU, RAM, disco)
+     - [ ] Identificar se é problema de código ou hardware
+     - [ ] Sugerir otimizações ou upgrade de infraestrutura
+
 ### ⚠️ BUGS A VERIFICAR:
 1. **Ícone de áudio thumbnail** - Reportado como esticado
    - Status: **CORRIGIDO** no commit 2f7d5e6
    - Aplicado: `width: 64px; height: 64px` fixo com `flex-shrink-0`
-   - **Ação:** Verificar se correção funcionou com o usuário
+   - **Ação:** ~~Verificar se correção funcionou~~ ✅ Ícone correto, mas quebrou player (ver bug #1)
 
 2. **Sincronização NIP-01 em outros usuários**
    - Status: ⚠️ **FUNCIONA NO PERFIL DO DONO, MAS NÃO EM OUTROS USUÁRIOS**
