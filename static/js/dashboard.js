@@ -252,7 +252,7 @@ if (!npub) { alert('Faça login!'); location.href = '/'; }
 document.getElementById('npubShort').textContent = npub.slice(0, 20) + '...';
 
 let todosArquivos = [];
-let pastaAtual = 'Mesa';
+let pastaAtual = 'Photos';
 let viewMode = 'grade';
 let tipoAtual = 'todos';
 let termoBusca = '';
@@ -545,7 +545,7 @@ function renderPastas(pastas) {
 
     const wrapper = document.createElement('div');
     wrapper.className = 'relative group w-full';
-    wrapper.style.display = 'block';
+    wrapper.style.cssText = 'display: block; position: relative;';
 
     const btn = document.createElement('button');
     btn.onclick = () => filtrarPasta(nome);
@@ -635,10 +635,17 @@ function renderMediaPreview(arquivo) {
   // ÁUDIO
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
-      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center overflow-hidden">
-        <svg class="text-white flex-shrink-0" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-        </svg>
+      <div class="relative w-full bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden flex flex-col">
+        <div class="w-full aspect-square flex items-center justify-center flex-shrink-0">
+          <svg class="text-white flex-shrink-0" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        </div>
+        <div class="w-full bg-black/20 px-3 py-2 flex-shrink-0">
+          <audio controls class="w-full" style="height: 32px;">
+            <source src="${linkComExt}" type="audio/${ext}">
+          </audio>
+        </div>
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
                 title="Copiar link">
