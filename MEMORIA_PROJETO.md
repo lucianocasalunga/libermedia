@@ -1,35 +1,66 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 31/Outubro/2025 17:15 UTC
+**Última atualização:** 31/Outubro/2025 23:45 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 21:10 UTC)
+## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 23:45 UTC)
 
-### 🚧 NIP-96 INICIADO (31/Out/2025 - 21:10 UTC):
-**COMPATIBILIDADE COM PROTOCOLO NOSTR** 📡
+### 🎉 NIP-96 IMPLEMENTADO (31/Out/2025 - 23:45 UTC):
+**COMPATIBILIDADE COMPLETA COM PROTOCOLO NOSTR FILE STORAGE** 📡✅
 
-**Progresso: 30% concluído**
+**Backend - Endpoints:**
+- ✅ `/.well-known/nostr/nip96.json` - Discovery endpoint
+- ✅ `/api/upload/nip96` - Upload com autenticação NIP-98 obrigatória
+- ✅ Configuração de capacidades (content-types, limites, planos)
+- ✅ Validação de tamanho por plano do usuário
 
-**Implementado:**
-- ✅ Endpoint `/.well-known/nostr/nip96.json` (descoberta)
-- ✅ Configuração de capacidades do servidor
-- ✅ Suporte a NIPs [96, 98]
-- ✅ Content-types suportados
-- ✅ Informação de planos (Free, Alpha, Bravo)
-- ✅ Limites por plano (3GB, 6GB, 12GB)
-- ✅ NIP-98 obrigatório
+**Backend - NIP-94 (File Metadata):**
+- ✅ Função `publicar_file_metadata()` usando `EventBuilder.file_metadata()`
+- ✅ Eventos kind 1063 publicados automaticamente após upload
+- ✅ Tags obrigatórias: `url`, `m` (mime), `x` (sha256)
+- ✅ Tag opcional: `size`
+- ✅ Publicação em 3 relays: Damus, nos.lol, nostr.band
+- ✅ Retorno do evento na resposta do upload
 
-**Pendente:**
-- [ ] Adaptar `/upload` para padrão NIP-96
-- [ ] Publicar eventos kind 1063 (File Metadata)
-- [ ] Endpoint `/delete` compatível
-- [ ] Testes com clientes Nostr (Damus, Amethyst)
+**Correções Técnicas:**
+- ✅ Fix: `event.tags().to_vec()` para iterar tags corretamente
+- ✅ Fix: `EventBuilder.file_metadata()` em vez de construtor genérico
+- ✅ Fix: `EventBuilder.http_auth()` com HttpData
+- ✅ Fix: `event.as_json()` para serialização correta
 
-**Commit:** `eed9dfc`
-**Tempo:** ~10min (endpoint de descoberta)
-**Estimativa restante:** 6-8 horas
+**Testes:**
+- ✅ Discovery endpoint validado
+- ✅ Upload com NIP-98 auth funcional
+- ✅ SHA256 calculado corretamente
+- ✅ Evento NIP-94 publicado e retornado
+- ✅ Arquivo acessível via URL
+
+**Resultado:**
+```json
+{
+  "status": "success",
+  "url": "https://libermedia.app/f/312.txt",
+  "sha256": "2e64b028...",
+  "size": 57,
+  "type": "text/plain",
+  "nip94_event": {
+    "id": "13ccbfaf0e9d892a...",
+    "kind": 1063,
+    "pubkey": "dfe3658a...",
+    "tags": [["url", "..."], ["m", "..."], ["x", "..."]]
+  }
+}
+```
+
+**Tempo:** ~2.5 horas (implementação + debugging + testes)
+**Status:** FUNCIONAL E TESTADO 🚀
+
+**Próximos passos:**
+- [ ] Testar com clientes Nostr (Damus, Amethyst)
+- [ ] Adaptar `/delete` para NIP-96 (opcional)
+- [ ] Documentação para desenvolvedores
 
 ---
 

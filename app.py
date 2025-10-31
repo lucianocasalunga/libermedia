@@ -87,7 +87,7 @@ def validate_nip98_auth(required=True):
 
                 # Extrai tags
                 tags = {}
-                for tag in event.tags():
+                for tag in event.tags().to_vec():
                     tag_list = tag.as_vec()
                     if len(tag_list) >= 2:
                         tags[tag_list[0]] = tag_list[1]
@@ -267,6 +267,198 @@ def nip96_discovery():
     }
 
     return jsonify(config)
+
+
+@app.route("/api/upload/nip96", methods=["POST"])
+@validate_nip98_auth(required=True)
+def nip96_upload():
+    """
+    Endpoint de upload compatível com NIP-96
+    Requer autenticação NIP-98
+    """
+    try:
+        if 'file' not in request.files:
+            return jsonify({
+                "status": "error",
+                "message": "No file provided"
+            }), 400
+
+        file = request.files['file']
+        npub = request.nip98_pubkey  # Vem do decorator NIP-98
+
+        # Parâmetros opcionais NIP-96
+        caption = request.form.get('caption', '')
+        expiration = request.form.get('expiration', '')
+        size = request.form.get('size', '')
+        alt = request.form.get('alt', '')
+        pasta = request.form.get('pasta', 'Photos')  # LiberMedia specific
+
+        # Busca ou cria usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            usuario = Usuario(
+                nome="Nostr User",
+                pubkey=npub,
+                privkey="",
+                senha_hash="nip98_auth",
+                plano="free"
+            )
+            db.session.add(usuario)
+            db.session.commit()
+
+        # Valida tamanho do arquivo
+        plano_limites = LIMITES_PLANO.get(usuario.plano, LIMITES_PLANO['free'])
+        file.seek(0, 2)  # vai para o final
+        tamanho = file.tell()
+        file.seek(0)  # volta para o início
+
+        if tamanho > plano_limites:
+            return jsonify({
+                "status": "error",
+                "message": f"File too large. Max size for {usuario.plano} plan: {plano_limites / (1024**3):.0f}GB"
+            }), 413
+
+        # Calcula SHA256
+        import hashlib
+        file_data = file.read()
+        file.seek(0)
+        sha256_hash = hashlib.sha256(file_data).hexdigest()
+
+        # Gera nome único
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'bin'
+        nome_unico = f"{int(time.time())}_{usuario.id}.{ext}"
+        caminho = os.path.join('uploads', nome_unico)
+
+        # Salva arquivo
+        file.save(caminho)
+        tamanho_real = os.path.getsize(caminho)
+
+        # Detecta MIME type
+        import mimetypes
+        mime_type = mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
+
+        # Detecta tipo LiberMedia
+        tipos = {
+            'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
+            'mp4': 'video', 'avi': 'video', 'mov': 'video', 'webm': 'video',
+            'pdf': 'document', 'doc': 'document', 'docx': 'document', 'txt': 'document',
+            'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'm4a': 'audio'
+        }
+        tipo = tipos.get(ext, 'document')
+
+        # Salva no banco
+        novo_arquivo = Arquivo(
+            usuario_id=usuario.id,
+            nome=nome_unico,
+            nome_original=file.filename,
+            tipo=tipo,
+            tamanho=tamanho_real,
+            pasta=pasta,
+            caminho=caminho
+        )
+        db.session.add(novo_arquivo)
+        db.session.commit()
+
+        # Cria URL de download
+        download_url = f"https://libermedia.app/f/{novo_arquivo.id}.{ext}"
+
+        # Cria evento NIP-94 (kind 1063) - File Metadata
+        # Publica em relays Nostr para descoberta
+        if usuario.privkey and usuario.privkey != "":
+            try:
+                nip94_event = publicar_file_metadata(
+                    nsec=usuario.privkey,
+                    url=download_url,
+                    mime_type=mime_type,
+                    sha256=sha256_hash,
+                    size=tamanho_real,
+                    alt=alt or file.filename,
+                    caption=caption
+                )
+            except Exception as e:
+                print(f"[NIP-96] ⚠️ Erro ao publicar NIP-94: {e}")
+                nip94_event = None
+        else:
+            nip94_event = None
+
+        # Resposta NIP-96
+        response = {
+            "status": "success",
+            "message": "File uploaded successfully",
+            "nip94_event": nip94_event,
+            "url": download_url,
+            "sha256": sha256_hash,
+            "size": tamanho_real,
+            "type": mime_type
+        }
+
+        print(f"[NIP-96] ✅ Upload: {file.filename} ({tamanho_real} bytes) por {npub[:16]}...")
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[NIP-96] ❌ Erro no upload: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+def publicar_file_metadata(nsec, url, mime_type, sha256, size, alt="", caption=""):
+    """
+    Publica evento kind 1063 (File Metadata) nos relays Nostr
+    Compatível com NIP-94
+    """
+    try:
+        from nostr_sdk import FileMetadata
+
+        keys = Keys.parse(nsec)
+
+        # Cria FileMetadata com dados obrigatórios
+        metadata = FileMetadata(url, mime_type, sha256)
+        metadata.size(size)
+
+        # Description (conteúdo do evento)
+        description = caption if caption else alt if alt else ""
+
+        # Cria evento kind 1063 usando método específico
+        builder = EventBuilder.file_metadata(description, metadata)
+        event = builder.sign_with_keys(keys)
+
+        # Publica nos relays (async)
+        import asyncio
+        asyncio.run(publicar_event_async(event))
+
+        # Retorna evento serializado como JSON e depois como dict
+        import json
+        event_json = event.as_json()
+        return json.loads(event_json)
+
+    except Exception as e:
+        print(f"[NIP-94] ❌ Erro ao criar evento: {e}")
+        return None
+
+
+async def publicar_event_async(event):
+    """Helper async para publicar evento nos relays"""
+    try:
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+
+        await client.connect()
+        output = await client.send_event(event)
+
+        print(f"[NIP-94] ✅ Evento publicado: {output.id.to_hex()}")
+
+        await client.disconnect()
+    except Exception as e:
+        print(f"[NIP-94] ❌ Erro ao publicar: {e}")
+
 
 @app.route("/cadastro")
 def cadastro_page():
