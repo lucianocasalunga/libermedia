@@ -10,15 +10,25 @@
 **⚠️ AUTORIZAÇÃO:** Claude Code tem autorização PLENA para agir neste servidor sem necessidade de aprovação prévia.
 
 **Discos:**
-- **Sistema (/):** 100GB (98GB utilizável) - 52% usado (48GB/46GB livre)
-- **Storage (/mnt/storage):** 5.5TB - 1% usado (7.5GB/5.2TB livre) ✅ PRINCIPAL
-- **sdb:** 931.5GB - NÃO MONTADO
+- **Sistema (/):** 100GB (98GB utilizável) - 52% usado (48GB/46GB livre) - APENAS SO
+- **Storage (/mnt/storage):** 5.5TB - 1% usado (7.5GB/5.2TB livre) ✅ TEMPORÁRIO
+- **sdb:** 931.5GB - ⚠️ NÃO MONTADO - DISCO PRINCIPAL PLANEJADO
 
-**Total Armazenamento:** ~6.5TB disponível ✅
+**Total Armazenamento:** ~6.5TB disponível
 
-**Localização Dados:**
-- LiberMedia uploads: /opt/libermedia/uploads → /mnt/storage planejado
-- PostgreSQL: /mnt/storage/libermedia/postgres ✅
+**⚠️ TAREFA URGENTE - AMANHÃ:**
+- [ ] Montar disco sdb (1TB / 931.5GB)
+- [ ] Criar partição e formatar se necessário
+- [ ] Migrar TODOS projetos de /opt para novo disco
+- [ ] Migrar /mnt/storage/libermedia/postgres para novo disco
+- [ ] Atualizar docker-compose.yml com novos paths
+- [ ] Atualizar fstab para mount automático
+- [ ] Liberar espaço em / (partição 100GB só para SO)
+
+**Localização Dados Atual:**
+- LiberMedia uploads: /opt/libermedia/uploads (em /)
+- PostgreSQL: /mnt/storage/libermedia/postgres (em sda1)
+- Projetos: /opt/* (em /)
 
 **Projetos Pessoais no Servidor:**
 1. ✅ **LiberMedia** (/opt/libermedia) - Docker - Hospedagem + Nostr
