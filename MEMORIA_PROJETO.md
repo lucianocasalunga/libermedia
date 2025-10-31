@@ -283,4 +283,55 @@
 
 ---
 
+## 🔓 SISTEMA DE PERMISSÕES AUTOMÁTICAS (31/Out/2025)
+
+### 📋 **Documentação Criada:**
+- Arquivo: `PERMISSOES_AUTOMATICAS.md`
+- Objetivo: Eliminar pedidos de permissão repetitivos
+
+### ✅ **Permissões Já Configuradas:**
+- Leitura: `/opt/**`, `/var/log/**`
+- Docker: `docker *`, `docker-compose *`
+- Git: `git add`, `git commit`, `git push`, `git log`
+- Comandos: `curl`, `python3`, `cat`, `find`, `nak`
+
+### 🎯 **Cobertura Atual:**
+- **~80%** das operações não precisam de permissão
+- **~20%** ainda podem pedir confirmação (operações imprevistas)
+
+### 📖 **Como Expandir Permissões:**
+Ver arquivo `PERMISSOES_AUTOMATICAS.md` para:
+- Adicionar novas permissões
+- Configurar permissão total (se desejado)
+- Exemplos de configuração
+
+---
+
+## 🚫 BLACKLIST NOSTR (Strfry Relay)
+
+### 📊 **Status Atual:**
+- **Total de contas banidas:** 14 pubkeys
+- **Última atualização:** 31/Out/2025 13:15 UTC
+
+### 📝 **Contas Banidas Hoje:**
+1. `npub10akm29ejpdns52ca082skmc3hr75wmv3ajv4987c9lgyrfynrmdqduqwlx`
+   - Hex: `7f6db517320b670a2b1d79d50b6f11b8fd476d91ec99529fd82fd041a4931eda`
+
+2. `npub13uvnw9qehqkds68ds76c4nfcn3y99c2rl9z8tr0p34v7ntzsmmzspwhh99`
+   - Hex: `8f19371419b82cd868ed87b58acd389c4852e143f944758de18d59e9ac50dec5`
+
+### 🛠️ **Comandos Úteis:**
+```bash
+# Editar blacklist
+nano /opt/strfry/blacklist.txt
+
+# Aplicar banimento
+/opt/strfry/ban-users.sh
+
+# Ver log de banimentos
+tail -20 /var/log/strfry-ban.log
+```
+
+---
+
 **FIM DA MEMÓRIA - ARQUIVO VIVO (atualizar conforme progresso)**
