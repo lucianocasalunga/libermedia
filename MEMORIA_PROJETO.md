@@ -1,7 +1,65 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 31/Outubro/2025 23:45 UTC
+**Última atualização:** 31/Outubro/2025 23:50 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
+
+---
+
+## 🖥️ INFRAESTRUTURA DO SERVIDOR
+
+**⚠️ AUTORIZAÇÃO:** Claude Code tem autorização PLENA para agir neste servidor sem necessidade de aprovação prévia.
+
+**Discos:**
+- **Sistema (/):** 100GB (98GB utilizável) - 52% usado (48GB/46GB livre)
+- **Storage (/mnt/storage):** 5.5TB - 1% usado (7.5GB/5.2TB livre) ✅ PRINCIPAL
+- **sdb:** 931.5GB - NÃO MONTADO
+
+**Total Armazenamento:** ~6.5TB disponível ✅
+
+**Localização Dados:**
+- LiberMedia uploads: /opt/libermedia/uploads → /mnt/storage planejado
+- PostgreSQL: /mnt/storage/libermedia/postgres ✅
+
+**Projetos Pessoais no Servidor:**
+1. ✅ **LiberMedia** (/opt/libermedia) - Hospedagem de arquivos + Nostr
+2. ✅ **relay.libernet.app** - Relay Nostr (strfry)
+3. ⏳ **libernet.app** - NÃO IMPLEMENTADO AINDA
+4. ✅ **lnbits** - Carteira de criptomoedas
+5. ✅ **n8n** - Automação
+6. ⏳ **nostr.libernet.app** - NÃO IMPLEMENTADO AINDA
+
+**Pendências GitHub:**
+- [ ] Push repositórios locais para GitHub
+- [ ] Atualizar README.md dos projetos
+- [ ] Documentação de setup
+
+---
+
+## 📊 RESUMO EXECUTIVO - 31/OUTUBRO/2025
+
+**✅ IMPLEMENTADO HOJE (5.5 horas):**
+1. ✅ NIP-78: Sync de pastas entre dispositivos (2h)
+2. ✅ NIP-98: Autenticação HTTP segura (1h)
+3. ✅ NIP-96: Protocolo file storage completo (2.5h)
+4. ✅ NIP-94: Metadata de arquivos em relays
+5. ✅ 3 bugs corrigidos (pasta padrão, botão 3 pontos, players)
+
+**📈 PROGRESSO NIPs:**
+- ✅ NIP-01: Perfil Nostr (30/Out)
+- ✅ NIP-07: Login via extensão (30/Out)
+- ✅ NIP-78: App data sync (31/Out)
+- ✅ NIP-94: File metadata (31/Out)
+- ✅ NIP-96: File storage (31/Out)
+- ✅ NIP-98: HTTP auth (31/Out)
+- ❌ NIP-05: Verificação DNS (pendente)
+- ❌ NIP-04: Mensagens privadas (pendente)
+
+**🎯 PRÓXIMOS PASSOS:**
+1. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
+2. [ ] Implementar NIP-05 (verificação @libermedia.app)
+3. [ ] Aplicar NIP-98 em todos endpoints
+4. [ ] Push projetos para GitHub
+5. [ ] Pequenas correções de UX (se aparecerem)
 
 ---
 
@@ -262,13 +320,17 @@
   - [ ] Implementar conflito resolution avançado
 
 #### **NIP-96: HTTP File Storage Integration**
-- Status: ❌ NÃO IMPLEMENTADO
+- Status: ✅ **IMPLEMENTADO (31/Out/2025)** 📡
+- Implementado em: 31/Out/2025 (commit 3406df9)
 - Objetivo: Protocolo padrão para servidores de arquivo Nostr
 - Tarefas:
-  - [ ] Implementar endpoints padrão NIP-96
-  - [ ] Suporte a auth via NIP-98
-  - [ ] Metadata de arquivos compatível
-  - [ ] Descoberta de servidor via NIP-05
+  - [x] Implementar endpoints padrão NIP-96 ✅
+  - [x] Suporte a auth via NIP-98 ✅
+  - [x] Metadata de arquivos compatível (NIP-94) ✅
+  - [x] Discovery endpoint /.well-known/nostr/nip96.json ✅
+  - [x] Publicação eventos kind 1063 em relays ✅
+  - [ ] Testar com clientes Nostr (Damus, Amethyst)
+  - [ ] Endpoint /delete compatível NIP-96
 
 #### **NIP-98: HTTP Auth**
 - Status: ✅ **IMPLEMENTADO (31/Out/2025)** 🔐
@@ -324,12 +386,14 @@
 - **Estimativa:** 1-2 dias
 - **Tempo real:** 1 hora ⚡
 
-### FASE 3: COMPATIBILIDADE NIP-96
+### FASE 3: COMPATIBILIDADE NIP-96 - ✅ CONCLUÍDA
 **Objetivo:** Tornar servidor compatível com protocolo padrão
-- Implementar endpoints NIP-96
-- Metadata de arquivos descentralizado
-- Descoberta de servidor
+- ✅ Implementar endpoints NIP-96 (31/Out)
+- ✅ Metadata de arquivos descentralizado (NIP-94) (31/Out)
+- ✅ Descoberta de servidor (31/Out)
+- ✅ Publicação em relays (31/Out)
 - **Estimativa:** 2-3 dias
+- **Tempo real:** 2.5 horas ⚡⚡
 
 ### FASE 4: VERIFICAÇÃO (NIP-05)
 **Objetivo:** Sistema de verificação de usuários
