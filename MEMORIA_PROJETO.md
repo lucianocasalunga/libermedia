@@ -395,10 +395,20 @@ Ver arquivo `PERMISSOES_AUTOMATICAS.md` para:
 ## 🚫 BLACKLIST NOSTR (Strfry Relay)
 
 ### 📊 **Status Atual:**
-- **Total de contas banidas:** 14 pubkeys
-- **Última atualização:** 31/Out/2025 13:15 UTC
+- **Total de contas banidas:** 17 pubkeys
+- **Última atualização:** 31/Out/2025 20:05 UTC
 
-### 📝 **Contas Banidas Hoje:**
+### 📝 **Contas Banidas Hoje (31/Out - 20:05):**
+1. `npub1m7szwpud3jh2k3cqe73v0fd769uzsj6rzmddh4dw67y92sw22r3sk5m3ys`
+   - Hex: `dfa027078d8caeab4700cfa2c7a5bed178284b4316dadbd5aed7885541ca50e3`
+
+2. `npub13wke9s6njrmugzpg6mqtvy2d49g4d6t390ng76dhxxgs9jn3f2jsmq82pk`
+   - Hex: `8bad92c35390f7c40828d6c0b6114da95156e9712be68f69b7319102ca714aa5`
+
+3. `npub1avq40tlnjqp3de9ww89ftqf9w440nufm8tc9l47uzv83xaatd32symvm2r`
+   - Hex: `eb0157aff3900316e4ae71ca958125756af9f13b3af05fd7dc130f1377ab6c55`
+
+### 📝 **Anteriores (31/Out - 13:15):**
 1. `npub10akm29ejpdns52ca082skmc3hr75wmv3ajv4987c9lgyrfynrmdqduqwlx`
    - Hex: `7f6db517320b670a2b1d79d50b6f11b8fd476d91ec99529fd82fd041a4931eda`
 
