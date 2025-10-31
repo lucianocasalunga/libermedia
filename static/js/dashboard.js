@@ -318,29 +318,105 @@ async function loadFiles() {
   renderFiles();
 }
 
+// ============================================
+// NIP-78: SINCRONIZAÇÃO DE PASTAS
+// ============================================
+
+/**
+ * Busca pastas salvas no Nostr (kind 30078)
+ */
+async function buscarPastasNostr(npub) {
+  try {
+    console.log('[NIP-78] 📡 Buscando pastas do Nostr...');
+
+    const response = await fetch('/api/nostr/folders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ npub })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      console.log(`[NIP-78] ✅ ${data.folders.length} pastas encontradas`);
+      return data.folders || [];
+    } else {
+      console.log('[NIP-78] ⚠️ Erro ao buscar pastas:', data.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('[NIP-78] ❌ Erro ao buscar pastas:', error);
+    return [];
+  }
+}
+
+/**
+ * Publica pastas no Nostr (kind 30078)
+ */
+async function publicarPastasNostr(folders) {
+  try {
+    console.log(`[NIP-78] 📤 Publicando ${folders.length} pastas...`);
+
+    const response = await fetch('/api/nostr/folders/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        npub,
+        folders
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      console.log('[NIP-78] ✅ Pastas sincronizadas com sucesso!');
+      return true;
+    } else {
+      console.log('[NIP-78] ⚠️ Não foi possível sincronizar:', data.error);
+      return false;
+    }
+  } catch (error) {
+    console.error('[NIP-78] ❌ Erro ao publicar pastas:', error);
+    return false;
+  }
+}
+
 // GERENCIAMENTO DE PASTAS
 async function loadPastas() {
   try {
-    // Busca pastas do backend
+    console.log('[Pastas] 🔄 Carregando pastas (backend + localStorage + Nostr)...');
+
+    // 1. Busca pastas do backend (pastas com arquivos)
     const res = await fetch(`/api/pastas?npub=${npub}`);
     const data = await res.json();
+    let pastas = data.status === 'ok' ? (data.pastas || []) : [];
 
-    if (data.status === 'ok') {
-      let pastas = data.pastas || [];
+    // 2. Merge com localStorage (pastas criadas localmente)
+    const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+    pastasLocal.forEach(p => {
+      if (!pastas.includes(p)) pastas.push(p);
+    });
 
-      // Merge com pastas do localStorage (pastas criadas mas sem arquivos ainda)
-      const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
-      pastasLocal.forEach(p => {
-        if (!pastas.includes(p)) pastas.push(p);
-      });
+    // 3. Merge com Nostr (NIP-78 - pastas sincronizadas entre dispositivos)
+    const pastasNostr = await buscarPastasNostr(npub);
+    pastasNostr.forEach(p => {
+      if (!pastas.includes(p)) pastas.push(p);
+    });
 
-      // Atualiza localStorage com lista completa
-      localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastas));
+    console.log(`[Pastas] ✅ Total: ${pastas.length} pastas (backend: ${data.pastas?.length || 0}, local: ${pastasLocal.length}, nostr: ${pastasNostr.length})`);
 
-      renderPastas(pastas);
+    // 4. Atualiza localStorage com lista completa
+    localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastas));
+
+    // 5. Se há pastas locais que não estão no Nostr, sincroniza
+    if (pastas.length > 0 && pastasNostr.length !== pastas.length) {
+      console.log('[Pastas] 📤 Sincronizando pastas com Nostr...');
+      await publicarPastasNostr(pastas);
     }
+
+    renderPastas(pastas);
   } catch (err) {
-    console.error('Erro ao carregar pastas:', err);
+    console.error('[Pastas] ❌ Erro ao carregar pastas:', err);
     // Fallback: usa localStorage
     const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
     renderPastas(pastasLocal);
@@ -829,9 +905,11 @@ async function executeBatchDelete() {
   }
 }
 
-function criarPasta() {
+async function criarPasta() {
   const nome = prompt("Nome da nova pasta:");
   if (!nome || nome.trim() === "") return;
+
+  console.log(`[Pastas] ➕ Criando pasta "${nome}"...`);
 
   // Salva em localStorage
   const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
@@ -840,12 +918,16 @@ function criarPasta() {
     localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastasLocal));
   }
 
+  // Sincroniza com Nostr (NIP-78)
+  console.log('[Pastas] 📤 Sincronizando nova pasta com Nostr...');
+  await publicarPastasNostr(pastasLocal);
+
   // Recarrega e renderiza pastas
-  loadPastas().then(() => {
-    // Seleciona a pasta recém-criada
-    filtrarPasta(nome.trim());
-    alert(`Pasta "${nome}" criada!`);
-  });
+  await loadPastas();
+
+  // Seleciona a pasta recém-criada
+  filtrarPasta(nome.trim());
+  showToast(`✓ Pasta "${nome}" criada e sincronizada!`, 'success');
 }
 
 // MENU CONTEXTUAL DE PASTAS
@@ -909,10 +991,14 @@ async function renomearPasta(pastaAntiga) {
       if (index !== -1) {
         pastasLocal[index] = pastaNova.trim();
         localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(pastasLocal));
+
+        // Sincroniza com Nostr (NIP-78)
+        console.log('[Pastas] 📤 Sincronizando renomeação com Nostr...');
+        await publicarPastasNostr(pastasLocal);
       }
 
       // Recarrega interface
-      loadPastas();
+      await loadPastas();
       loadFiles();
 
       // Se estava na pasta antiga, muda para a nova
@@ -950,10 +1036,14 @@ async function deletarPasta(nomePasta) {
       const novaLista = pastasLocal.filter(p => p !== nomePasta);
       localStorage.setItem('libermedia_pastas_' + npub, JSON.stringify(novaLista));
 
-      showToast('✓ Pasta deletada com sucesso!', 'success');
+      // Sincroniza com Nostr (NIP-78)
+      console.log('[Pastas] 📤 Sincronizando deleção com Nostr...');
+      await publicarPastasNostr(novaLista);
+
+      showToast('✓ Pasta deletada e sincronizada!', 'success');
 
       // Recarrega interface
-      loadPastas();
+      await loadPastas();
 
       // Se estava na pasta deletada, volta pra Mesa
       if (pastaAtual === nomePasta) {

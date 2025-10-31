@@ -1024,6 +1024,187 @@ def api_publish_nostr_profile():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+# ============================================
+# NIP-78: SINCRONIZAÇÃO DE PASTAS
+# ============================================
+from nostr_sdk import Tag
+
+async def buscar_pastas_nostr_async(npub: str):
+    """Busca pastas (kind 30078) de um npub nos relays"""
+    try:
+        decoded = Nip19.from_bech32(npub)
+        pubkey = decoded.as_enum().npub
+
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+
+        await client.connect()
+
+        # Filtro para kind 30078 (application data) com tag "d" = "folders"
+        filter = (Filter()
+                  .author(pubkey)
+                  .kind(NostrKind(30078))
+                  .custom_tag('d', ['folders']))
+
+        # Timeout de 10 segundos
+        events = await client.fetch_events([filter], timedelta(seconds=10))
+
+        if events:
+            # Pega o evento mais recente (kind 30078 é replaceable)
+            latest = max(events, key=lambda e: e.created_at())
+            content = latest.content()
+
+            try:
+                data = json.loads(content)
+                folders = data.get("folders", [])
+
+                print(f"[NIP-78] ✅ {len(folders)} pastas encontradas para {npub[:12]}...")
+
+                return {
+                    "status": "ok",
+                    "folders": folders,
+                    "timestamp": latest.created_at().as_secs()
+                }
+            except json.JSONDecodeError:
+                print(f"[NIP-78] ⚠️ Erro ao decodificar JSON do evento")
+                return {"status": "error", "error": "Formato inválido"}
+
+        print(f"[NIP-78] ℹ️ Nenhuma pasta encontrada para {npub[:12]}...")
+        return {"status": "ok", "folders": []}
+
+    except Exception as e:
+        print(f"[NIP-78] ❌ Erro ao buscar pastas: {e}")
+        return {"status": "error", "error": str(e)}
+    finally:
+        try:
+            await client.disconnect()
+        except:
+            pass
+
+
+def buscar_pastas_nostr(npub: str):
+    """Wrapper síncrono para buscar pastas"""
+    import asyncio
+    return asyncio.run(buscar_pastas_nostr_async(npub))
+
+
+@app.route("/api/nostr/folders", methods=["POST"])
+def api_nostr_folders():
+    """API para buscar pastas do Nostr (NIP-78)"""
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+
+        result = buscar_pastas_nostr(npub)
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"[ERROR] Erro ao buscar pastas: {e}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+async def publicar_pastas_nostr_async(nsec: str, folders: list):
+    """Publica pastas (kind 30078) usando nsec do usuário"""
+    try:
+        keys = Keys.parse(nsec)
+
+        # Cria conteúdo JSON com as pastas
+        content = json.dumps({"folders": folders})
+
+        # Tag "d" identifica este evento como sendo de pastas
+        d_tag = Tag.parse(["d", "folders"])
+
+        # Cria evento kind 30078 (application-specific data)
+        builder = EventBuilder(NostrKind(30078), content, [d_tag])
+        event = builder.sign_with_keys(keys)
+
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+
+        await client.connect()
+
+        # Publica evento
+        output = await client.send_event(event)
+
+        print(f"[NIP-78] ✅ Pastas publicadas: {folders}")
+        print(f"[NIP-78] Event ID: {output.id.to_hex()}")
+
+        return {
+            "success": True,
+            "event_id": output.id.to_hex(),
+            "folders_count": len(folders)
+        }
+
+    except Exception as e:
+        print(f"[NIP-78] ❌ Erro ao publicar pastas: {e}")
+        return {"success": False, "error": str(e)}
+    finally:
+        try:
+            await client.disconnect()
+        except:
+            pass
+
+
+def publicar_pastas_nostr(nsec: str, folders: list):
+    """Wrapper síncrono para publicar pastas"""
+    import asyncio
+    return asyncio.run(publicar_pastas_nostr_async(nsec, folders))
+
+
+@app.route("/api/nostr/folders/publish", methods=["POST"])
+def api_publish_nostr_folders():
+    """API para publicar pastas no Nostr (NIP-78)"""
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        folders = data.get("folders", [])
+
+        print(f"[DEBUG] Publicando {len(folders)} pastas para {npub[:12] if npub else 'unknown'}...")
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+
+        # Busca usuário no banco
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Verifica se tem privkey
+        if not usuario.privkey or usuario.privkey == "":
+            return jsonify({
+                "status": "error",
+                "error": "Usuário não possui chave privada. Sincronização desabilitada."
+            }), 400
+
+        # Publica pastas
+        result = publicar_pastas_nostr(usuario.privkey, folders)
+
+        if result.get("success"):
+            return jsonify({
+                "status": "ok",
+                "message": f"{len(folders)} pastas sincronizadas!",
+                "event_id": result.get("event_id")
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "error": result.get("error", "Erro desconhecido")
+            }), 500
+
+    except Exception as e:
+        print(f"[ERROR] Erro ao publicar pastas: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 # Mapeamento de planos para limites (em bytes)
 LIMITES_PLANO = {
     'free': 3 * 1024 * 1024 * 1024,      # 3 GB
