@@ -15,15 +15,21 @@ const NOSTR_RELAYS = [
  */
 async function buscarPerfilNostr(npub) {
   try {
+    console.log('[Nostr] 📡 Buscando perfil via backend para:', npub);
+
     const response = await fetch('/api/nostr/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ npub })
     });
 
+    console.log('[Nostr] 📬 Resposta HTTP:', response.status);
+
     const data = await response.json();
+    console.log('[Nostr] 📦 Dados retornados:', data);
 
     if (data.status === 'ok' && data.perfil) {
+      console.log('[Nostr] ✅ Perfil encontrado com sucesso!');
       return {
         name: data.perfil.name || '',
         picture: data.perfil.picture || '',
@@ -36,9 +42,10 @@ async function buscarPerfilNostr(npub) {
       };
     }
 
+    console.log('[Nostr] ⚠️ Perfil não encontrado (status != ok ou sem perfil)');
     return null;
   } catch (error) {
-    console.error('[Nostr] Erro ao buscar perfil:', error);
+    console.error('[Nostr] ❌ Erro ao buscar perfil:', error);
     return null;
   }
 }
@@ -462,14 +469,10 @@ function renderMediaPreview(arquivo) {
   // ÁUDIO
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
-      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex flex-col items-center justify-center p-4">
-        <svg class="flex-shrink-0 mb-3 text-white" style="width: 64px; height: 64px;" fill="currentColor" viewBox="0 0 24 24">
+      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center overflow-hidden">
+        <svg class="text-white" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
         </svg>
-        <p class="text-white text-xs mb-3 truncate w-full text-center px-2 flex-shrink-0">${arquivo.nome}</p>
-        <audio controls class="w-full flex-shrink-0" style="max-width: 90%;">
-          <source src="${linkComExt}" type="audio/${ext}">
-        </audio>
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
                 title="Copiar link">
@@ -1348,6 +1351,12 @@ function showToast(message, type) {
 
 // Dashboard de Uso
 function carregarDashboardUso() {
+  // Verifica se o bloco de uso está habilitado no HTML
+  if (!document.getElementById('dashboardUso')) {
+    console.log('[Dashboard] Bloco de uso desabilitado');
+    return;
+  }
+
   const npub = localStorage.getItem('libermedia_npub');
   fetch('/api/uso?npub=' + npub)
   .then(res => res.json())
@@ -1356,11 +1365,11 @@ function carregarDashboardUso() {
       console.error('Erro ao carregar uso:', data.error);
       return;
     }
-    
+
     // Converter para GB
     const usadoGB = (data.usado / (1024 * 1024 * 1024)).toFixed(2);
     const limiteGB = (data.limite / (1024 * 1024 * 1024)).toFixed(0);
-    
+
     // Atualizar textos
     document.getElementById('usoAtual').textContent = usadoGB + ' GB';
     document.getElementById('usoLimite').textContent = limiteGB + ' GB';
@@ -1506,6 +1515,8 @@ async function saveConfig() {
 async function sincronizarPerfil() {
   const npub = localStorage.getItem('libermedia_npub');
 
+  console.log('[Dashboard] 🔍 Iniciando sincronização para npub:', npub);
+
   if (!npub) {
     showToast('⚠️ NPub não encontrado', 'error');
     return;
@@ -1513,11 +1524,13 @@ async function sincronizarPerfil() {
 
   showToast('🔄 Sincronizando perfil...', 'info');
 
+  console.log('[Dashboard] 📡 Chamando sincronizarPerfilNostr...');
   const perfil = await sincronizarPerfilNostr(npub);
+  console.log('[Dashboard] 📥 Perfil retornado:', perfil);
 
   if (perfil) {
     // Atualiza campos do modal
-    console.log('[Dashboard] Atualizando campos do modal...');
+    console.log('[Dashboard] ✅ Perfil encontrado! Atualizando campos do modal...');
     document.getElementById('configNome').value = perfil.name || '';
     document.getElementById('configDisplayName').value = perfil.display_name || '';
     document.getElementById('configAvatar').value = perfil.picture || '';
@@ -1527,7 +1540,7 @@ async function sincronizarPerfil() {
     document.getElementById('configNip05').value = perfil.nip05 || '';
     document.getElementById('configLud16').value = perfil.lud16 || '';
 
-    console.log('[Dashboard] Campos atualizados');
+    console.log('[Dashboard] 💾 Campos atualizados com sucesso');
 
     // Atualiza UI
     atualizarPerfilUI(perfil);
@@ -1537,7 +1550,7 @@ async function sincronizarPerfil() {
 
     showToast('✓ Perfil sincronizado!', 'success');
   } else {
-    console.log('[Dashboard] Perfil não foi encontrado');
+    console.log('[Dashboard] ❌ Perfil NÃO foi encontrado (null retornado)');
     showToast('⚠️ Perfil não encontrado no Nostr', 'error');
   }
 }
