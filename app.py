@@ -28,6 +28,164 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "libermedia-secret")
 JWT_ALGO = "HS256"
 
 
+# ============================================
+# NIP-98: HTTP AUTH MIDDLEWARE
+# ============================================
+from nostr_sdk import Event as NostrEvent, PublicKey
+from functools import wraps
+import base64
+
+def validate_nip98_auth(required=True):
+    """
+    Decorator para validar autenticação NIP-98
+
+    Usage:
+        @app.route('/api/protected')
+        @validate_nip98_auth(required=True)
+        def protected_route():
+            npub = request.nip98_pubkey  # Pubkey autenticado
+            ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization', '')
+
+            # Se não é obrigatório e não tem header, permite
+            if not required and not auth_header:
+                request.nip98_pubkey = None
+                return f(*args, **kwargs)
+
+            # Valida formato: "Nostr <base64_event>"
+            if not auth_header.startswith('Nostr '):
+                if required:
+                    return jsonify({'error': 'Authorization header inválido (esperado: Nostr <base64_event>)'}), 401
+                request.nip98_pubkey = None
+                return f(*args, **kwargs)
+
+            try:
+                # Decodifica evento base64
+                event_b64 = auth_header[6:]  # Remove "Nostr "
+                event_json = base64.b64decode(event_b64).decode('utf-8')
+
+                # Parse evento Nostr
+                event = NostrEvent.from_json(event_json)
+
+                # Valida kind 27235 (HTTP Auth)
+                if event.kind().as_u16() != 27235:
+                    return jsonify({'error': 'Evento deve ser kind 27235 (HTTP Auth)'}), 401
+
+                # Valida assinatura
+                if not event.verify():
+                    return jsonify({'error': 'Assinatura inválida'}), 401
+
+                # Valida timestamp (máximo 60 segundos de diferença)
+                event_time = event.created_at().as_secs()
+                now = int(time.time())
+                if abs(now - event_time) > 60:
+                    return jsonify({'error': 'Evento expirado (máximo 60s)'}), 401
+
+                # Extrai tags
+                tags = {}
+                for tag in event.tags():
+                    tag_list = tag.as_vec()
+                    if len(tag_list) >= 2:
+                        tags[tag_list[0]] = tag_list[1]
+
+                # Valida URL (tag 'u')
+                request_url = request.url
+                event_url = tags.get('u', '')
+                if event_url and event_url != request_url:
+                    # Permite variação com/sem query params
+                    if not request_url.startswith(event_url):
+                        return jsonify({'error': 'URL não corresponde ao evento'}), 401
+
+                # Valida método HTTP (tag 'method')
+                event_method = tags.get('method', '').upper()
+                if event_method and event_method != request.method:
+                    return jsonify({'error': 'Método HTTP não corresponde'}), 401
+
+                # Sucesso! Anexa pubkey ao request
+                pubkey = event.author()
+                request.nip98_pubkey = pubkey.to_bech32()
+                request.nip98_event = event
+
+                print(f"[NIP-98] ✅ Auth válido: {pubkey.to_bech32()[:16]}... método={request.method} url={request.path}")
+
+                return f(*args, **kwargs)
+
+            except Exception as e:
+                print(f"[NIP-98] ❌ Erro ao validar: {e}")
+                if required:
+                    return jsonify({'error': f'Erro ao validar autenticação: {str(e)}'}), 401
+                request.nip98_pubkey = None
+                return f(*args, **kwargs)
+
+        return decorated_function
+    return decorator
+
+
+@app.route("/api/nip98/sign", methods=["POST"])
+def api_nip98_sign():
+    """
+    Endpoint para criar e assinar evento NIP-98 (HTTP Auth)
+    Usado quando usuário tem privkey no banco
+    """
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        http_method = data.get("http_method", "GET")
+        http_url = data.get("http_url", "")
+        payload = data.get("payload")
+
+        if not npub or not http_url:
+            return jsonify({"status": "error", "error": "npub e http_url obrigatórios"}), 400
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        if not usuario.privkey or usuario.privkey == "":
+            return jsonify({"status": "error", "error": "Usuário sem privkey"}), 400
+
+        # Cria evento NIP-98
+        keys = Keys.parse(usuario.privkey)
+
+        # Tags obrigatórias
+        tags = [
+            Tag.parse(["u", http_url]),
+            Tag.parse(["method", http_method.upper()])
+        ]
+
+        # Se tem payload, adiciona hash
+        if payload:
+            import hashlib
+            payload_hash = hashlib.sha256(payload.encode()).hexdigest()
+            tags.append(Tag.parse(["payload", payload_hash]))
+
+        # Cria evento kind 27235
+        builder = EventBuilder(NostrKind(27235), "", tags)
+        event = builder.sign_with_keys(keys)
+
+        # Serializa para JSON e converte para base64
+        event_json = event.as_json()
+        event_b64 = base64.b64encode(event_json.encode()).decode()
+
+        print(f"[NIP-98] ✅ Evento assinado para {npub[:16]}... método={http_method} url={http_url}")
+
+        return jsonify({
+            "status": "ok",
+            "auth_header": event_b64,
+            "event_id": event.id().to_hex()
+        })
+
+    except Exception as e:
+        print(f"[NIP-98] ❌ Erro ao assinar: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 
 # --- Modelo de usuário ---
 class Usuario(db.Model):

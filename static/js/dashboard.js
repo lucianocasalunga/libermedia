@@ -319,6 +319,87 @@ async function loadFiles() {
 }
 
 // ============================================
+// NIP-98: HTTP AUTH
+// ============================================
+
+/**
+ * Cria evento NIP-98 (HTTP Auth) para autenticar requests
+ * @param {string} method - Método HTTP (GET, POST, etc)
+ * @param {string} url - URL completa do request
+ * @param {string} payload - Payload JSON (opcional)
+ * @returns {Promise<string>} Base64 do evento assinado
+ */
+async function createNip98Event(method, url, payload = null) {
+  try {
+    const npub = localStorage.getItem('libermedia_npub');
+    if (!npub) throw new Error('NPub não encontrado');
+
+    // Busca usuário no backend para pegar privkey
+    const usuario = await fetch(`/api/usuario?npub=${npub}`).then(r => r.json());
+
+    if (!usuario.privkey || usuario.privkey === '') {
+      console.warn('[NIP-98] Usuário sem privkey, tentando extensão Nostr...');
+
+      // Tenta usar extensão Nostr (NIP-07)
+      if (window.nostr) {
+        const event = {
+          kind: 27235,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [
+            ['u', url],
+            ['method', method.toUpperCase()]
+          ],
+          content: ''
+        };
+
+        if (payload) {
+          const payloadHash = await sha256(payload);
+          event.tags.push(['payload', payloadHash]);
+        }
+
+        const signedEvent = await window.nostr.signEvent(event);
+        return btoa(JSON.stringify(signedEvent));
+      }
+
+      throw new Error('Sem chave privada e sem extensão Nostr');
+    }
+
+    // Cria evento no backend (usuário tem privkey)
+    const response = await fetch('/api/nip98/sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        npub,
+        http_method: method.toUpperCase(),
+        http_url: url,
+        payload: payload
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      return data.auth_header;  // Já vem em base64
+    } else {
+      throw new Error(data.error || 'Erro ao assinar evento');
+    }
+  } catch (error) {
+    console.error('[NIP-98] Erro ao criar evento:', error);
+    return null;
+  }
+}
+
+/**
+ * Helper para calcular SHA256 de uma string
+ */
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================
 // NIP-78: SINCRONIZAÇÃO DE PASTAS
 // ============================================
 
