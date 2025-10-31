@@ -1076,8 +1076,8 @@ loadPastas().then(() => {
 });
 loadFiles();
 
-// Buscar perfil Nostr
-async function buscarPerfilNostr() {
+// Atualizar avatar e nome na interface (executa ao carregar página)
+async function atualizarAvatarNostr() {
   try {
     const npub = localStorage.getItem('libermedia_npub');
     const res = await fetch('/api/nostr/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ npub }) });
@@ -1090,7 +1090,7 @@ async function buscarPerfilNostr() {
     }
   } catch (err) { console.error('Erro:', err); }
 }
-setTimeout(buscarPerfilNostr, 500);
+setTimeout(atualizarAvatarNostr, 500);
 
 // Menu de tamanhos
 let tamanhoAtual = localStorage.getItem('grid_size') || 'grande';

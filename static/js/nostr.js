@@ -1,7 +1,10 @@
 /**
  * LiberMedia - Biblioteca Nostr (NIP-01)
  * Funções para leitura e escrita de perfis Nostr
+ * VERSION: 2.0 - 30/Oct/2025 19:45 UTC
  */
+
+console.log('🚀 [NostrLib] Carregando biblioteca Nostr v2.0');
 
 // Configuração de relays
 const RELAYS = [
@@ -17,6 +20,8 @@ const RELAYS = [
  */
 async function buscarPerfilNostr(npub) {
   try {
+    console.log('[NostrLib] Buscando perfil para:', npub);
+
     const response = await fetch('/api/nostr/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,9 +29,10 @@ async function buscarPerfilNostr(npub) {
     });
 
     const data = await response.json();
+    console.log('[NostrLib] Resposta da API:', data);
 
     if (data.status === 'ok' && data.perfil) {
-      return {
+      const perfil = {
         name: data.perfil.name || '',
         picture: data.perfil.picture || '',
         about: data.perfil.about || '',
@@ -36,11 +42,15 @@ async function buscarPerfilNostr(npub) {
         nip05: data.perfil.nip05 || '',
         lud16: data.perfil.lud16 || ''
       };
+
+      console.log('[NostrLib] Perfil processado:', perfil);
+      return perfil;
     }
 
+    console.log('[NostrLib] Perfil não encontrado');
     return null;
   } catch (error) {
-    console.error('Erro ao buscar perfil Nostr:', error);
+    console.error('[NostrLib] Erro ao buscar perfil:', error);
     return null;
   }
 }
@@ -163,9 +173,15 @@ async function publicarEventoNostr(signedEvent) {
  */
 async function sincronizarPerfilNostr(npub) {
   try {
+    console.log('[NostrLib] sincronizarPerfilNostr iniciada para:', npub);
+
     const perfil = await buscarPerfilNostr(npub);
 
+    console.log('[NostrLib] buscarPerfilNostr retornou:', perfil);
+
     if (perfil) {
+      console.log('[NostrLib] Salvando no localStorage...');
+
       // Salva no localStorage
       localStorage.setItem('libermedia_nome', perfil.name || perfil.display_name || '');
       localStorage.setItem('libermedia_avatar', perfil.picture || '');
@@ -176,12 +192,15 @@ async function sincronizarPerfilNostr(npub) {
       localStorage.setItem('libermedia_lud16', perfil.lud16 || '');
       localStorage.setItem('libermedia_last_sync', Date.now().toString());
 
+      console.log('[NostrLib] Perfil salvo com sucesso');
+
       return perfil;
     }
 
+    console.log('[NostrLib] Perfil é null, retornando null');
     return null;
   } catch (error) {
-    console.error('Erro ao sincronizar perfil:', error);
+    console.error('[NostrLib] Erro ao sincronizar perfil:', error);
     return null;
   }
 }
