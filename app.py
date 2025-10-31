@@ -205,6 +205,69 @@ with app.app_context():
 def index():
     return render_template("index.html")
 
+
+# ============================================
+# NIP-96: FILE STORAGE INTEGRATION
+# ============================================
+
+@app.route("/.well-known/nostr/nip96.json")
+def nip96_discovery():
+    """
+    Endpoint de descoberta NIP-96
+    Informa capacidades do servidor para clientes Nostr
+    """
+    config = {
+        "api_url": "https://libermedia.app/api",
+        "download_url": "https://libermedia.app/f",
+        "delegated_to_url": None,
+        "supported_nips": [96, 98],
+        "tos_url": "https://libermedia.app/terms",
+        "content_types": [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "video/mp4",
+            "video/webm",
+            "video/mov",
+            "video/avi",
+            "audio/mp3",
+            "audio/wav",
+            "audio/ogg",
+            "audio/m4a",
+            "application/pdf"
+        ],
+        "plans": {
+            "free": {
+                "name": "Free",
+                "is_nip98_required": True,
+                "url": "https://libermedia.app/plans",
+                "max_byte_size": 3 * 1024 * 1024 * 1024,  # 3 GB
+                "file_expiration": [0, 0],  # nunca expira
+                "media_transformations": {
+                    "image": []
+                }
+            },
+            "alpha": {
+                "name": "Alpha",
+                "is_nip98_required": True,
+                "url": "https://libermedia.app/plans",
+                "max_byte_size": 6 * 1024 * 1024 * 1024,  # 6 GB
+                "file_expiration": [0, 0]
+            },
+            "bravo": {
+                "name": "Bravo",
+                "is_nip98_required": True,
+                "url": "https://libermedia.app/plans",
+                "max_byte_size": 12 * 1024 * 1024 * 1024,  # 12 GB
+                "file_expiration": [0, 0]
+            }
+        }
+    }
+
+    return jsonify(config)
+
 @app.route("/cadastro")
 def cadastro_page():
     return render_template("cadastro.html")
