@@ -463,7 +463,9 @@ function renderMediaPreview(arquivo) {
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
       <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 flex flex-col items-center justify-center p-4">
-        <div class="flex-shrink-0 mb-3" style="width: 64px; height: 64px; font-size: 64px; line-height: 64px;">🎵</div>
+        <svg class="flex-shrink-0 mb-3 text-white" style="width: 64px; height: 64px;" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
         <p class="text-white text-xs mb-3 truncate w-full text-center px-2 flex-shrink-0">${arquivo.nome}</p>
         <audio controls class="w-full flex-shrink-0" style="max-width: 90%;">
           <source src="${linkComExt}" type="audio/${ext}">
@@ -585,10 +587,6 @@ function renderFiles() {
                class="absolute top-2 left-2 z-10 w-5 h-5 cursor-pointer accent-yellow-500"
                onclick="event.stopPropagation()">` : ''}
         ${renderMediaPreview(f)}
-        <div class="p-3">
-          <h3 class="text-xs text-gray-600 dark:text-gray-400 truncate" title="${f.nome}">${f.nome}</h3>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">${formatSize(f.tamanho)}</p>
-        </div>
       </div>
     `;
     }).join('');
