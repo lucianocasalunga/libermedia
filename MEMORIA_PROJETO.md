@@ -5,7 +5,44 @@
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 20:50 UTC)
+## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 21:10 UTC)
+
+### 🚧 NIP-96 INICIADO (31/Out/2025 - 21:10 UTC):
+**COMPATIBILIDADE COM PROTOCOLO NOSTR** 📡
+
+**Progresso: 30% concluído**
+
+**Implementado:**
+- ✅ Endpoint `/.well-known/nostr/nip96.json` (descoberta)
+- ✅ Configuração de capacidades do servidor
+- ✅ Suporte a NIPs [96, 98]
+- ✅ Content-types suportados
+- ✅ Informação de planos (Free, Alpha, Bravo)
+- ✅ Limites por plano (3GB, 6GB, 12GB)
+- ✅ NIP-98 obrigatório
+
+**Pendente:**
+- [ ] Adaptar `/upload` para padrão NIP-96
+- [ ] Publicar eventos kind 1063 (File Metadata)
+- [ ] Endpoint `/delete` compatível
+- [ ] Testes com clientes Nostr (Damus, Amethyst)
+
+**Commit:** `eed9dfc`
+**Tempo:** ~10min (endpoint de descoberta)
+**Estimativa restante:** 6-8 horas
+
+---
+
+### 🐛 BUGS CORRIGIDOS (31/Out/2025 - 21:05 UTC):
+1. ✅ Pasta padrão mudada de Mesa → Photos
+2. ✅ Botão de 3 pontinhos alinhado
+3. ✅ Players de áudio/vídeo restaurados
+
+**Commit:** `f6c67be`
+
+---
+
+## 🎯 SITUAÇÃO ANTERIOR (31/Out/2025 - 20:50 UTC)
 
 ### 🎉 NIP-98 IMPLEMENTADO (31/Out/2025 - 20:50 UTC):
 **AUTENTICAÇÃO HTTP COM EVENTOS NOSTR** 🔐✅
