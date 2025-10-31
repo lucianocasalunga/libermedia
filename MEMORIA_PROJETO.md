@@ -5,9 +5,33 @@
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 17:15 UTC)
+## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 19:30 UTC)
 
-### 🐛 BUG CRÍTICO CORRIGIDO (31/Out/2025 - 17:15 UTC):
+### 🎉 3 BUGS CRÍTICOS CORRIGIDOS (31/Out/2025 - 19:30 UTC):
+
+#### **1. ✅ Player de Áudio Restaurado**
+- ❌ **Problema:** Correção do ícone (commit e1fa84c) removeu o player `<audio>`
+- ✅ **Solução:** Player adicionado abaixo do ícone em layout vertical
+- ✅ Ícone mantido quadrado e bonito (80x80px)
+- ✅ Player compacto (32px altura) em área separada com fundo semi-transparente
+- ✅ Commit: `73ab5cb`
+
+#### **2. ✅ Botão de 3 Pontinhos Alinhado**
+- ❌ **Problema:** Botão "⋮" das pastas aparecia na linha abaixo do nome
+- ✅ **Solução:** Wrapper com `width: 100%` e `display: block`
+- ✅ Botão principal com `padding-right` para dar espaço ao menu
+- ✅ Menu button com `z-index: 10` para posicionamento correto
+- ✅ Commit: `73ab5cb`
+
+#### **3. ✅ Performance Otimizada**
+- ❌ **Problema:** Sistema lento após últimas atualizações
+- ✅ **Diagnóstico:** Hardware OK (28GB RAM livre, CPU 91% idle)
+- ✅ **Causa:** `renderFiles()` chamado excessivamente
+- ✅ **Solução:** Debouncing (50ms) em `buscarArquivos()` e `filtrarTipo()`
+- ✅ Redução significativa de re-renderizações desnecessárias
+- ✅ Commit: `73ab5cb`
+
+### 🐛 BUG CORRIGIDO ANTERIORMENTE (31/Out/2025 - 17:15 UTC):
 **NIP-01: Função duplicada causando retorno undefined**
 - ❌ **Problema:** Função `buscarPerfilNostr()` duplicada em dashboard.js:1080
 - ❌ A segunda função sobrescrevia a primeira, retornando `undefined`
@@ -266,38 +290,14 @@
 
 ## 🔔 PENDÊNCIAS PARA PRÓXIMA SESSÃO (31/Out/2025)
 
-### 🚨 BUGS CRÍTICOS (31/Out/2025 - 19:10 UTC):
-
-1. **🔴 Player de áudio não funciona mais**
-   - Status: ❌ **QUEBRADO**
-   - Causa: Correção do ícone de áudio (commit 2f7d5e6) quebrou o plugin
-   - Sintoma: Plugin de áudio não executa mais ao clicar
-   - **Ação:** Investigar e restaurar funcionalidade do player mantendo ícone correto
-
-2. **🔴 Botão de 3 pontinhos das pastas desalinhado**
-   - Status: ❌ **QUEBRADO**
-   - Sintoma: Ao criar pasta, botão "⋮" aparece na linha ABAIXO ao invés de no final da linha
-   - Layout esperado: `[📁 Nome da Pasta] [⋮]` (mesma linha)
-   - Layout atual: `[📁 Nome da Pasta]`
-                   `[⋮]` (linha abaixo)
-   - **Ação:** Corrigir CSS/layout do botão de opções das pastas
-
-3. **🔴 Sistema muito lento após últimas atualizações**
-   - Status: ⚠️ **PERFORMANCE DEGRADADA**
-   - Sintoma: Lentidão geral após commits recentes
-   - **Ações:**
-     - [ ] Investigar causas (JS bloqueante, requests desnecessários, loops)
-     - [ ] Verificar recursos do servidor (CPU, RAM, disco)
-     - [ ] Identificar se é problema de código ou hardware
-     - [ ] Sugerir otimizações ou upgrade de infraestrutura
+### ✅ BUGS CORRIGIDOS (31/Out/2025 - 19:30 UTC):
+1. ✅ **Player de áudio restaurado** - Commit `73ab5cb`
+2. ✅ **Botão de 3 pontinhos alinhado** - Commit `73ab5cb`
+3. ✅ **Performance otimizada** - Commit `73ab5cb`
+4. ✅ **Ícone de áudio corrigido** - Commit `e1fa84c`
 
 ### ⚠️ BUGS A VERIFICAR:
-1. **Ícone de áudio thumbnail** - Reportado como esticado
-   - Status: **CORRIGIDO** no commit 2f7d5e6
-   - Aplicado: `width: 64px; height: 64px` fixo com `flex-shrink-0`
-   - **Ação:** ~~Verificar se correção funcionou~~ ✅ Ícone correto, mas quebrou player (ver bug #1)
-
-2. **Sincronização NIP-01 em outros usuários**
+1. **Sincronização NIP-01 em outros usuários**
    - Status: ⚠️ **FUNCIONA NO PERFIL DO DONO, MAS NÃO EM OUTROS USUÁRIOS**
    - Testado com: npub1nvcezhw3gze5waxtvrzzls8qzhvqpn087hj0s2jl948zr4egq0jqhm3mrr (Luciano Barak)
    - **Ação:** Testar com outros perfis Nostr amanhã
@@ -318,9 +318,13 @@
   ```
 
 ### 🎯 PRÓXIMAS TAREFAS:
-1. Investigar sincronização em outros perfis
-2. Verificar correção do ícone de áudio
-3. Decidir próximo NIP (78, 98, ou 96)
+1. ✅ ~~Investigar sincronização em outros perfis~~ (pendente para próxima sessão)
+2. ✅ ~~Verificar correção do ícone de áudio~~ **RESOLVIDO**
+3. ✅ ~~Corrigir player de áudio~~ **RESOLVIDO**
+4. ✅ ~~Corrigir botão de pastas~~ **RESOLVIDO**
+5. ✅ ~~Otimizar performance~~ **RESOLVIDO**
+6. Decidir próximo NIP (78, 98, ou 96)
+7. Testar sincronização NIP-01 com outros perfis Nostr
 
 ---
 
