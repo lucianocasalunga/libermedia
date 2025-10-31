@@ -5,7 +5,41 @@
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 19:30 UTC)
+## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 20:00 UTC)
+
+### 🎉 NIP-78 IMPLEMENTADO (31/Out/2025 - 20:00 UTC):
+**SINCRONIZAÇÃO DE PASTAS ENTRE DISPOSITIVOS** ✅
+
+**Backend:**
+- ✅ Endpoint `/api/nostr/folders` (buscar pastas)
+- ✅ Endpoint `/api/nostr/folders/publish` (publicar pastas)
+- ✅ Eventos kind 30078 com tag "d" = "folders"
+- ✅ Sincronização em 3 relays (Damus, nos.lol, nostr.band)
+- ✅ Wrapper async/sync para compatibilidade Flask
+
+**Frontend:**
+- ✅ `buscarPastasNostr()` - busca do Nostr
+- ✅ `publicarPastasNostr()` - publica no Nostr
+- ✅ `loadPastas()` - merge triplo (backend + localStorage + Nostr)
+- ✅ `criarPasta()` - sincroniza após criar
+- ✅ `renomearPasta()` - sincroniza após renomear
+- ✅ `deletarPasta()` - sincroniza após deletar
+- ✅ Logs detalhados no console
+
+**Funcionalidades:**
+- ✅ Pasta criada no celular → aparece no desktop
+- ✅ Renomeações/deleções sincronizam automaticamente
+- ✅ Merge inteligente entre dispositivos
+- ✅ Fallback para localStorage se falhar
+- ✅ Auto-sincronização ao carregar página
+
+**Commit:** `4e57336`
+**Tempo de implementação:** ~2 horas
+**Status:** FUNCIONAL 🚀
+
+---
+
+## 🎯 SITUAÇÃO ANTERIOR (31/Out/2025 - 19:30 UTC)
 
 ### 🎉 3 BUGS CRÍTICOS CORRIGIDOS (31/Out/2025 - 19:30 UTC):
 
@@ -113,13 +147,16 @@
   - [ ] Implementar sign/encrypt/decrypt via extensão
 
 #### **NIP-78: Application-specific Data**
-- Status: ❌ NÃO IMPLEMENTADO
+- Status: ✅ **IMPLEMENTADO (31/Out/2025)** 🎉
+- Implementado em: 31/Out/2025 (commit 4e57336)
 - Objetivo: Armazenar dados privados do app (pastas, preferências)
 - Tarefas:
-  - [ ] Criar eventos kind 30078 para armazenar pastas
-  - [ ] Sincronizar preferências do usuário via Nostr
-  - [ ] Backup descentralizado de metadados
-  - [ ] Conflito resolution (múltiplos dispositivos)
+  - [x] Criar eventos kind 30078 para armazenar pastas ✅
+  - [x] Sincronizar pastas entre dispositivos ✅
+  - [x] Backup descentralizado de metadados ✅
+  - [x] Merge de dados entre múltiplos dispositivos ✅
+  - [ ] Sincronizar preferências do usuário (tema, ordenação, etc)
+  - [ ] Implementar conflito resolution avançado
 
 #### **NIP-96: HTTP File Storage Integration**
 - Status: ❌ NÃO IMPLEMENTADO
@@ -160,12 +197,13 @@
 
 ## 🚀 ROADMAP TÉCNICO
 
-### FASE 1: SYNC & BACKUP (NIP-78)
+### FASE 1: SYNC & BACKUP (NIP-78) - ✅ CONCLUÍDA
 **Objetivo:** Sincronizar dados do usuário entre dispositivos
-- Implementar NIP-78 para pastas customizadas
-- Sincronizar preferências (tamanho grid, tema, etc)
-- Resolver conflitos entre dispositivos
+- ✅ Implementar NIP-78 para pastas customizadas (31/Out)
+- [ ] Sincronizar preferências (tamanho grid, tema, etc)
+- ✅ Resolver conflitos entre dispositivos (merge automático)
 - **Estimativa:** 2-3 dias
+- **Tempo real:** 2 horas ⚡
 
 ### FASE 2: AUTENTICAÇÃO SEGURA (NIP-98)
 **Objetivo:** Substituir auth simples por assinatura Nostr
@@ -320,11 +358,13 @@
 ### 🎯 PRÓXIMAS TAREFAS:
 1. ✅ ~~Investigar sincronização em outros perfis~~ (pendente para próxima sessão)
 2. ✅ ~~Verificar correção do ícone de áudio~~ **RESOLVIDO**
-3. ✅ ~~Corrigir player de áudio~~ **RESOLVIDO**
+3. ✅ ~~Corrigir player de áudio~~ **RESOLVIDO** (simplificado, sem player)
 4. ✅ ~~Corrigir botão de pastas~~ **RESOLVIDO**
 5. ✅ ~~Otimizar performance~~ **RESOLVIDO**
-6. Decidir próximo NIP (78, 98, ou 96)
-7. Testar sincronização NIP-01 com outros perfis Nostr
+6. ✅ ~~Implementar NIP-78 (sincronização de pastas)~~ **CONCLUÍDO** 🎉
+7. **PRÓXIMO:** Implementar NIP-98 (autenticação segura) - 1-2 dias
+8. Testar sincronização NIP-01 com outros perfis Nostr
+9. Implementar NIP-96 (compatibilidade Nostr) - 2-3 dias
 
 ---
 
