@@ -906,6 +906,124 @@ def api_nostr_profile():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+# ============================================
+# PUBLICAR PERFIL NOSTR (NIP-01)
+# ============================================
+from nostr_sdk import Keys, EventBuilder, Kind as NostrKind
+
+async def publicar_perfil_nostr_async(nsec: str, perfil_data: dict):
+    """Publica perfil (kind 0) usando nsec do usuário"""
+    try:
+        # Cria keys a partir do nsec
+        keys = Keys.parse(nsec)
+
+        # Cria evento kind 0 com metadados
+        content = json.dumps({
+            "name": perfil_data.get("name", ""),
+            "display_name": perfil_data.get("display_name", ""),
+            "picture": perfil_data.get("picture", ""),
+            "about": perfil_data.get("about", ""),
+            "banner": perfil_data.get("banner", ""),
+            "website": perfil_data.get("website", ""),
+            "nip05": perfil_data.get("nip05", ""),
+            "lud16": perfil_data.get("lud16", "")
+        })
+
+        # Cria e assina evento
+        event_builder = EventBuilder.metadata(content)
+        event = event_builder.sign_with_keys(keys)
+
+        # Conecta aos relays e publica
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+
+        await client.connect()
+
+        # Publica evento
+        output = await client.send_event(event)
+
+        print(f"[DEBUG] Evento publicado: {output}")
+
+        return {
+            "success": True,
+            "event_id": event.id().to_hex(),
+            "relays": ["relay.damus.io", "nos.lol", "relay.nostr.band"]
+        }
+
+    except Exception as e:
+        print(f"[ERROR] Erro ao publicar perfil: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e)
+        }
+    finally:
+        try:
+            await client.disconnect()
+        except:
+            pass
+
+
+def publicar_perfil_nostr(nsec: str, perfil_data: dict):
+    """Wrapper síncrono"""
+    import asyncio
+    return asyncio.run(publicar_perfil_nostr_async(nsec, perfil_data))
+
+
+@app.route("/api/nostr/profile/publish", methods=["POST"])
+def api_publish_nostr_profile():
+    """API para publicar perfil Nostr (funciona sem extensão)"""
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        perfil = data.get("perfil", {})
+
+        print(f"[DEBUG] Publicando perfil para npub: {npub}")
+        print(f"[DEBUG] Dados do perfil: {perfil}")
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+
+        # Busca usuário no banco
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Verifica se tem privkey
+        if not usuario.privkey or usuario.privkey == "":
+            return jsonify({
+                "status": "error",
+                "error": "Usuário não possui chave privada cadastrada. Use a extensão Nostr para publicar."
+            }), 400
+
+        # Publica perfil
+        result = publicar_perfil_nostr(usuario.privkey, perfil)
+
+        if result.get("success"):
+            print(f"[DEBUG] Perfil publicado com sucesso: {result}")
+            return jsonify({
+                "status": "ok",
+                "message": "Perfil publicado com sucesso!",
+                "event_id": result.get("event_id"),
+                "relays": result.get("relays")
+            })
+        else:
+            print(f"[ERROR] Falha ao publicar: {result.get('error')}")
+            return jsonify({
+                "status": "error",
+                "error": result.get("error", "Erro desconhecido")
+            }), 500
+
+    except Exception as e:
+        print(f"[ERROR] Erro ao publicar perfil: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 # Mapeamento de planos para limites (em bytes)
 LIMITES_PLANO = {
     'free': 3 * 1024 * 1024 * 1024,      # 3 GB

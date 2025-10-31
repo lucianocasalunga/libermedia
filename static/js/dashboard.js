@@ -44,46 +44,87 @@ async function buscarPerfilNostr(npub) {
 }
 
 /**
- * Publica perfil Nostr (kind 0) usando NIP-07 (window.nostr)
+ * Publica perfil Nostr (kind 0) usando backend (funciona em qualquer dispositivo)
+ * Fallback para NIP-07 (window.nostr) se não tiver privkey no banco
  */
 async function publicarPerfilNostr(profileData) {
   try {
-    if (!window.nostr) {
-      throw new Error('Extensão Nostr não encontrada. Instale Alby, nos2x ou outra extensão compatível.');
+    const npub = localStorage.getItem('libermedia_npub');
+
+    // Tenta publicar via backend primeiro (funciona sem extensão)
+    try {
+      const response = await fetch('/api/nostr/profile/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          npub: npub,
+          perfil: profileData
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'ok') {
+        console.log('[Nostr] ✅ Perfil publicado via backend!', data);
+        return {
+          success: true,
+          event_id: data.event_id,
+          relays: data.relays,
+          method: 'backend'
+        };
+      }
+
+      // Se falhou porque não tem privkey, tenta extensão
+      if (data.error && data.error.includes('não possui chave privada')) {
+        console.log('[Nostr] ⚠️ Sem privkey no banco, tentando extensão...');
+        throw new Error('NO_PRIVKEY');
+      }
+
+      throw new Error(data.error || 'Erro ao publicar via backend');
+
+    } catch (backendError) {
+      // Se não tem privkey no banco, tenta usar extensão
+      if (backendError.message === 'NO_PRIVKEY' && window.nostr) {
+        console.log('[Nostr] 🔌 Usando extensão Nostr (NIP-07)...');
+
+        const content = JSON.stringify({
+          name: profileData.name || '',
+          display_name: profileData.display_name || '',
+          about: profileData.about || '',
+          picture: profileData.picture || '',
+          banner: profileData.banner || '',
+          website: profileData.website || '',
+          nip05: profileData.nip05 || '',
+          lud16: profileData.lud16 || ''
+        });
+
+        const event = {
+          kind: 0,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [],
+          content: content
+        };
+
+        const signedEvent = await window.nostr.signEvent(event);
+        const publishResults = await publicarEventoNostr(signedEvent);
+
+        return {
+          success: true,
+          event: signedEvent,
+          relays: publishResults,
+          method: 'extension'
+        };
+      }
+
+      // Se não tem extensão também, erro final
+      throw backendError;
     }
 
-    const content = JSON.stringify({
-      name: profileData.name || '',
-      display_name: profileData.display_name || '',
-      about: profileData.about || '',
-      picture: profileData.picture || '',
-      banner: profileData.banner || '',
-      website: profileData.website || '',
-      nip05: profileData.nip05 || '',
-      lud16: profileData.lud16 || ''
-    });
-
-    const event = {
-      kind: 0,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [],
-      content: content
-    };
-
-    const signedEvent = await window.nostr.signEvent(event);
-    const publishResults = await publicarEventoNostr(signedEvent);
-
-    return {
-      success: true,
-      event: signedEvent,
-      relays: publishResults
-    };
-
   } catch (error) {
-    console.error('[Nostr] Erro ao publicar perfil:', error);
+    console.error('[Nostr] ❌ Erro ao publicar perfil:', error);
     return {
       success: false,
-      error: error.message
+      error: error.message || 'Erro desconhecido'
     };
   }
 }
