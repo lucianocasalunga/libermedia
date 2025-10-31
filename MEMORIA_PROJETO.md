@@ -75,12 +75,20 @@
 - ❌ NIP-05: Verificação DNS (pendente)
 - ❌ NIP-04: Mensagens privadas (pendente)
 
+**🐛 BUGS IDENTIFICADOS (31/Out - 23:55 UTC):**
+1. ⚠️ **NIP-78 buscar pastas:** "Expected SingleLetterTag instance, str found"
+2. ⚠️ **NIP-78 publicar:** 400 Bad Request quando usuário sem privkey
+3. ℹ️ Tailwind CDN em produção (warning - não crítico)
+
+**Causa provável:** Tag "d" sendo passada como string em vez de objeto Tag no backend NIP-78
+
 **🎯 PRÓXIMOS PASSOS:**
-1. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
-2. [ ] Implementar NIP-05 (verificação @libermedia.app)
-3. [ ] Aplicar NIP-98 em todos endpoints
-4. [ ] Push projetos para GitHub
-5. [ ] Pequenas correções de UX (se aparecerem)
+1. [ ] 🔥 Corrigir bugs NIP-78 (tags)
+2. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
+3. [ ] Implementar NIP-05 (verificação @libermedia.app)
+4. [ ] Aplicar NIP-98 em todos endpoints
+5. [ ] Push projetos para GitHub
+6. [ ] Migrar disco sdb 1TB
 
 ---
 
