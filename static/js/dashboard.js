@@ -197,9 +197,15 @@ async function publicarEventoNostr(signedEvent) {
  */
 async function sincronizarPerfilNostr(npub) {
   try {
+    console.log('[SyncNostr] 🔄 Iniciando sincronização para:', npub);
+    console.log('[SyncNostr] 📞 Chamando buscarPerfilNostr()...');
+
     const perfil = await buscarPerfilNostr(npub);
 
+    console.log('[SyncNostr] 📥 Resultado de buscarPerfilNostr():', perfil);
+
     if (perfil) {
+      console.log('[SyncNostr] ✅ Perfil válido, salvando no localStorage...');
       localStorage.setItem('libermedia_nome', perfil.name || perfil.display_name || '');
       localStorage.setItem('libermedia_display_name', perfil.display_name || '');
       localStorage.setItem('libermedia_avatar', perfil.picture || '');
@@ -210,12 +216,14 @@ async function sincronizarPerfilNostr(npub) {
       localStorage.setItem('libermedia_lud16', perfil.lud16 || '');
       localStorage.setItem('libermedia_last_sync', Date.now().toString());
 
+      console.log('[SyncNostr] 💾 Salvo no localStorage com sucesso!');
       return perfil;
     }
 
+    console.log('[SyncNostr] ⚠️ Perfil null, retornando null');
     return null;
   } catch (error) {
-    console.error('[Nostr] Erro ao sincronizar perfil:', error);
+    console.error('[SyncNostr] ❌ ERRO na sincronização:', error);
     return null;
   }
 }
