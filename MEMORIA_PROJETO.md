@@ -1,11 +1,28 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 30/Outubro/2025 20:00 UTC
+**Última atualização:** 31/Outubro/2025 11:30 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
 
-## 🎯 SITUAÇÃO ATUAL (30/Out/2025 - 19:30 UTC)
+## 🎯 SITUAÇÃO ATUAL (31/Out/2025 - 11:30 UTC)
+
+### 🎉 CORREÇÃO CRÍTICA IMPLEMENTADA HOJE:
+**NIP-01: Sincronização Universal (funciona sem extensão)**
+- ✅ Criado endpoint `/api/nostr/profile/publish` no backend
+- ✅ Backend assina e publica eventos kind 0 usando `nostr-sdk`
+- ✅ Frontend usa backend primeiro, fallback para extensão NIP-07
+- ✅ **Funciona em QUALQUER dispositivo** (mobile, desktop, tablets)
+- ✅ Não depende mais de extensão Nostr instalada
+- ✅ Commit: `8f0c83a`
+
+**Problema resolvido:**
+- Antes: sincronização só funcionava no MacMini com extensão instalada
+- Agora: funciona em qualquer dispositivo (celular da sua filha, seu celular, etc)
+
+---
+
+## 🎯 SITUAÇÃO ANTERIOR (30/Out/2025 - 19:30 UTC)
 
 ### ✅ FUNCIONALIDADES IMPLEMENTADAS HOJE:
 1. ✅ Busca de arquivos por nome (filtro em tempo real)
@@ -29,21 +46,25 @@
 ### ⚠️ PRIORIDADE ALTA - MENCIONADOS ONTEM:
 
 #### **NIP-01: Basic Protocol Flow**
-- Status: ✅ **IMPLEMENTADO E TESTADO COM SUCESSO**
+- Status: ✅ **IMPLEMENTADO COMPLETAMENTE (31/Out/2025)**
 - Implementado em: 30/Out/2025 (commits 5499375, 2f7d5e6)
-- Solução final: Código inline no dashboard.js (evita cache)
+- **Correção crítica em: 31/Out/2025 (commit 8f0c83a)** 🎉
+- Solução final: Backend + Frontend híbrido
 - Funcionalidades:
-  - ✅ Sincronizar metadados de perfil (kind 0) completos
-  - ✅ Publicar perfil usando NIP-07 (window.nostr)
+  - ✅ Sincronizar metadados de perfil (kind 0) completos via backend
+  - ✅ Publicar perfil via backend (funciona sem extensão) 🚀
+  - ✅ Fallback para NIP-07 (window.nostr) quando sem privkey
   - ✅ Todos os campos: name, display_name, about, picture, banner, website, nip05, lud16
   - ✅ Sincronização automática (1x por hora)
   - ✅ Publicação em múltiplos relays (Damus, nos.lol, relay.band)
   - ✅ Modal expandido com 8 campos editáveis
   - ✅ Indicador de status de sincronização
-  - ✅ Funciona sem cache do usuário
+  - ✅ **Funciona em qualquer dispositivo (mobile, desktop, tablets)**
+  - ✅ **Não depende de extensão Nostr instalada**
 - Próximos passos:
   - [ ] Publicar eventos de atividade do usuário (kind 1)
   - [ ] Melhorar tratamento de eventos recebidos
+  - [ ] Cache de perfis para reduzir requests aos relays
 
 #### **NIP-07: window.nostr Capability**
 - Status: ✅ IMPLEMENTADO (login via extensão)
