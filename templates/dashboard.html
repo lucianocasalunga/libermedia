@@ -14,25 +14,6 @@
 .view-lista .file-info { flex: 1; }
 .view-lista .file-actions { display: flex; gap: 0.5rem; }
 .view-lista .file-card > div:first-of-type { display: none; }
-/* Modo lista: áudio compacto sem player */
-.view-lista .file-card > div:first-of-type {
-  display: block !important;
-  width: 60px !important;
-  height: 60px !important;
-  flex-shrink: 0;
-}
-.view-lista .file-card > div:first-of-type > div:first-child {
-  width: 60px !important;
-  height: 60px !important;
-  aspect-ratio: 1 !important;
-}
-.view-lista .file-card > div:first-of-type > div:last-child {
-  display: none !important; /* Esconde player no modo lista */
-}
-.view-lista .file-card > div:first-of-type svg {
-  width: 32px !important;
-  height: 32px !important;
-}
 
 /* Estilos para filtro por tipo */
 .tipo-btn { padding: 0.5rem 1rem; border-radius: 9999px; background: #f3f4f6; color: #1f2937; font-weight: 500; cursor: pointer; transition: all 0.2s; }
