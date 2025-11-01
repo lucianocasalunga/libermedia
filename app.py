@@ -1462,13 +1462,16 @@ async def buscar_pastas_nostr_async(npub: str):
                   .kind(NostrKind(30078))
                   .identifier("folders"))
 
-        # Timeout de 10 segundos
+        # Timeout de 3 segundos (reduzido para melhor performance)
         # Nota: fetch_events espera Filter instance, não lista
-        events = await client.fetch_events(filter, timedelta(seconds=10))
+        events = await client.fetch_events(filter, timedelta(seconds=3))
 
-        if events:
+        # Converte Events object para lista
+        events_list = list(events) if events else []
+
+        if events_list:
             # Pega o evento mais recente (kind 30078 é replaceable)
-            latest = max(events, key=lambda e: e.created_at())
+            latest = max(events_list, key=lambda e: e.created_at())
             content = latest.content()
 
             try:
