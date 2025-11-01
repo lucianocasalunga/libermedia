@@ -1463,7 +1463,8 @@ async def buscar_pastas_nostr_async(npub: str):
                   .identifier("folders"))
 
         # Timeout de 10 segundos
-        events = await client.fetch_events([filter], timedelta(seconds=10))
+        # Nota: fetch_events espera Filter instance, não lista
+        events = await client.fetch_events(filter, timedelta(seconds=10))
 
         if events:
             # Pega o evento mais recente (kind 30078 é replaceable)
