@@ -1,6 +1,6 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 31/Outubro/2025 23:50 UTC
+**Última atualização:** 01/Novembro/2025 07:45 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
@@ -9,29 +9,31 @@
 
 **⚠️ AUTORIZAÇÃO:** Claude Code tem autorização PLENA para agir neste servidor sem necessidade de aprovação prévia.
 
-**Arquitetura de Discos (Planejada):**
-- **Sistema (/):** 100GB - APENAS SO ⚙️
-- **sdb (1TB):** 931.5GB - PROJETOS (/opt/*) 📂 ⚠️ NÃO MONTADO
-- **sda1 (6TB):** 5.5TB - DADOS (uploads, DBs, crescimento) 📊 ✅ JÁ EM USO
+**Arquitetura de Discos (✅ IMPLEMENTADA - 01/Nov/2025):**
+- **Sistema (/):** 100GB LVM - SO + Docker ⚙️
+- **projetos-lv (800GB):** Volume LVM em sdb3 - PROJETOS (/mnt/projetos) 📂 ✅
+- **sda1 (6TB):** 5.5TB - DADOS (uploads, DBs, crescimento) 📊 ✅
 
-**Estado Atual:**
-- **Sistema (/):** 52% usado (48GB/46GB livre) - SO + Projetos (errado)
-- **sda1 (/mnt/storage):** 1% usado (7.5GB/5.2TB livre) - DBs ✅
-- **sdb:** NÃO MONTADO ⚠️
+**Estado Atual (✅ MIGRAÇÃO COMPLETA):**
+- **Sistema (/):** 53% usado (49GB/45GB livre) - APENAS SO + Docker ✅
+- **projetos-lv (/mnt/projetos):** 1% usado (2.7GB/744GB livre) - Projetos ✅
+- **sda1 (/mnt/storage):** 1% usado (11GB/5.2TB livre) - DBs + Uploads ✅
 
-**⚠️ TAREFA URGENTE - AMANHÃ:**
-- [ ] Montar disco sdb (1TB)
-- [ ] Criar partição e formatar se necessário
-- [ ] Migrar projetos: /opt/* → /sdb/opt/ (ou /mnt/projetos)
-- [ ] Atualizar docker-compose.yml com novos paths
-- [ ] Atualizar fstab para mount automático
-- [ ] Liberar espaço em / (100GB só para SO)
-- [ ] PostgreSQL e uploads permanecem em /mnt/storage (6TB) ✅
+**✅ MIGRAÇÃO CONCLUÍDA (01/Nov/2025 - 07:45 UTC):**
+- [x] Criado volume lógico projetos-lv (800GB) no LVM
+- [x] Formatado como ext4 (UUID: 8b8bd42f-b2e5-4414-99bb-c0352dd97ba4)
+- [x] Migrados todos projetos: /opt/* → /mnt/projetos/*
+- [x] Criados symlinks: /opt/* → /mnt/projetos/* (compatibilidade)
+- [x] Atualizado /etc/fstab para mount automático
+- [x] Backup de segurança em /mnt/storage/backup_projetos_20251101_0100
+- [x] Todos serviços Docker funcionando normalmente
+- [x] PostgreSQL e uploads permanecem em /mnt/storage (6TB) ✅
 
-**Localização Atual vs Planejada:**
-- Projetos: `/opt/*` (em /) → `/mnt/projetos/*` (em sdb) 📂
-- Uploads: `/opt/libermedia/uploads` → `/mnt/storage/uploads` 📊
-- PostgreSQL: `/mnt/storage/libermedia/postgres` ✅ JÁ CORRETO
+**Localização Final:**
+- Projetos: `/opt/*` (symlinks) → `/mnt/projetos/*` (real location) 📂
+- Uploads: `/mnt/storage/uploads` 📊
+- PostgreSQL: `/mnt/storage/libermedia/postgres` ✅
+- Backup original: `/opt_old` (pode ser removido após testes)
 
 **Projetos Pessoais no Servidor:**
 1. ✅ **LiberMedia** (/opt/libermedia) - Docker - Hospedagem + Nostr
