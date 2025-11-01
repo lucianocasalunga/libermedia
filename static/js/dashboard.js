@@ -1664,6 +1664,8 @@ const originalLoad = window.onload || (() => {});
 window.onload = function() {
   originalLoad();
   setTimeout(carregarDashboardUso, 1000);
+  // Carrega badge NIP-05
+  loadNip05Badge();
 };
 
 // Mobile: Toggle sidebar ao tocar
@@ -1690,6 +1692,9 @@ function openConfigModal() {
 
   // Atualiza status de sincronização
   atualizarStatusSync();
+
+  // Carrega status NIP-05
+  loadNip05Status();
 
   document.getElementById('configModal').classList.remove('hidden');
 }
@@ -1895,4 +1900,133 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// ============================================
+// NIP-05: VERIFICAÇÃO DE IDENTIDADE
+// ============================================
+
+async function loadNip05Status() {
+  try {
+    const response = await fetch(`/api/nip05/check?npub=${npub}`);
+    const data = await response.json();
+
+    const statusDiv = document.getElementById('nip05Status');
+    const formDiv = document.getElementById('nip05RequestForm');
+
+    if (data.verified) {
+      // Usuário verificado
+      statusDiv.innerHTML = `
+        <div class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
+          <span class="text-2xl">✅</span>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-green-700 dark:text-green-300">
+              Verificado!
+            </p>
+            <p class="text-xs text-green-600 dark:text-green-400">
+              ${data.identifier}
+            </p>
+          </div>
+        </div>
+      `;
+      formDiv.classList.add('hidden');
+
+      // Atualiza campo NIP-05 no formulário
+      document.getElementById('configNip05').value = data.identifier;
+
+    } else if (data.username) {
+      // Solicitação pendente
+      statusDiv.innerHTML = `
+        <div class="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-700">
+          <span class="text-2xl">⏳</span>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+              Aguardando aprovação
+            </p>
+            <p class="text-xs text-yellow-600 dark:text-yellow-400">
+              Username solicitado: ${data.username}@libermedia.app
+            </p>
+          </div>
+        </div>
+      `;
+      formDiv.classList.add('hidden');
+
+    } else {
+      // Sem verificação
+      statusDiv.innerHTML = `
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Solicite seu username verificado @libermedia.app
+        </p>
+      `;
+      formDiv.classList.remove('hidden');
+    }
+
+  } catch (error) {
+    console.error('[NIP-05] Erro ao carregar status:', error);
+  }
+}
+
+async function requestNip05Username() {
+  try {
+    const username = document.getElementById('nip05RequestUsername').value.trim().toLowerCase();
+
+    if (!username) {
+      showToast('⚠️ Digite um username', 'error');
+      return;
+    }
+
+    // Valida formato
+    if (!/^[a-z0-9_-]+$/.test(username)) {
+      showToast('⚠️ Use apenas letras minúsculas, números, - e _', 'error');
+      return;
+    }
+
+    console.log(`[NIP-05] Solicitando username: ${username}`);
+
+    const response = await fetch('/api/nip05/request-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        npub,
+        username
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      showToast(`✅ ${data.message}`, 'success');
+      loadNip05Status(); // Recarrega status
+      loadNip05Badge(); // Atualiza badge no header
+    } else {
+      showToast(`❌ ${data.error}`, 'error');
+    }
+
+  } catch (error) {
+    console.error('[NIP-05] Erro ao solicitar username:', error);
+    showToast('❌ Erro ao solicitar username', 'error');
+  }
+}
+
+async function loadNip05Badge() {
+  try {
+    const response = await fetch(`/api/nip05/check?npub=${npub}`);
+    const data = await response.json();
+
+    const badge = document.getElementById('nip05Badge');
+    const identifier = document.getElementById('nip05Identifier');
+
+    if (data.verified && data.identifier) {
+      badge.classList.remove('hidden');
+      identifier.textContent = data.identifier;
+      identifier.classList.remove('hidden');
+      console.log(`[NIP-05] Usuário verificado: ${data.identifier}`);
+    } else {
+      badge.classList.add('hidden');
+      identifier.classList.add('hidden');
+    }
+
+  } catch (error) {
+    console.error('[NIP-05] Erro ao carregar badge:', error);
+  }
+}
 

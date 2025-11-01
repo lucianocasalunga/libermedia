@@ -32,8 +32,12 @@
     <div class="sidebar-drawer fixed md:relative top-0 left-0 h-screen md:h-full w-80 md:w-auto transform -translate-x-full md:translate-x-0 transition-transform z-40 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl pt-8 md:pt-6 px-6 pb-6 border border-gray-200 dark:border-gray-700 space-y-4 sidebar-mobile overflow-y-auto">
       <div class="text-center">
         <img src="/static/img/avatar.png" class="w-16 h-16 mx-auto rounded-full border-2 border-yellow-500 mb-2 object-cover">
-        <p class="font-bold text-gray-900 dark:text-white">Usuário</p>
+        <div class="flex items-center justify-center gap-1">
+          <p class="font-bold text-gray-900 dark:text-white">Usuário</p>
+          <span id="nip05Badge" class="hidden" title="Verificado NIP-05">✅</span>
+        </div>
         <p id="npubShort" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
+        <p id="nip05Identifier" class="text-xs text-purple-600 dark:text-purple-400 mt-1 hidden"></p>
       </div>
       
       <div class="flex gap-2">
@@ -460,6 +464,33 @@
       <p class="text-xs text-blue-500 dark:text-blue-400 mt-2">
         💡 Suas configurações serão publicadas no Nostr automaticamente (funciona em qualquer dispositivo!)
       </p>
+    </div>
+
+    <!-- Verificação NIP-05 @libermedia.app -->
+    <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+      <h4 class="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-3">✅ Verificação NIP-05</h4>
+
+      <div id="nip05Status" class="mb-3"></div>
+
+      <div id="nip05RequestForm" class="hidden">
+        <label class="text-xs text-gray-600 dark:text-gray-400 mb-2 block">
+          Escolha seu username (username@libermedia.app):
+        </label>
+        <div class="flex gap-2">
+          <input type="text" id="nip05RequestUsername" placeholder="luciano"
+                 class="flex-1 px-3 py-2 bg-white dark:bg-gray-900 border border-purple-300 dark:border-purple-600 rounded text-gray-900 dark:text-white text-sm"
+                 pattern="[a-z0-9_-]+"
+                 title="Apenas letras minúsculas, números, - e _">
+          <span class="flex items-center text-gray-600 dark:text-gray-400 text-sm">@libermedia.app</span>
+        </div>
+        <button onclick="requestNip05Username()"
+                class="mt-2 w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm font-semibold">
+          📝 Solicitar Verificação
+        </button>
+        <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+          ℹ️ Após solicitar, aguarde aprovação do admin para ativar sua verificação.
+        </p>
+      </div>
     </div>
 
     <!-- Botões -->

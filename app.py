@@ -197,6 +197,10 @@ class Usuario(db.Model):
     plano = db.Column(db.String(32), default="free")
     created_at = db.Column(db.Integer, default=lambda: int(time.time()))
 
+    # NIP-05: Verificação de identidade
+    nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@libermedia.app
+    nip05_verified = db.Column(db.Boolean, default=False)  # Se está verificado
+
 with app.app_context():
     db.create_all()
 
@@ -204,6 +208,63 @@ with app.app_context():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+# ============================================
+# NIP-05: VERIFICATION (username@libermedia.app)
+# ============================================
+
+@app.route("/.well-known/nostr.json")
+def nip05_verification():
+    """
+    Endpoint NIP-05 para verificação de identidade
+    Retorna mapeamento username → pubkey
+
+    Exemplo: GET /.well-known/nostr.json?name=luciano
+    Retorna: {"names": {"luciano": "9b31915dd140b34774cb60c42fc0e015d800cde7f5e4f82a5f2d4e21d72803e4"}}
+    """
+    try:
+        # Busca todos usuários verificados
+        usuarios_verificados = Usuario.query.filter_by(nip05_verified=True).all()
+
+        # Cria dicionário de mapeamentos
+        names = {}
+        relays = {}
+
+        for usuario in usuarios_verificados:
+            if usuario.nip05_username:
+                # Remove npub prefix e converte para hex se necessário
+                pubkey_hex = usuario.pubkey
+                if pubkey_hex.startswith("npub"):
+                    # Converte npub para hex
+                    from nostr_sdk import Nip19
+                    try:
+                        decoded = Nip19.from_bech32(pubkey_hex)
+                        pubkey_hex = decoded.as_enum().npub.to_hex()
+                    except:
+                        print(f"[NIP-05] Erro ao converter npub para hex: {pubkey_hex}")
+                        continue
+
+                names[usuario.nip05_username] = pubkey_hex
+                # Adiciona relays recomendados (opcional)
+                relays[usuario.nip05_username] = [
+                    "wss://relay.damus.io",
+                    "wss://nos.lol",
+                    "wss://relay.nostr.band"
+                ]
+
+        # Retorna JSON conforme especificação NIP-05
+        response = {"names": names}
+        if relays:
+            response["relays"] = relays
+
+        return jsonify(response), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+    except Exception as e:
+        print(f"[NIP-05] Erro no endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"names": {}}), 200
 
 
 # ============================================
@@ -759,6 +820,129 @@ def auth_login():
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "error": str(e)}), 500
+
+
+# ============================================
+# NIP-05: API de Gerenciamento
+# ============================================
+
+@app.route("/api/nip05/request-username", methods=["POST"])
+def request_nip05_username():
+    """
+    Usuário solicita um username para verificação NIP-05
+    """
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        username = data.get("username")
+
+        if not npub or not username:
+            return jsonify({"status": "error", "error": "npub e username obrigatórios"}), 400
+
+        # Valida formato do username (somente letras minúsculas, números, hífen, underscore)
+        import re
+        if not re.match(r'^[a-z0-9_-]+$', username):
+            return jsonify({
+                "status": "error",
+                "error": "Username inválido. Use apenas letras minúsculas, números, - e _"
+            }), 400
+
+        # Verifica se username já existe
+        existing = Usuario.query.filter_by(nip05_username=username).first()
+        if existing:
+            return jsonify({"status": "error", "error": "Username já em uso"}), 400
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Atualiza username (mas não verifica automaticamente)
+        usuario.nip05_username = username
+        usuario.nip05_verified = False  # Precisa aprovação do admin
+        db.session.commit()
+
+        print(f"[NIP-05] Solicitação de username: {username} para {npub[:12]}...")
+
+        return jsonify({
+            "status": "ok",
+            "message": f"Username '{username}' solicitado! Aguarde aprovação do admin.",
+            "username": username,
+            "verified": False
+        })
+
+    except Exception as e:
+        print(f"[NIP-05] Erro ao solicitar username: {e}")
+        db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+@app.route("/api/admin/nip05/verify", methods=["POST"])
+@admin_required
+def admin_verify_nip05():
+    """
+    Admin aprova/rejeita verificação NIP-05 de um usuário
+    """
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+        verified = data.get("verified", False)
+
+        usuario = Usuario.query.get(user_id)
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        if not usuario.nip05_username:
+            return jsonify({"status": "error", "error": "Usuário não possui username solicitado"}), 400
+
+        usuario.nip05_verified = verified
+        db.session.commit()
+
+        status_text = "verificado" if verified else "rejeitado"
+        print(f"[NIP-05] Admin {status_text} username '{usuario.nip05_username}' para {usuario.pubkey[:12]}...")
+
+        return jsonify({
+            "status": "ok",
+            "message": f"Username {status_text} com sucesso!",
+            "username": usuario.nip05_username,
+            "verified": verified
+        })
+
+    except Exception as e:
+        print(f"[NIP-05] Erro ao verificar username: {e}")
+        db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+@app.route("/api/nip05/check", methods=["GET"])
+def check_nip05():
+    """
+    Verifica status NIP-05 de um usuário
+    """
+    try:
+        npub = request.args.get("npub")
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({
+                "status": "ok",
+                "verified": False,
+                "username": None
+            })
+
+        return jsonify({
+            "status": "ok",
+            "verified": usuario.nip05_verified,
+            "username": usuario.nip05_username,
+            "identifier": f"{usuario.nip05_username}@libermedia.app" if usuario.nip05_username else None
+        })
+
+    except Exception as e:
+        print(f"[NIP-05] Erro ao checar status: {e}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8081)
