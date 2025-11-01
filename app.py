@@ -1973,24 +1973,16 @@ def get_uso():
         for tipo, count, size in arquivos_por_tipo:
             tipos[tipo or 'outros'] = {'count': count, 'size': size or 0}
 
-        # Histórico de uploads (últimos 30 dias)
-        trinta_dias_atras = int(time.time()) - (30 * 24 * 60 * 60)
-        uploads_recentes = db.session.query(
-            db.func.date(db.func.from_unixtime(Arquivo.created_at)).label('data'),
-            db.func.count(Arquivo.id).label('count'),
-            db.func.sum(Arquivo.tamanho).label('size')
+        # Histórico simplificado (últimos 7 dias - apenas count)
+        sete_dias_atras = int(time.time()) - (7 * 24 * 60 * 60)
+        uploads_ultimos_7d = db.session.query(
+            db.func.count(Arquivo.id)
         ).filter(
             Arquivo.usuario_id == usuario.id,
-            Arquivo.created_at >= trinta_dias_atras
-        ).group_by(db.func.date(db.func.from_unixtime(Arquivo.created_at))).all()
+            Arquivo.created_at >= sete_dias_atras
+        ).scalar() or 0
 
-        historico = []
-        for data, count, size in uploads_recentes:
-            historico.append({
-                'data': str(data),
-                'count': count,
-                'size': size or 0
-            })
+        historico = {'uploads_7d': uploads_ultimos_7d}
 
         # Top 5 arquivos maiores
         maiores_arquivos = db.session.query(Arquivo).filter_by(
@@ -2027,7 +2019,7 @@ def get_uso():
             'plano': usuario.plano,
             'total_arquivos': total_arquivos,
             'tipos': tipos,
-            'historico_30dias': historico,
+            'historico': historico,
             'top_arquivos': top_arquivos,
             'alertas': alertas
         })

@@ -1735,21 +1735,16 @@ function carregarDashboardUso() {
       document.getElementById('topArquivos').innerHTML = topHTML;
     }
 
-    // Histórico simplificado (últimos 7 dias com uploads)
-    if (data.historico_30dias && data.historico_30dias.length > 0 && document.getElementById('historico7dias')) {
-      const ultimos7 = data.historico_30dias.slice(-7);
-      const historicoHTML = ultimos7.map(h => {
-        const count = h.count;
-        const sizeMB = (h.size / (1024 * 1024)).toFixed(0);
-        const data_formatada = new Date(h.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        return `
-          <div class="text-center">
-            <div class="text-xs font-bold text-gray-900 dark:text-white">${data_formatada}</div>
-            <div class="text-xs text-gray-600 dark:text-gray-400">${count} arq</div>
-            <div class="text-xs text-gray-500 dark:text-gray-500">${sizeMB}MB</div>
-          </div>
-        `;
-      }).join('');
+    // Histórico simplificado (últimos 7 dias)
+    if (data.historico && document.getElementById('historico7dias')) {
+      const historicoHTML = `
+        <div class="col-span-7 text-center py-2 bg-gray-100 dark:bg-gray-700 rounded">
+          <p class="text-xs text-gray-600 dark:text-gray-400">
+            <span class="font-bold text-gray-900 dark:text-white">${data.historico.uploads_7d || 0}</span>
+            arquivo${(data.historico.uploads_7d || 0) !== 1 ? 's' : ''} enviado${(data.historico.uploads_7d || 0) !== 1 ? 's' : ''} nos últimos 7 dias
+          </p>
+        </div>
+      `;
       document.getElementById('historico7dias').innerHTML = historicoHTML;
     }
   })
