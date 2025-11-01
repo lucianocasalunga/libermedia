@@ -1456,10 +1456,11 @@ async def buscar_pastas_nostr_async(npub: str):
         await client.connect()
 
         # Filtro para kind 30078 (application data) com tag "d" = "folders"
+        # Para eventos parametrizáveis (30000-39999), usar .identifier() em vez de custom_tag
         filter = (Filter()
                   .author(pubkey)
                   .kind(NostrKind(30078))
-                  .custom_tag('d', ['folders']))
+                  .identifier("folders"))
 
         # Timeout de 10 segundos
         events = await client.fetch_events([filter], timedelta(seconds=10))
@@ -1613,6 +1614,77 @@ def api_publish_nostr_folders():
 
     except Exception as e:
         print(f"[ERROR] Erro ao publicar pastas: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+async def publicar_evento_assinado_async(event_json: dict):
+    """Publica um evento já assinado (de NIP-07) nos relays"""
+    try:
+        from nostr_sdk import Event as NostrEventSDK
+
+        # Converte JSON para objeto Event
+        event = NostrEventSDK.from_json(json.dumps(event_json))
+
+        client = Client()
+        await client.add_relay(RelayUrl.parse("wss://relay.damus.io"))
+        await client.add_relay(RelayUrl.parse("wss://nos.lol"))
+        await client.add_relay(RelayUrl.parse("wss://relay.nostr.band"))
+
+        await client.connect()
+
+        # Publica evento
+        output = await client.send_event(event)
+
+        print(f"[NIP-78] ✅ Evento NIP-07 publicado: {output.id.to_hex()}")
+
+        return {
+            "success": True,
+            "event_id": output.id.to_hex()
+        }
+
+    except Exception as e:
+        print(f"[NIP-78] ❌ Erro ao publicar evento assinado: {e}")
+        return {"success": False, "error": str(e)}
+    finally:
+        try:
+            await client.disconnect()
+        except:
+            pass
+
+
+def publicar_evento_assinado(event_json: dict):
+    """Wrapper síncrono para publicar evento assinado"""
+    import asyncio
+    return asyncio.run(publicar_evento_assinado_async(event_json))
+
+
+@app.route("/api/nostr/publish-signed", methods=["POST"])
+def api_publish_signed_event():
+    """API para publicar evento já assinado (de extensão NIP-07)"""
+    try:
+        data = request.get_json()
+        event = data.get("event")
+
+        if not event:
+            return jsonify({"status": "error", "error": "Evento obrigatório"}), 400
+
+        result = publicar_evento_assinado(event)
+
+        if result.get("success"):
+            return jsonify({
+                "status": "ok",
+                "event_id": result.get("event_id")
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "error": result.get("error", "Erro desconhecido")
+            }), 500
+
+    except Exception as e:
+        print(f"[ERROR] Erro ao publicar evento assinado: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "error": str(e)}), 500

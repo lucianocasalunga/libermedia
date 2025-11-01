@@ -438,6 +438,7 @@ async function publicarPastasNostr(folders) {
   try {
     console.log(`[NIP-78] 📤 Publicando ${folders.length} pastas...`);
 
+    // Tenta publicar via backend primeiro
     const response = await fetch('/api/nostr/folders/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -450,12 +451,59 @@ async function publicarPastasNostr(folders) {
     const data = await response.json();
 
     if (data.status === 'ok') {
-      console.log('[NIP-78] ✅ Pastas sincronizadas com sucesso!');
+      console.log('[NIP-78] ✅ Pastas sincronizadas com sucesso (backend)!');
       return true;
-    } else {
-      console.log('[NIP-78] ⚠️ Não foi possível sincronizar:', data.error);
-      return false;
     }
+
+    // Se falhou porque não tem privkey, tenta via extensão NIP-07
+    if (response.status === 400 && data.error && data.error.includes('chave privada')) {
+      console.log('[NIP-78] 🔄 Backend sem privkey, tentando via extensão NIP-07...');
+
+      if (typeof window.nostr !== 'undefined') {
+        try {
+          // Cria evento kind 30078 com tag "d" = "folders"
+          const event = {
+            kind: 30078,
+            content: JSON.stringify({ folders }),
+            tags: [['d', 'folders']],
+            created_at: Math.floor(Date.now() / 1000)
+          };
+
+          // Assina via extensão
+          const signedEvent = await window.nostr.signEvent(event);
+
+          console.log('[NIP-78] ✅ Evento assinado via NIP-07:', signedEvent.id);
+
+          // Publica o evento assinado via backend
+          const publishResponse = await fetch('/api/nostr/publish-signed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: signedEvent })
+          });
+
+          const publishData = await publishResponse.json();
+
+          if (publishData.status === 'ok') {
+            console.log('[NIP-78] ✅ Pastas sincronizadas com sucesso (NIP-07)!');
+            return true;
+          } else {
+            console.error('[NIP-78] ❌ Erro ao publicar evento:', publishData.error);
+            return false;
+          }
+
+        } catch (nip07Error) {
+          console.error('[NIP-78] ❌ Erro ao assinar via NIP-07:', nip07Error);
+          return false;
+        }
+      } else {
+        console.log('[NIP-78] ⚠️ Extensão NIP-07 não disponível');
+        return false;
+      }
+    }
+
+    console.log('[NIP-78] ⚠️ Não foi possível sincronizar:', data.error);
+    return false;
+
   } catch (error) {
     console.error('[NIP-78] ❌ Erro ao publicar pastas:', error);
     return false;
