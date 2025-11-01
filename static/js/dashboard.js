@@ -1579,12 +1579,56 @@ function executeDelete() {
     });
 }
 
-function showToast(message, type) {
+// ============================================
+// UI HELPERS - Toast & Loading States
+// ============================================
+
+function showToast(message, type = 'info') {
   const toast = document.createElement('div');
-  toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+
+  const colors = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    warning: 'bg-yellow-500',
+    info: 'bg-blue-500'
+  };
+
+  const bg = colors[type] || colors.info;
+
+  toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-2xl z-50 ${bg} text-white font-semibold transition-all duration-300`;
   toast.textContent = message;
+
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+let loadingOverlay = null;
+
+function showLoading(message = 'Carregando...') {
+  if (loadingOverlay) return; // Já existe um loading
+
+  loadingOverlay = document.createElement('div');
+  loadingOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center';
+  loadingOverlay.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 flex flex-col items-center gap-4">
+      <div class="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-gray-900 dark:text-white font-semibold">${message}</p>
+    </div>
+  `;
+
+  document.body.appendChild(loadingOverlay);
+}
+
+function hideLoading() {
+  if (loadingOverlay) {
+    loadingOverlay.remove();
+    loadingOverlay = null;
+  }
 }
 
 // Dashboard de Uso
