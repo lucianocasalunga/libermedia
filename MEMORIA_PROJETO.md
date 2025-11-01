@@ -1,6 +1,6 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 01/Novembro/2025 07:45 UTC
+**Última atualização:** 01/Novembro/2025 07:50 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
@@ -77,20 +77,25 @@
 - ❌ NIP-05: Verificação DNS (pendente)
 - ❌ NIP-04: Mensagens privadas (pendente)
 
-**🐛 BUGS IDENTIFICADOS (31/Out - 23:55 UTC):**
-1. ⚠️ **NIP-78 buscar pastas:** "Expected SingleLetterTag instance, str found"
-2. ⚠️ **NIP-78 publicar:** 400 Bad Request quando usuário sem privkey
-3. ℹ️ Tailwind CDN em produção (warning - não crítico)
+**✅ BUGS CORRIGIDOS (01/Nov/2025 - 07:50 UTC):**
+1. ✅ **NIP-78 buscar pastas:** Substituído `.custom_tag('d', ['folders'])` por `.identifier("folders")`
+   - Método correto para eventos parametrizáveis (kind 30000-39999)
+2. ✅ **NIP-78 publicar:** Implementado fallback automático para NIP-07
+   - Tenta backend primeiro, depois extensão
+   - Criado endpoint `/api/nostr/publish-signed` para eventos assinados
+   - Suporte completo para usuários sem privkey armazenado
+3. ℹ️ Tailwind CDN em produção (warning - não crítico, não afeta funcionalidade)
 
-**Causa provável:** Tag "d" sendo passada como string em vez de objeto Tag no backend NIP-78
+**Tempo de correção:** ~45 minutos
+**Commit:** `2ba6c58`
 
 **🎯 PRÓXIMOS PASSOS:**
-1. [ ] 🔥 Corrigir bugs NIP-78 (tags)
-2. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
-3. [ ] Implementar NIP-05 (verificação @libermedia.app)
-4. [ ] Aplicar NIP-98 em todos endpoints
-5. [ ] Push projetos para GitHub
-6. [ ] Migrar disco sdb 1TB
+1. [x] ~~🔥 Corrigir bugs NIP-78 (tags)~~ **CONCLUÍDO** ✅
+2. [x] ~~Migrar disco sdb 1TB~~ **CONCLUÍDO** ✅
+3. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
+4. [ ] Implementar NIP-05 (verificação @libermedia.app)
+5. [ ] Aplicar NIP-98 em todos endpoints
+6. [ ] Push projetos para GitHub
 
 ---
 
