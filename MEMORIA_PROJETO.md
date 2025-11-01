@@ -92,10 +92,19 @@
 **🎯 PRÓXIMOS PASSOS:**
 1. [x] ~~🔥 Corrigir bugs NIP-78 (tags)~~ **CONCLUÍDO** ✅
 2. [x] ~~Migrar disco sdb 1TB~~ **CONCLUÍDO** ✅
-3. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
-4. [ ] Implementar NIP-05 (verificação @libermedia.app)
+3. [ ] 🔥 **EM ANDAMENTO:** Implementar NIP-05 (verificação @libermedia.app)
+4. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
 5. [ ] Aplicar NIP-98 em todos endpoints
 6. [ ] Push projetos para GitHub
+
+**✨ POLIMENTO FINAL (após todas funcionalidades):**
+- [ ] Aparar arestas e detalhes visuais
+- [ ] Melhorar experiência do usuário (UX)
+- [ ] Refinar interface (UI) para aspecto mais profissional
+- [ ] Revisar mensagens de erro e feedback
+- [ ] Otimizar animações e transições
+- [ ] Remover warning Tailwind CDN (build produção)
+- [ ] Testes finais de usabilidade
 
 ---
 
