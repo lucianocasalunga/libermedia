@@ -1,6 +1,6 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 01/Novembro/2025 10:10 UTC
+**Última atualização:** 01/Novembro/2025 11:00 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
@@ -360,6 +360,97 @@ ALTER TABLE usuario ADD COLUMN nip05_verified BOOLEAN DEFAULT FALSE;
 
 ---
 
+---
+
+## 📊 SESSÃO 3: DASHBOARD ANALYTICS + GITHUB (01/Nov/2025 - 10:30 UTC)
+
+**✅ DASHBOARD DE USO E ANALYTICS EXPANDIDO:**
+
+**Backend `/api/uso` (app.py):**
+- ✅ `total_arquivos` - Contador total de arquivos do usuário
+- ✅ `historico_30dias` - Uploads agrupados por dia
+  - Query: `db.func.date(db.func.from_unixtime(Arquivo.created_at))`
+  - Filtro: Últimos 30 dias
+  - Retorna: data, count, size por dia
+- ✅ `top_arquivos` - Top 5 maiores arquivos
+  - Query: `order_by(Arquivo.tamanho.desc()).limit(5)`
+  - Retorna: id, nome, tipo, tamanho, pasta
+- ✅ `alertas` - Sistema de alertas baseado em percentual
+  - Crítico: >= 90% (vermelho) → "Considere fazer upgrade"
+  - Aviso: >= 75% (amarelo) → Informativo
+  - Tipo + mensagem customizada
+
+**Frontend (dashboard.js):**
+- ✅ Renderização de alertas com cores contextuais
+  - Vermelho dark mode: `bg-red-900/30 border-red-700`
+  - Amarelo dark mode: `bg-yellow-900/30 border-yellow-700`
+  - Border-left-4 para destaque
+- ✅ Display de total de arquivos ao lado do plano
+- ✅ Top 5 maiores arquivos:
+  - Layout: ícone + nome + pasta | tamanho
+  - Truncate em nomes longos
+  - Ícones por tipo (🖼️ 🎬 🎵 📄)
+  - Tamanho em MB com 1 decimal
+- ✅ Histórico últimos 7 dias:
+  - Grid 7 colunas responsivo
+  - Data formatada (dd/mm)
+  - Count + tamanho por dia
+  - Slice dos últimos 7 dias do histórico de 30
+
+**Frontend (dashboard.html):**
+- ✅ Seção `usoAlertas` para exibir avisos
+- ✅ Total de arquivos na linha principal
+- ✅ Card "📊 Top 5 Maiores"
+- ✅ Card "📅 Últimos 7 dias" com grid
+
+**Melhorias visuais:**
+- Layout compacto e informativo
+- Cores consistentes com sistema de design
+- Ícones contextuais
+- Responsive grid
+
+**Tempo:** ~1 hora
+**Commit:** `c42eefb`
+**Arquivos:** +141 linhas
+**Status:** FUNCIONAL ✅
+
+---
+
+**✅ PUSH PARA GITHUB + DOCUMENTAÇÃO:**
+
+**README.md atualizado:**
+- ✅ Seção NIPs atualizada com implementações de Nov/2025
+  - NIP-05 ✨ (Verificação DNS)
+  - NIP-78 ✨ (Sync de pastas)
+  - NIP-94 ✨ (File Metadata)
+  - NIP-96 ✨ (HTTP File Storage)
+  - NIP-98 ✨ (HTTP Auth)
+- ✅ Funcionalidades atualizadas:
+  - Dashboard de uso com analytics
+  - Autenticação NIP-98
+  - Verificação NIP-05
+  - Sync de pastas via NIP-78
+- ✅ Status atual do projeto documentado
+
+**Push para GitHub:**
+- ✅ Remote: `github.com/lucianocasalunga/libermedia.git`
+- ✅ Branch: `master`
+- ✅ Commits enviados: 10 commits (desde último push)
+- ✅ Status: Push bem-sucedido
+- ✅ Commits inclusos:
+  - NIP-05 implementação completa
+  - Painel Admin NIP-05
+  - NIP-98 em endpoints
+  - Polimento UX
+  - Dashboard Analytics
+  - README atualizado
+
+**Tempo:** ~30 minutos
+**Commit:** `d9c0f1c`
+**Status:** COMPLETO ✅
+
+---
+
 **🎯 PRÓXIMOS PASSOS:**
 1. [x] ~~🔥 Corrigir bugs NIP-78 (tags)~~ **CONCLUÍDO** ✅
 2. [x] ~~Migrar disco sdb 1TB~~ **CONCLUÍDO** ✅
@@ -367,9 +458,10 @@ ALTER TABLE usuario ADD COLUMN nip05_verified BOOLEAN DEFAULT FALSE;
 4. [x] ~~Criar painel admin NIP-05~~ **CONCLUÍDO** ✅
 5. [x] ~~Aplicar NIP-98 em endpoints críticos~~ **CONCLUÍDO** ✅
 6. [x] ~~Polimento Visual e UX~~ **CONCLUÍDO** ✅
-7. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
-8. [ ] Dashboard de Uso e Analytics
-9. [ ] Push projetos para GitHub
+7. [x] ~~Dashboard de Uso e Analytics~~ **CONCLUÍDO** ✅
+8. [x] ~~Push projetos para GitHub~~ **CONCLUÍDO** ✅
+9. [ ] Testar NIP-96 com clientes Nostr (Damus/Amethyst)
+10. [ ] Aplicar polimento final (conforme lista)
 
 **✨ POLIMENTO FINAL (após todas funcionalidades):**
 - [ ] Aparar arestas e detalhes visuais
