@@ -23,16 +23,20 @@
 ### 🔑 Autenticação
 - Login via extensão Nostr (NIP-07)
 - Login via chave privada (nsec)
-- Sincronização automática de perfil Nostr
+- Sincronização automática de perfil Nostr (NIP-01)
+- Autenticação HTTP via NIP-98 (eventos assinados) ✨ **NOVO**
+- Verificação de identidade NIP-05 (username@libermedia.app) ✨ **NOVO**
 - Suporte a múltiplos relays
 
 ### 📂 Gerenciamento de Arquivos
-- Upload de múltiplos arquivos
-- Organização em pastas customizáveis
+- Upload de múltiplos arquivos (drag & drop)
+- Organização em pastas customizáveis (sincronizadas via NIP-78)
 - Busca em tempo real
-- Ordenação por data, nome e tamanho
+- Ordenação por data, nome e tamanho (6 opções)
 - Thumbnails automáticos (imagens, vídeos, áudio, PDF)
 - Preview inline de arquivos
+- Mover arquivos entre pastas
+- Dashboard de uso com analytics (histórico 30 dias, top arquivos) ✨ **NOVO**
 
 ### 🔗 Compartilhamento
 - Links públicos temporários (1h, 24h, 7d, 30d)
@@ -118,15 +122,19 @@ http://localhost:8081
 
 ## 📊 NIPs Implementados
 
-### ✅ Implementados
-- **NIP-01**: Basic Protocol Flow (sincronização de perfil)
+### ✅ Implementados (Novembro 2025)
+- **NIP-01**: Basic Protocol Flow (sincronização completa de perfil)
+- **NIP-05**: Verificação DNS (username@libermedia.app) ✨ **NOVO**
 - **NIP-07**: window.nostr capability (login via extensão)
+- **NIP-78**: Application-specific Data (sync de pastas entre dispositivos) ✨ **NOVO**
+- **NIP-94**: File Metadata (metadata descentralizado) ✨ **NOVO**
+- **NIP-96**: HTTP File Storage Integration (protocolo Nostr completo) ✨ **NOVO**
+- **NIP-98**: HTTP Auth (autenticação criptográfica) ✨ **NOVO**
 
-### 🔄 Em Desenvolvimento
-- **NIP-05**: Mapping Nostr Keys to DNS (verificação)
-- **NIP-78**: Application-specific Data (sincronização de dados)
-- **NIP-96**: HTTP File Storage Integration (protocolo padrão)
-- **NIP-98**: HTTP Auth (autenticação segura)
+### 🔄 Planejados
+- **NIP-04**: Encrypted Direct Messages (mensagens privadas)
+- **NIP-26**: Delegated Event Signing
+- **NIP-57**: Lightning Zaps (pagamentos integrados)
 
 ---
 
