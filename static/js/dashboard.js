@@ -1644,24 +1644,30 @@ function carregarDashboardUso() {
   .then(res => res.json())
   .then(data => {
     if (data.error) {
-      console.error('Erro ao carregar uso:', data.error);
+      console.error('[Uso] Erro ao carregar:', data.error);
       return;
     }
+
+    console.log('[Uso] Dados recebidos:', data);
 
     // Converter para GB
     const usadoGB = (data.usado / (1024 * 1024 * 1024)).toFixed(2);
     const limiteGB = (data.limite / (1024 * 1024 * 1024)).toFixed(0);
 
-    // Atualizar textos
+    // Atualizar textos básicos
     document.getElementById('usoAtual').textContent = usadoGB + ' GB';
     document.getElementById('usoLimite').textContent = limiteGB + ' GB';
     document.getElementById('usoPercentual').textContent = data.percentual + '%';
     document.getElementById('usoPlano').textContent = data.plano.toUpperCase();
-    
+
+    if (document.getElementById('totalArquivos')) {
+      document.getElementById('totalArquivos').textContent = data.total_arquivos || 0;
+    }
+
     // Atualizar barra de progresso
     const progressBar = document.getElementById('usoProgressBar');
     progressBar.style.width = data.percentual + '%';
-    
+
     // Cores baseadas no percentual
     if (data.percentual < 50) {
       progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-green-500';
@@ -1672,11 +1678,21 @@ function carregarDashboardUso() {
     } else {
       progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-red-500';
     }
-    
+
+    // Alertas
+    if (data.alertas && data.alertas.length > 0 && document.getElementById('usoAlertas')) {
+      const alertasHTML = data.alertas.map(alerta => {
+        const cor = alerta.tipo === 'critico' ? 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'
+                  : 'bg-yellow-100 border-yellow-400 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300';
+        return `<div class="p-2 mb-2 border-l-4 ${cor} text-xs">${alerta.mensagem}</div>`;
+      }).join('');
+      document.getElementById('usoAlertas').innerHTML = alertasHTML;
+    }
+
     // Breakdown por tipo
     const tiposContainer = document.getElementById('usoTipos');
     tiposContainer.innerHTML = '';
-    
+
     const icones = {
       'image': '🖼️',
       'video': '🎬',
@@ -1697,9 +1713,48 @@ function carregarDashboardUso() {
       `;
       tiposContainer.innerHTML += card;
     }
+
+    // Top 5 maiores arquivos
+    if (data.top_arquivos && data.top_arquivos.length > 0 && document.getElementById('topArquivos')) {
+      const topHTML = data.top_arquivos.map((arq, idx) => {
+        const sizeMB = (arq.tamanho / (1024 * 1024)).toFixed(1);
+        const icone = icones[arq.tipo] || '📦';
+        return `
+          <div class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="text-lg">${icone}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-gray-900 dark:text-white truncate">${arq.nome}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${arq.pasta}</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 ml-2">${sizeMB} MB</span>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('topArquivos').innerHTML = topHTML;
+    }
+
+    // Histórico simplificado (últimos 7 dias com uploads)
+    if (data.historico_30dias && data.historico_30dias.length > 0 && document.getElementById('historico7dias')) {
+      const ultimos7 = data.historico_30dias.slice(-7);
+      const historicoHTML = ultimos7.map(h => {
+        const count = h.count;
+        const sizeMB = (h.size / (1024 * 1024)).toFixed(0);
+        const data_formatada = new Date(h.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return `
+          <div class="text-center">
+            <div class="text-xs font-bold text-gray-900 dark:text-white">${data_formatada}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">${count} arq</div>
+            <div class="text-xs text-gray-500 dark:text-gray-500">${sizeMB}MB</div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('historico7dias').innerHTML = historicoHTML;
+    }
   })
   .catch(err => {
-    console.error('Erro ao carregar dashboard de uso:', err);
+    console.error('[Uso] Erro ao carregar dashboard:', err);
   });
 }
 

@@ -75,6 +75,11 @@
 
       <div id="dashboardUso" class="mb-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow p-3 border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div class="space-y-3">
+
+          <!-- Alertas -->
+          <div id="usoAlertas"></div>
+
+          <!-- Armazenamento -->
           <div>
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Armazenamento:</span>
@@ -83,12 +88,28 @@
                 (<span id="usoPercentual">0%</span>)
               </span>
               <span class="text-xs text-gray-500 dark:text-gray-400">• Plano: <span id="usoPlano" class="font-medium uppercase">Free</span></span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">• <span id="totalArquivos">0</span> arquivos</span>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
               <div id="usoProgressBar" class="h-2 rounded-full transition-all duration-500 bg-green-500" style="width: 0%"></div>
             </div>
           </div>
+
+          <!-- Breakdown por tipo -->
           <div id="usoTipos" class="grid grid-cols-2 gap-2 max-w-full" style="grid-template-columns: repeat(2, minmax(0, 1fr));"></div>
+
+          <!-- Top 5 Maiores Arquivos -->
+          <div>
+            <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">📊 Top 5 Maiores:</h4>
+            <div id="topArquivos" class="space-y-1"></div>
+          </div>
+
+          <!-- Histórico 7 dias -->
+          <div>
+            <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">📅 Últimos 7 dias:</h4>
+            <div id="historico7dias" class="grid grid-cols-7 gap-1"></div>
+          </div>
+
         </div>
       </div>
       FIM DO BLOCO DE ARMAZENAMENTO -->

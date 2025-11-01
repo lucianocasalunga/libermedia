@@ -1956,10 +1956,13 @@ def get_uso():
         if not usuario:
             return jsonify({'error': 'Usuário não encontrado'}), 404
 
+        # Totais básicos
         total_usado = db.session.query(db.func.sum(Arquivo.tamanho)).filter_by(usuario_id=usuario.id).scalar() or 0
+        total_arquivos = db.session.query(db.func.count(Arquivo.id)).filter_by(usuario_id=usuario.id).scalar() or 0
         limite = LIMITES_PLANO.get(usuario.plano, LIMITES_PLANO['free'])
         percentual = (total_usado / limite * 100) if limite > 0 else 0
 
+        # Arquivos por tipo
         arquivos_por_tipo = db.session.query(
             Arquivo.tipo,
             db.func.count(Arquivo.id),
@@ -1970,14 +1973,68 @@ def get_uso():
         for tipo, count, size in arquivos_por_tipo:
             tipos[tipo or 'outros'] = {'count': count, 'size': size or 0}
 
+        # Histórico de uploads (últimos 30 dias)
+        trinta_dias_atras = int(time.time()) - (30 * 24 * 60 * 60)
+        uploads_recentes = db.session.query(
+            db.func.date(db.func.from_unixtime(Arquivo.created_at)).label('data'),
+            db.func.count(Arquivo.id).label('count'),
+            db.func.sum(Arquivo.tamanho).label('size')
+        ).filter(
+            Arquivo.usuario_id == usuario.id,
+            Arquivo.created_at >= trinta_dias_atras
+        ).group_by(db.func.date(db.func.from_unixtime(Arquivo.created_at))).all()
+
+        historico = []
+        for data, count, size in uploads_recentes:
+            historico.append({
+                'data': str(data),
+                'count': count,
+                'size': size or 0
+            })
+
+        # Top 5 arquivos maiores
+        maiores_arquivos = db.session.query(Arquivo).filter_by(
+            usuario_id=usuario.id
+        ).order_by(Arquivo.tamanho.desc()).limit(5).all()
+
+        top_arquivos = []
+        for arq in maiores_arquivos:
+            top_arquivos.append({
+                'id': arq.id,
+                'nome': arq.nome_original,
+                'tipo': arq.tipo,
+                'tamanho': arq.tamanho,
+                'pasta': arq.pasta
+            })
+
+        # Alertas
+        alertas = []
+        if percentual >= 90:
+            alertas.append({
+                'tipo': 'critico',
+                'mensagem': f'Você está usando {percentual:.1f}% do seu armazenamento! Considere fazer upgrade.'
+            })
+        elif percentual >= 75:
+            alertas.append({
+                'tipo': 'aviso',
+                'mensagem': f'Você está usando {percentual:.1f}% do seu armazenamento.'
+            })
+
         return jsonify({
             'usado': total_usado,
             'limite': limite,
             'percentual': round(percentual, 2),
             'plano': usuario.plano,
-            'tipos': tipos
+            'total_arquivos': total_arquivos,
+            'tipos': tipos,
+            'historico_30dias': historico,
+            'top_arquivos': top_arquivos,
+            'alertas': alertas
         })
     except Exception as e:
+        print(f"[USO] Erro ao buscar dados: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 # ============================================
