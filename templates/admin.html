@@ -4,29 +4,230 @@
 
 <div class="container mx-auto px-4 py-6">
   <h1 class="text-4xl font-bold mb-8 text-gray-900 dark:text-white">👑 Admin - Sofia</h1>
-  
+
+  <!-- NIP-05 Verificações (Full Width) -->
+  <div class="mb-6 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        ✅ Verificações NIP-05
+        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+          (Pendentes: <span id="totalPendentes" class="text-yellow-600 dark:text-yellow-400">0</span> |
+          Verificados: <span id="totalVerificados" class="text-green-600 dark:text-green-400">0</span>)
+        </span>
+      </h2>
+      <input type="text" id="searchNip05" placeholder="🔍 Buscar username ou npub..."
+             class="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm w-80"
+             oninput="filtrarNip05()">
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Pendentes -->
+      <div>
+        <h3 class="text-lg font-bold mb-3 text-yellow-700 dark:text-yellow-400">⏳ Aguardando Aprovação</h3>
+        <div id="listaPendentes" class="space-y-2 max-h-96 overflow-y-auto"></div>
+      </div>
+
+      <!-- Verificados -->
+      <div>
+        <h3 class="text-lg font-bold mb-3 text-green-700 dark:text-green-400">✅ Verificados</h3>
+        <div id="listaVerificados" class="space-y-2 max-h-96 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    
+
     <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">👥 Usuários (<span id="totalUsers">0</span>)</h2>
       <div id="listaUsuarios" class="space-y-2 max-h-96 overflow-y-auto"></div>
     </div>
-    
+
     <div class="bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700">
       <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">📁 Todos os Arquivos (<span id="totalFiles">0</span>)</h2>
       <div id="listaArquivos" class="space-y-2 max-h-96 overflow-y-auto"></div>
     </div>
-    
+
   </div>
 </div>
 
 <script>
+// ============================================
+// NIP-05 VERIFICAÇÕES
+// ============================================
+let nip05Data = { pendentes: [], verificados: [] };
+
+async function carregarNip05(){
+  try{
+    const r = await fetch('/api/admin/nip05/pending');
+    const d = await r.json();
+
+    if(d.status === 'ok'){
+      nip05Data = { pendentes: d.pendentes, verificados: d.verificados };
+      document.getElementById('totalPendentes').innerText = d.total_pendentes;
+      document.getElementById('totalVerificados').innerText = d.total_verificados;
+      renderNip05();
+    }
+  }catch(e){
+    console.error('[NIP-05] Erro ao carregar:', e);
+  }
+}
+
+function renderNip05(){
+  const listaPendentes = document.getElementById('listaPendentes');
+  const listaVerificados = document.getElementById('listaVerificados');
+  const search = document.getElementById('searchNip05').value.toLowerCase();
+
+  // Filtrar por busca
+  const pendentesFiltrados = nip05Data.pendentes.filter(u =>
+    u.username.toLowerCase().includes(search) ||
+    u.identifier.toLowerCase().includes(search) ||
+    u.pubkey.toLowerCase().includes(search)
+  );
+
+  const verificadosFiltrados = nip05Data.verificados.filter(u =>
+    u.username.toLowerCase().includes(search) ||
+    u.identifier.toLowerCase().includes(search) ||
+    u.pubkey.toLowerCase().includes(search)
+  );
+
+  // Render pendentes
+  let htmlPendentes = '';
+  if(pendentesFiltrados.length === 0){
+    htmlPendentes = '<p class="text-gray-500 dark:text-gray-400 text-sm italic">Nenhuma solicitação pendente</p>';
+  } else {
+    for(let u of pendentesFiltrados){
+      htmlPendentes += `
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-300 dark:border-yellow-700" data-user-id="${u.id}">
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex-1">
+              <p class="font-bold text-gray-900 dark:text-white">${u.identifier}</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400 break-all">${u.pubkey}</p>
+            </div>
+            <span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded ml-2">⏳ Pendente</span>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button onclick="aprovar(${u.id}, '${u.username}')"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-semibold">
+              ✅ Aprovar
+            </button>
+            <button onclick="rejeitar(${u.id}, '${u.username}')"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-semibold">
+              ❌ Rejeitar
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+  listaPendentes.innerHTML = htmlPendentes;
+
+  // Render verificados
+  let htmlVerificados = '';
+  if(verificadosFiltrados.length === 0){
+    htmlVerificados = '<p class="text-gray-500 dark:text-gray-400 text-sm italic">Nenhum usuário verificado ainda</p>';
+  } else {
+    for(let u of verificadosFiltrados){
+      htmlVerificados += `
+        <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-300 dark:border-green-700">
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <p class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                ${u.identifier}
+                <span class="text-green-600">✅</span>
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400 break-all">${u.pubkey}</p>
+            </div>
+            <button onclick="revogar(${u.id}, '${u.username}')"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs ml-2">
+              🗑️ Revogar
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+  listaVerificados.innerHTML = htmlVerificados;
+}
+
+function filtrarNip05(){
+  renderNip05();
+}
+
+async function aprovar(userId, username){
+  if(!confirm(`Aprovar verificação de '${username}@libermedia.app'?`)) return;
+
+  try{
+    const r = await fetch('/api/admin/nip05/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, verified: true })
+    });
+    const d = await r.json();
+
+    if(d.status === 'ok'){
+      alert(`✅ ${username}@libermedia.app verificado com sucesso!`);
+      carregarNip05(); // Recarrega lista
+    } else {
+      alert('❌ Erro: ' + d.error);
+    }
+  }catch(e){
+    alert('❌ Erro ao aprovar: ' + e.message);
+  }
+}
+
+async function rejeitar(userId, username){
+  if(!confirm(`Rejeitar solicitação de '${username}'?\n\nIsso removerá o username solicitado.`)) return;
+
+  try{
+    const r = await fetch('/api/admin/nip05/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, verified: false })
+    });
+    const d = await r.json();
+
+    if(d.status === 'ok'){
+      alert(`❌ Solicitação de '${username}' rejeitada.`);
+      carregarNip05();
+    } else {
+      alert('❌ Erro: ' + d.error);
+    }
+  }catch(e){
+    alert('❌ Erro ao rejeitar: ' + e.message);
+  }
+}
+
+async function revogar(userId, username){
+  if(!confirm(`Revogar verificação de '${username}@libermedia.app'?\n\nO usuário perderá o badge verificado.`)) return;
+
+  try{
+    const r = await fetch('/api/admin/nip05/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, verified: false })
+    });
+    const d = await r.json();
+
+    if(d.status === 'ok'){
+      alert(`🗑️ Verificação de '${username}' revogada.`);
+      carregarNip05();
+    } else {
+      alert('❌ Erro: ' + d.error);
+    }
+  }catch(e){
+    alert('❌ Erro ao revogar: ' + e.message);
+  }
+}
+
+// ============================================
+// USUÁRIOS E ARQUIVOS
+// ============================================
 async function carregarUsuarios(){
   try{
     const r=await fetch('/api/admin/usuarios');
     const d=await r.json();
     const lista=document.getElementById('listaUsuarios');
-    
+
     if(d.status==='ok'){
       document.getElementById('totalUsers').innerText=d.usuarios.length;
       let html='';
@@ -48,7 +249,7 @@ async function carregarArquivos(){
     const r=await fetch('/api/admin/arquivos');
     const d=await r.json();
     const lista=document.getElementById('listaArquivos');
-    
+
     if(d.status==='ok'){
       document.getElementById('totalFiles').innerText=d.arquivos.length;
       let html='';
@@ -81,6 +282,10 @@ async function deletar(id){
   }catch{alert('❌ Erro');}
 }
 
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+carregarNip05();
 carregarUsuarios();
 carregarArquivos();
 </script>

@@ -827,13 +827,16 @@ def auth_login():
 # ============================================
 
 @app.route("/api/nip05/request-username", methods=["POST"])
+@validate_nip98_auth(required=False)
 def request_nip05_username():
     """
-    Usuário solicita um username para verificação NIP-05
+    Usuário solicita um username para verificação NIP-05 (com suporte NIP-98)
     """
     try:
         data = request.get_json()
-        npub = data.get("npub")
+
+        # Prioriza autenticação NIP-98, fallback para npub do body
+        npub = getattr(request, 'nip98_pubkey', None) or data.get("npub")
         username = data.get("username")
 
         if not npub or not username:
@@ -874,6 +877,50 @@ def request_nip05_username():
     except Exception as e:
         print(f"[NIP-05] Erro ao solicitar username: {e}")
         db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+@app.route("/api/admin/nip05/pending", methods=["GET"])
+@admin_required
+def admin_nip05_pending():
+    """
+    Lista todas solicitações de verificação NIP-05
+    """
+    try:
+        # Busca todos usuários com username solicitado
+        usuarios = Usuario.query.filter(Usuario.nip05_username.isnot(None)).all()
+
+        pendentes = []
+        verificados = []
+
+        for u in usuarios:
+            user_data = {
+                "id": u.id,
+                "nome": u.nome if hasattr(u, 'nome') else u.pubkey[:12] + "...",
+                "pubkey": u.pubkey,
+                "username": u.nip05_username,
+                "identifier": f"{u.nip05_username}@libermedia.app",
+                "verified": u.nip05_verified,
+                "created_at": u.created_at if hasattr(u, 'created_at') else None
+            }
+
+            if u.nip05_verified:
+                verificados.append(user_data)
+            else:
+                pendentes.append(user_data)
+
+        return jsonify({
+            "status": "ok",
+            "pendentes": pendentes,
+            "verificados": verificados,
+            "total_pendentes": len(pendentes),
+            "total_verificados": len(verificados)
+        })
+
+    except Exception as e:
+        print(f"[NIP-05] Erro ao listar solicitações: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
@@ -1571,15 +1618,19 @@ def publicar_perfil_nostr(nsec: str, perfil_data: dict):
 
 
 @app.route("/api/nostr/profile/publish", methods=["POST"])
+@validate_nip98_auth(required=False)
 def api_publish_nostr_profile():
-    """API para publicar perfil Nostr (funciona sem extensão)"""
+    """API para publicar perfil Nostr (funciona sem extensão) com suporte NIP-98"""
     try:
         data = request.get_json()
-        npub = data.get("npub")
+
+        # Prioriza autenticação NIP-98, fallback para npub do body
+        npub = getattr(request, 'nip98_pubkey', None) or data.get("npub")
         perfil = data.get("perfil", {})
 
-        print(f"[DEBUG] Publicando perfil para npub: {npub}")
-        print(f"[DEBUG] Dados do perfil: {perfil}")
+        auth_method = "NIP-98" if getattr(request, 'nip98_pubkey', None) else "npub"
+        print(f"[NIP-01] Publicando perfil para {npub[:12]}... (auth: {auth_method})")
+        print(f"[NIP-01] Dados do perfil: {perfil}")
 
         if not npub:
             return jsonify({"status": "error", "error": "npub obrigatório"}), 400
@@ -1761,14 +1812,18 @@ def publicar_pastas_nostr(nsec: str, folders: list):
 
 
 @app.route("/api/nostr/folders/publish", methods=["POST"])
+@validate_nip98_auth(required=False)
 def api_publish_nostr_folders():
-    """API para publicar pastas no Nostr (NIP-78)"""
+    """API para publicar pastas no Nostr (NIP-78) com suporte NIP-98"""
     try:
         data = request.get_json()
-        npub = data.get("npub")
+
+        # Prioriza autenticação NIP-98, fallback para npub do body
+        npub = getattr(request, 'nip98_pubkey', None) or data.get("npub")
         folders = data.get("folders", [])
 
-        print(f"[DEBUG] Publicando {len(folders)} pastas para {npub[:12] if npub else 'unknown'}...")
+        auth_method = "NIP-98" if getattr(request, 'nip98_pubkey', None) else "npub"
+        print(f"[NIP-78] Publicando {len(folders)} pastas para {npub[:12] if npub else 'unknown'}... (auth: {auth_method})")
 
         if not npub:
             return jsonify({"status": "error", "error": "npub obrigatório"}), 400
