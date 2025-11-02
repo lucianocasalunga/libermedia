@@ -25,4 +25,4 @@ COPY . .
 
 ENV PORT=8081
 EXPOSE 8081
-CMD ["gunicorn", "--bind", "0.0.0.0:8081", "app:app", "--workers", "2"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8081", "app:app", "--workers", "2", "--timeout", "120"]

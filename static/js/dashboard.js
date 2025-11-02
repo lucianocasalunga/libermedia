@@ -10,6 +10,10 @@ const NOSTR_RELAYS = [
   'wss://relay.nostr.band'
 ];
 
+// Paginação
+let paginaAtual = 1;
+const ARQUIVOS_POR_PAGINA = 50;
+
 /**
  * Busca perfil Nostr (kind 0) do usuário via backend
  */
@@ -587,35 +591,35 @@ function renderPastas(pastas) {
     // Não duplica pastas padrão
     if (pastasDefault.find(p => p.nome === nome)) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'relative group w-full';
-    wrapper.style.cssText = 'display: block; position: relative;';
-
     const btn = document.createElement('button');
     btn.onclick = () => filtrarPasta(nome);
-    btn.className = 'w-full text-left p-2 pr-8 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white flex items-center transition-colors';
-    btn.innerHTML = `${icons.folder}${nome}`;
+    btn.className = 'relative group w-full text-left p-2 pr-8 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-900 dark:text-white flex items-center transition-colors';
+    btn.innerHTML = `
+      ${icons.folder}${nome}
+      <span onclick="event.stopPropagation(); togglePastaMenu('${nome}', event)"
+            class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded px-1.5 py-0.5 text-xs cursor-pointer">⋮</span>
+    `;
 
-    // Botão de menu (três pontinhos)
-    const menuBtn = document.createElement('button');
-    menuBtn.onclick = (e) => {
-      e.stopPropagation();
-      togglePastaMenu(nome, e);
-    };
-    menuBtn.className = 'absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded p-1 text-xs z-10';
-    menuBtn.innerHTML = '⋮';
-
-    wrapper.appendChild(btn);
-    wrapper.appendChild(menuBtn);
-    container.appendChild(wrapper);
+    container.appendChild(btn);
   });
 
-  // Botão "Criar Pasta"
+  // Botões "Criar Pasta" e "Apagar Pasta"
+  const btnWrapper = document.createElement('div');
+  btnWrapper.className = 'flex gap-2 mt-2';
+
   const btnCriar = document.createElement('button');
   btnCriar.onclick = criarPasta;
-  btnCriar.className = 'w-full text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold mt-2 flex items-center transition-colors';
-  btnCriar.innerHTML = `${icons.plus}Criar Pasta`;
-  container.appendChild(btnCriar);
+  btnCriar.className = 'flex-1 text-left p-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded font-bold flex items-center justify-center transition-colors';
+  btnCriar.innerHTML = `${icons.plus}Criar`;
+
+  const btnApagar = document.createElement('button');
+  btnApagar.onclick = iniciarApagarPasta;
+  btnApagar.className = 'flex-1 text-left p-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded font-bold flex items-center justify-center transition-colors';
+  btnApagar.innerHTML = `<svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Apagar`;
+
+  btnWrapper.appendChild(btnCriar);
+  btnWrapper.appendChild(btnApagar);
+  container.appendChild(btnWrapper);
 }
 
 function toggleView(mode) {
@@ -644,8 +648,8 @@ function getExtensao(nome) {
 
 // Ícones SVG para ações dos cards
 const cardIcons = {
-  link: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>',
-  menu: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/></svg>'
+  link: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  menu: '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="18" r="1.5"/></svg>'
 };
 
 function renderMediaPreview(arquivo) {
@@ -661,17 +665,20 @@ function renderMediaPreview(arquivo) {
   };
 
   if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) {
+    // Para MOV, usa src direto (melhor compatibilidade)
+    // Para outros formatos, usa source tag
+    const videoTag = ext === 'mov'
+      ? `<video class="w-full h-full object-cover" controls preload="metadata" playsinline src="${linkComExt}">Seu navegador não suporta vídeos MOV.</video>`
+      : `<video class="w-full h-full object-cover" controls preload="metadata" playsinline><source src="${linkComExt}" type="${videoMimeTypes[ext]}">Seu navegador não suporta este formato de vídeo.</video>`;
+
     return `
       <div class="relative w-full aspect-square overflow-hidden bg-gray-100 dark:bg-gray-900">
-        <video class="w-full h-full object-cover" controls><source src="${linkComExt}" type="${videoMimeTypes[ext]}"></video>
+        ${videoTag}
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
                 title="Copiar link">
           ${cardIcons.link}
         </button>
-        <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
-                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
-                title="Mais opções">${cardIcons.menu}</button>
       </div>
     `;
   }
@@ -679,13 +686,11 @@ function renderMediaPreview(arquivo) {
   // ÁUDIO
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
     return `
-      <div class="relative w-full bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden flex flex-col">
-        <div class="w-full aspect-square flex items-center justify-center flex-shrink-0">
-          <svg class="text-white flex-shrink-0" style="width: 80px; height: 80px;" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-          </svg>
-        </div>
-        <div class="w-full bg-black/20 px-3 py-2 flex-shrink-0">
+      <div class="relative w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden flex items-center justify-center">
+        <svg class="text-white flex-shrink-0" style="width: 96px; height: 96px;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l12-2v13M9 18c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-2c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"/>
+        </svg>
+        <div class="absolute bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm px-3 py-2">
           <audio controls class="w-full" style="height: 32px;">
             <source src="${linkComExt}" type="audio/${ext}">
           </audio>
@@ -695,29 +700,30 @@ function renderMediaPreview(arquivo) {
                 title="Copiar link">
           ${cardIcons.link}
         </button>
-        <button onclick="event.stopPropagation(); toggleFileMenu(${arquivo.id})"
-                class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
-                title="Mais opções">${cardIcons.menu}</button>
       </div>
     `;
   }
 
   // DOCUMENTOS
   const docIcons = {
-    'pdf': '📕',
-    'doc': '📘', 'docx': '📘',
-    'xls': '📊', 'xlsx': '📊',
-    'ppt': '📙', 'pptx': '📙',
-    'txt': '📄',
-    'md': '📝',
-    'zip': '🗜️', 'rar': '🗜️',
-    'csv': '📋'
+    'pdf': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-6 4h4"/></svg>',
+    'doc': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    'docx': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    'xls': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>',
+    'xlsx': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>',
+    'ppt': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8m-8 4h8m-8 4h5"/></svg>',
+    'pptx': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h8m-8 4h8m-8 4h5"/></svg>',
+    'txt': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    'md': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>',
+    'zip': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    'rar': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+    'csv': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'
   };
 
   if (docIcons[ext]) {
     return `
       <div class="relative w-full aspect-square bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center">
-        <p class="text-6xl mb-2">${docIcons[ext]}</p>
+        <div class="text-gray-600 dark:text-gray-400 mb-2" style="width: 80px; height: 80px;">${docIcons[ext]}</div>
         <p class="text-xs text-gray-600 dark:text-gray-400 px-4 text-center truncate w-full">${arquivo.nome}</p>
         <button onclick="event.stopPropagation(); copyLinkDiscrete('${linkComExt}')"
                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-2 rounded-full"
@@ -796,13 +802,22 @@ function renderFiles() {
   if (arquivosFiltrados.length === 0) {
     filesDiv.innerHTML = '';
     emptyDiv.classList.remove('hidden');
+    document.getElementById('paginationControls').classList.add('hidden');
     return;
   }
-  
+
   emptyDiv.classList.add('hidden');
-  
+
+  // Paginação
+  const totalArquivos = arquivosFiltrados.length;
+  const totalPaginas = Math.ceil(totalArquivos / ARQUIVOS_POR_PAGINA);
+  const inicio = (paginaAtual - 1) * ARQUIVOS_POR_PAGINA;
+  const fim = Math.min(inicio + ARQUIVOS_POR_PAGINA, totalArquivos);
+  const arquivosPaginados = arquivosFiltrados.slice(inicio, fim);
+
+  // Renderizar apenas arquivos da página atual
   if (viewMode === 'grade') {
-    filesDiv.innerHTML = arquivosFiltrados.map(f => {
+    filesDiv.innerHTML = arquivosPaginados.map(f => {
       const ext = getExtensao(f.nome);
       const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
       const isSelected = arquivosSelecionados.includes(f.id);
@@ -818,7 +833,7 @@ function renderFiles() {
     `;
     }).join('');
   } else {
-    filesDiv.innerHTML = arquivosFiltrados.map(f => {
+    filesDiv.innerHTML = arquivosPaginados.map(f => {
       const ext = getExtensao(f.nome);
       const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
       return `
@@ -843,10 +858,56 @@ function renderFiles() {
     `;
     }).join('');
   }
+
+  // Atualizar controles de paginação
+  atualizarPaginacao(totalArquivos, totalPaginas, inicio, fim);
+}
+
+function atualizarPaginacao(totalArquivos, totalPaginas, inicio, fim) {
+  const controls = document.getElementById('paginationControls');
+
+  if (totalPaginas <= 1) {
+    controls.classList.add('hidden');
+    return;
+  }
+
+  controls.classList.remove('hidden');
+  controls.innerHTML = `
+    <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4 mt-4">
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        Mostrando <span class="font-semibold">${inicio + 1}</span> a <span class="font-semibold">${fim}</span> de <span class="font-semibold">${totalArquivos}</span> arquivos
+      </div>
+      <div class="flex gap-2">
+        <button
+          onclick="mudarPagina(${paginaAtual - 1})"
+          ${paginaAtual === 1 ? 'disabled' : ''}
+          class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition">
+          Anterior
+        </button>
+        <span class="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold">
+          Página ${paginaAtual} de ${totalPaginas}
+        </span>
+        <button
+          onclick="mudarPagina(${paginaAtual + 1})"
+          ${paginaAtual === totalPaginas ? 'disabled' : ''}
+          class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition">
+          Próxima
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function mudarPagina(novaPagina) {
+  paginaAtual = novaPagina;
+  renderizarArquivos();
+  // Scroll suave para o topo da lista de arquivos
+  document.getElementById('filesContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function filtrarPasta(pasta) {
   pastaAtual = pasta;
+  paginaAtual = 1; // Reset para primeira página
 
   // Destaca botão ativo visualmente
   const container = document.getElementById("pastasContainer");
@@ -866,6 +927,7 @@ function filtrarPasta(pasta) {
 
 function filtrarTipo(tipo) {
   tipoAtual = tipo;
+  paginaAtual = 1; // Reset para primeira página
 
   // Visual feedback nos botões
   document.querySelectorAll('.tipo-btn').forEach(btn => {
@@ -1142,6 +1204,34 @@ async function renomearPasta(pastaAntiga) {
     }
   } catch (err) {
     showToast('❌ Erro: ' + err.message, 'error');
+  }
+}
+
+async function iniciarApagarPasta() {
+  // Obtém pastas customizadas (não as padrão)
+  const pastasLocal = JSON.parse(localStorage.getItem('libermedia_pastas_' + npub) || '[]');
+  const pastasProtegidas = ['Mesa', 'Photos', 'Videos', 'Docs', 'Audio'];
+  const pastasCustomizadas = pastasLocal.filter(p => !pastasProtegidas.includes(p));
+
+  if (pastasCustomizadas.length === 0) {
+    showToast('❌ Nenhuma pasta customizada para apagar', 'error');
+    return;
+  }
+
+  // Mostra lista de pastas
+  const lista = pastasCustomizadas.map((p, i) => `${i + 1}. ${p}`).join('\n');
+  const escolha = prompt(`Escolha a pasta para apagar:\n\n${lista}\n\nDigite o número:`);
+
+  if (!escolha) return;
+
+  const index = parseInt(escolha) - 1;
+  if (index >= 0 && index < pastasCustomizadas.length) {
+    const nomePasta = pastasCustomizadas[index];
+    if (confirm(`⚠️ Tem certeza que deseja apagar a pasta "${nomePasta}"?\n\nOs arquivos serão movidos para a pasta Mesa.`)) {
+      await deletarPasta(nomePasta);
+    }
+  } else {
+    showToast('❌ Número inválido', 'error');
   }
 }
 
@@ -1694,18 +1784,18 @@ function carregarDashboardUso() {
     tiposContainer.innerHTML = '';
 
     const icones = {
-      'image': '🖼️',
-      'video': '🎬',
-      'audio': '🎵',
-      'document': '📄',
-      'outros': '📦'
+      'image': '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>',
+      'video': '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>',
+      'audio': '<svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>',
+      'document': '<svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+      'outros': '<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>'
     };
     
     for (const [tipo, info] of Object.entries(data.tipos)) {
       const sizeGB = (info.size / (1024 * 1024 * 1024)).toFixed(2);
       const card = `
         <div class="bg-gray-50 dark:bg-gray-700 rounded text-center" style="width: 116px; padding: 6px; overflow: hidden; box-sizing: border-box;">
-          <div style="font-size: 14px; line-height: 14px; margin-bottom: 4px;">${icones[tipo] || '📦'}</div>
+          <div class="flex justify-center mb-1">${icones[tipo] || icones['outros']}</div>
           <div class="text-xs font-semibold text-gray-900 dark:text-white truncate">${tipo}</div>
           <div class="text-xs text-gray-600 dark:text-gray-300">${info.count} arq</div>
           <div class="text-xs text-gray-500 dark:text-gray-400">${sizeGB}GB</div>
@@ -1718,11 +1808,11 @@ function carregarDashboardUso() {
     if (data.top_arquivos && data.top_arquivos.length > 0 && document.getElementById('topArquivos')) {
       const topHTML = data.top_arquivos.map((arq, idx) => {
         const sizeMB = (arq.tamanho / (1024 * 1024)).toFixed(1);
-        const icone = icones[arq.tipo] || '📦';
+        const icone = icones[arq.tipo] || icones['outros'];
         return `
           <div class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
             <div class="flex items-center gap-2 flex-1 min-w-0">
-              <span class="text-lg">${icone}</span>
+              <div class="flex-shrink-0">${icone}</div>
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-semibold text-gray-900 dark:text-white truncate">${arq.nome}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">${arq.pasta}</p>

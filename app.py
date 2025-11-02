@@ -3,11 +3,21 @@ import time
 import jwt
 from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- Configuração ---
 app = Flask(__name__)
 app.secret_key = 'LiberMedia2025SecretKey!@#$%Sofia'
+
+# CORS configurado para endpoints NIP-96 e arquivos públicos
+CORS(app, resources={
+    r"/.well-known/*": {"origins": "*"},
+    r"/nip96.json": {"origins": "*"},
+    r"/api/upload/nip96": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]},
+    r"/f/*": {"origins": "*"},
+    r"/uploads/*": {"origins": "*"}
+})
 
 # Proteção Admin
 ADMIN_PASSWORD = "Liber1010"
@@ -26,6 +36,35 @@ db = SQLAlchemy(app)
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "libermedia-secret")
 JWT_ALGO = "HS256"
+
+# ============================================
+# BLACKLIST - Pubkeys Bloqueadas
+# ============================================
+BLACKLISTED_PUBKEYS = [
+    "3a8298f05b42d6d1533b714ae1f319c8a5bd1662400703ae631e70149979dce8",  # npub182pf3uzmgttdz5emw99wruceezjm69nzgqrs8tnrrecpfxtemn5qtdg5xp
+]
+
+def is_blacklisted(pubkey_hex):
+    """Verifica se pubkey está na blacklist"""
+    return pubkey_hex.lower() in [pk.lower() for pk in BLACKLISTED_PUBKEYS]
+
+def check_blacklist_npub(npub_or_hex):
+    """
+    Verifica se npub ou hex está na blacklist
+    Retorna (is_blocked: bool, pubkey_hex: str)
+    """
+    try:
+        # Se começa com npub, converte para hex
+        if npub_or_hex.startswith('npub'):
+            from nostr_sdk import PublicKey
+            pubkey = PublicKey.parse(npub_or_hex)
+            pubkey_hex = pubkey.to_hex()
+        else:
+            pubkey_hex = npub_or_hex
+
+        return is_blacklisted(pubkey_hex), pubkey_hex
+    except:
+        return False, npub_or_hex
 
 
 # ============================================
@@ -95,19 +134,35 @@ def validate_nip98_auth(required=True):
                 # Valida URL (tag 'u')
                 request_url = request.url
                 event_url = tags.get('u', '')
-                if event_url and event_url != request_url:
+
+                # Normaliza http/https para comparação (alguns clientes enviam http)
+                request_url_normalized = request_url.replace('http://', 'https://')
+                event_url_normalized = event_url.replace('http://', 'https://')
+
+                if event_url and event_url_normalized != request_url_normalized:
                     # Permite variação com/sem query params
-                    if not request_url.startswith(event_url):
+                    if not request_url_normalized.startswith(event_url_normalized):
+                        print(f"[NIP-98] ❌ URL mismatch: event={event_url} request={request_url}")
                         return jsonify({'error': 'URL não corresponde ao evento'}), 401
 
                 # Valida método HTTP (tag 'method')
                 event_method = tags.get('method', '').upper()
                 if event_method and event_method != request.method:
+                    print(f"[NIP-98] ❌ Método HTTP não corresponde!")
                     return jsonify({'error': 'Método HTTP não corresponde'}), 401
 
-                # Sucesso! Anexa pubkey ao request
+                # Extrai pubkey
                 pubkey = event.author()
+                pubkey_hex = pubkey.to_hex()
+
+                # Verifica blacklist
+                if is_blacklisted(pubkey_hex):
+                    print(f"[BLACKLIST] ⛔ Acesso bloqueado: {pubkey.to_bech32()}")
+                    return jsonify({'error': 'Acesso negado'}), 403
+
+                # Sucesso! Anexa pubkey ao request
                 request.nip98_pubkey = pubkey.to_bech32()
+                request.nip98_pubkey_hex = pubkey_hex
                 request.nip98_event = event
 
                 print(f"[NIP-98] ✅ Auth válido: {pubkey.to_bech32()[:16]}... método={request.method} url={request.path}")
@@ -205,8 +260,33 @@ with app.app_context():
     db.create_all()
 
 # --- Rotas principais ---
-@app.route("/")
+@app.route("/", methods=["GET", "POST", "OPTIONS"])
 def index():
+    """Homepage - com suporte para POST/OPTIONS para debug de clientes NIP-96"""
+
+    # Workaround: alguns clientes Nostr enviam para raiz ao invés de /api/upload/nip96
+
+    # Handle OPTIONS (CORS preflight)
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok", "message": "Use /api/upload/nip96 for uploads"})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+
+    # Handle POST (WORKAROUND para clientes que enviam na raiz)
+    if request.method == "POST":
+        # Verifica se é um upload (tem arquivo)
+        if 'file' in request.files or 'fileToUpload' in request.files:
+            # Chama o handler NIP-96 diretamente
+            return _nip96_upload_post()
+
+        return jsonify({
+            "status": "error",
+            "message": "Invalid request. See /.well-known/nostr/nip96.json for upload endpoint"
+        }), 400
+
+    # GET - página normal
     return render_template("index.html")
 
 
@@ -271,14 +351,10 @@ def nip05_verification():
 # NIP-96: FILE STORAGE INTEGRATION
 # ============================================
 
-@app.route("/.well-known/nostr/nip96.json")
-def nip96_discovery():
-    """
-    Endpoint de descoberta NIP-96
-    Informa capacidades do servidor para clientes Nostr
-    """
-    config = {
-        "api_url": "https://libermedia.app/api",
+def _get_nip96_config():
+    """Retorna configuração NIP-96 (compartilhado entre endpoints)"""
+    return {
+        "api_url": "https://libermedia.app/api/upload/nip96",
         "download_url": "https://libermedia.app/f",
         "delegated_to_url": None,
         "supported_nips": [96, 98],
@@ -327,24 +403,63 @@ def nip96_discovery():
         }
     }
 
-    return jsonify(config)
+@app.route("/.well-known/nostr/nip96.json")
+def nip96_discovery():
+    """
+    Endpoint de descoberta NIP-96 (localização padrão)
+    Informa capacidades do servidor para clientes Nostr
+    """
+    response = jsonify(_get_nip96_config())
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@app.route("/nip96.json")
+def nip96_discovery_alt():
+    """
+    Endpoint alternativo de descoberta NIP-96
+    Alguns clientes (como Jumble) podem buscar aqui
+    """
+    response = jsonify(_get_nip96_config())
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
 
 
-@app.route("/api/upload/nip96", methods=["POST"])
-@validate_nip98_auth(required=True)
+@app.route("/api/upload/nip96", methods=["POST", "OPTIONS"])
 def nip96_upload():
     """
     Endpoint de upload compatível com NIP-96
-    Requer autenticação NIP-98
+    Suporta OPTIONS (CORS preflight) e POST (upload)
     """
+    # Handle OPTIONS preflight (CORS já adiciona headers automaticamente)
+    if request.method == "OPTIONS":
+        return '', 204
+
+    # POST request - requer NIP-98 auth
+    return _nip96_upload_post()
+
+def _add_cors_headers(response):
+    """
+    DEPRECATED: Flask-CORS agora cuida dos headers automaticamente
+    Mantido por compatibilidade com código antigo
+    """
+    # Headers já são adicionados pelo Flask-CORS
+    return response
+
+@validate_nip98_auth(required=True)
+def _nip96_upload_post():
+    """Handler de POST após validação NIP-98"""
     try:
-        if 'file' not in request.files:
+        # Aceita 'file' (padrão NIP-96) ou 'fileToUpload' (iris.to)
+        if 'file' in request.files:
+            file = request.files['file']
+        elif 'fileToUpload' in request.files:
+            file = request.files['fileToUpload']
+            print(f"[NIP-96] 📎 Arquivo recebido como 'fileToUpload' (iris.to format)")
+        else:
             return jsonify({
                 "status": "error",
                 "message": "No file provided"
             }), 400
-
-        file = request.files['file']
         npub = request.nip98_pubkey  # Vem do decorator NIP-98
 
         # Parâmetros opcionais NIP-96
@@ -442,30 +557,44 @@ def nip96_upload():
         else:
             nip94_event = None
 
-        # Resposta NIP-96
+        # Resposta NIP-96 - SEMPRE incluir nip94_event no formato de tags
+        # Alguns clientes como iris.to rejeitam resposta sem nip94_event válido
+        nip94_tags = {
+            "tags": [
+                ["url", download_url],
+                ["ox", sha256_hash],  # original hash (antes de transformação)
+                ["x", sha256_hash],   # hash atual (mesmo, pois não transformamos)
+                ["m", mime_type],
+                ["size", str(tamanho_real)]
+            ]
+        }
+
+        # Se conseguimos publicar evento NIP-94 assinado, incluir também
+        if nip94_event:
+            nip94_tags["id"] = nip94_event.get("id", "")
+            nip94_tags["pubkey"] = nip94_event.get("pubkey", "")
+            nip94_tags["sig"] = nip94_event.get("sig", "")
+
         response = {
             "status": "success",
             "message": "File uploaded successfully",
-            "nip94_event": nip94_event,
-            "url": download_url,
-            "sha256": sha256_hash,
-            "size": tamanho_real,
-            "type": mime_type
+            "nip94_event": nip94_tags
         }
 
         print(f"[NIP-96] ✅ Upload: {file.filename} ({tamanho_real} bytes) por {npub[:16]}...")
 
-        return jsonify(response), 200
+        # Retorna com CORS headers (crítico para clientes web como iris.to)
+        return _add_cors_headers(jsonify(response)), 200
 
     except Exception as e:
         db.session.rollback()
         print(f"[NIP-96] ❌ Erro no upload: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({
+        return _add_cors_headers(jsonify({
             "status": "error",
             "message": str(e)
-        }), 500
+        })), 500
 
 
 def publicar_file_metadata(nsec, url, mime_type, sha256, size, alt="", caption=""):
@@ -579,6 +708,12 @@ def api_login():
     data = request.get_json(force=True)
     pubkey = data.get("pubkey")
     password = data.get("password")
+
+    # Verifica blacklist
+    is_blocked, _ = check_blacklist_npub(pubkey)
+    if is_blocked:
+        print(f"[BLACKLIST] ⛔ Login bloqueado: {pubkey[:20]}...")
+        return jsonify({"error": "Acesso negado"}), 403
 
     user = Usuario.query.filter_by(pubkey=pubkey).first()
     if not user or not check_password_hash(user.senha_hash, password):
@@ -778,10 +913,16 @@ def auth_login():
     try:
         data = request.get_json()
         npub = data.get("npub")
-        
+
         if not npub:
             return jsonify({"status": "error", "error": "npub obrigatório"}), 400
-        
+
+        # Verifica blacklist
+        is_blocked, _ = check_blacklist_npub(npub)
+        if is_blocked:
+            print(f"[BLACKLIST] ⛔ Login bloqueado: {npub[:20]}...")
+            return jsonify({"status": "error", "error": "Acesso negado"}), 403
+
         # Busca usuário
         user = Usuario.query.filter_by(pubkey=npub).first()
         
@@ -1057,14 +1198,20 @@ def upload_arquivo():
     try:
         if 'file' not in request.files:
             return jsonify({"status": "error", "error": "Nenhum arquivo"}), 400
-        
+
         file = request.files['file']
         npub = request.form.get('npub')
         pasta = request.form.get('pasta', 'Geral')
-        
+
         if not npub:
             return jsonify({"status": "error", "error": "Usuário não identificado"}), 401
-        
+
+        # Verifica blacklist
+        is_blocked, _ = check_blacklist_npub(npub)
+        if is_blocked:
+            print(f"[BLACKLIST] ⛔ Upload bloqueado: {npub[:20]}...")
+            return jsonify({"status": "error", "error": "Acesso negado"}), 403
+
         # Busca usuário
         usuario = Usuario.query.filter_by(pubkey=npub).first()
         if not usuario:
