@@ -21,6 +21,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: libermedia-db
+    restart: always
     environment:
       - POSTGRES_USER=libermedia
       - POSTGRES_PASSWORD=libermedia123
