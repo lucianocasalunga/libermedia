@@ -1,6 +1,6 @@
 # 📋 MEMÓRIA DO PROJETO LIBERMEDIA
 
-**Última atualização:** 01/Novembro/2025 11:00 UTC
+**Última atualização:** 02/Novembro/2025 20:15 UTC
 **Contexto:** Plataforma de hospedagem descentralizada com Nostr
 
 ---
@@ -1397,3 +1397,156 @@ CORS(app, resources={
 ---
 
 **FIM DA SESSÃO 5 - ATUALIZADO: 02/Nov/2025 17:15 UTC**
+
+---
+
+## 🎨 SESSÃO 6: MELHORIAS DE INTERFACE E UX (02/Nov/2025 - 19:40-20:15 UTC)
+
+### ✅ CORREÇÃO APÓS QUEDA DE ENERGIA:
+
+**Problema:**
+- Queda de energia reiniciou servidor
+- PostgreSQL (libermedia-db) não reiniciou automaticamente
+- Erro: `could not translate host name "libermedia-db" to address`
+
+**Solução:**
+- ✅ Reiniciado PostgreSQL e libermedia manualmente
+- ✅ Adicionado `restart: always` no docker-compose.yml
+- ✅ Containers recriados com nova política
+- ✅ Commit: `1b85623` e `ec42b45`
+
+**Tempo:** ~15 minutos
+
+---
+
+### ✅ MELHORIAS DE INTERFACE IMPLEMENTADAS:
+
+#### 1. **Formulário de Suporte Funcional** 📧
+
+**Backend (app.py):**
+- ✅ Modelo `Suporte`: id, nome, email, mensagem, created_at, respondido
+- ✅ Endpoint `/api/suporte` (POST) - Recebe mensagens
+  - Validações: nome min 2 chars, email válido, mensagem min 10 chars
+  - Salva no PostgreSQL
+  - TODO marcado para envio via SMTP Porkbun
+- ✅ Endpoint `/api/admin/suporte` (GET) - Lista mensagens (admin only)
+
+**Frontend (suporte.html):**
+- ✅ IDs adicionados nos inputs
+- ✅ JavaScript completo para processar formulário
+- ✅ Validações client-side
+- ✅ Mensagens de feedback (sucesso/erro)
+- ✅ Limpa formulário após envio
+- ✅ Estados de loading no botão
+
+**Benefícios:**
+- Usuários podem pedir ajuda diretamente
+- Admin visualiza todas mensagens
+- Preparado para envio de email automático
+
+**Tempo:** ~45 minutos
+
+---
+
+#### 2. **Feedback Visual Melhorado** ✨
+
+**Dashboard (dashboard.js):**
+- ✅ Mensagem de sucesso após uploads
+  - Mostra quantidade de arquivos enviados
+  - Toast verde com ícone ✅
+- ✅ Tratamento de erros de upload melhorado
+  - xhr.onerror captura erros de rede
+  - Feedback claro de falhas
+
+**Já Existentes (verificados):**
+- ✅ Mover arquivos: feedback OK
+- ✅ Sincronizar perfil Nostr: feedback OK
+- ✅ Criar/deletar pastas: feedback OK
+- ✅ Links públicos: feedback OK
+
+**Tempo:** ~20 minutos
+
+---
+
+#### 3. **Tooltips Explicativos** 💬
+
+**Dashboard (dashboard.html):**
+- ✅ Botão Configurações: "Configurar perfil Nostr e verificação NIP-05"
+- ✅ Botão Sair: "Sair da conta"
+- ✅ Botão Tamanho: "Mudar tamanho dos ícones"
+- ✅ Botão Ordenação: "Ordenar arquivos"
+- ✅ FAB Mobile: "Enviar arquivos"
+
+**Tecnologia:**
+- CSS-only tooltips (já existia em base.html)
+- Atributo `data-tooltip`
+- Posicionamento automático top center
+- Animação suave 200ms
+
+**Tempo:** ~15 minutos
+
+---
+
+### 📊 ESTATÍSTICAS DO PROJETO (02/Nov/2025):
+
+**Usuários:**
+- 📊 **Total:** 23 usuários cadastrados
+- 🎯 **Plano:** 100% Free (nenhum pagante ainda)
+- 📅 **Último cadastro:** Hoje 18:28 UTC
+- ✅ **NIP-05 verificados:** 0
+
+**Arquivos:**
+- 📁 **Total:** 314 arquivos
+- 💾 **Armazenamento:** 0.52 GB (520 MB)
+- 📊 **Média/usuário:** ~22 MB
+- 🎯 **Capacidade disponível:** 5.5 TB restantes
+
+**Sistema:**
+- ✅ 100% operacional após correção
+- ✅ Restart policy configurado
+- ✅ Todos serviços rodando
+
+---
+
+### 📝 COMMIT REALIZADO:
+
+**Commit:** `5a40138`
+**Mensagem:** "feat: melhorias de UX e interface"
+
+**Arquivos modificados:**
+- app.py (+85 linhas)
+- static/js/dashboard.js (+15 linhas)
+- templates/dashboard.html (+5 linhas)
+- templates/suporte.html (+94 linhas)
+
+**Total:** +199 linhas, -22 deletadas
+
+---
+
+### ⏭️ PRÓXIMOS PASSOS:
+
+**PRIORIDADE 1: Configurar SMTP Porkbun** 📧
+- [ ] Obter credenciais SMTP da Porkbun
+- [ ] Configurar Flask-Mail no app.py
+- [ ] Testar envio de email de suporte
+- [ ] Adicionar notificação de email ao admin
+
+**PRIORIDADE 2: Onboarding de Novos Usuários** 👋
+- [ ] Modal de boas-vindas para primeiro acesso
+- [ ] Tutorial interativo (3-4 passos)
+- [ ] Destacar features principais
+
+**PRIORIDADE 3: FAQ** ❓
+- [ ] Criar página /faq
+- [ ] Perguntas comuns sobre Nostr
+- [ ] Como fazer upgrade de plano
+- [ ] Troubleshooting básico
+
+**PRIORIDADE 4: Testes NIP-96** 📡
+- [ ] Testar upload com Jumble Social
+- [ ] Testar Amethyst, Primal, Damus
+- [ ] Debug de compatibilidade
+
+---
+
+**FIM DA SESSÃO 6 - ATUALIZADO: 02/Nov/2025 20:15 UTC**
