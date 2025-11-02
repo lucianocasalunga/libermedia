@@ -1525,11 +1525,42 @@ CORS(app, resources={
 
 ### ⏭️ PRÓXIMOS PASSOS:
 
-**PRIORIDADE 1: Configurar SMTP Porkbun** 📧
-- [ ] Obter credenciais SMTP da Porkbun
-- [ ] Configurar Flask-Mail no app.py
-- [ ] Testar envio de email de suporte
-- [ ] Adicionar notificação de email ao admin
+**PRIORIDADE 1: Configurar Email de Suporte** 📧
+
+⚠️ **PENDENTE - FAZER COM CALMA**
+
+**Situação Atual:**
+- Email `suporte@libermedia.app` configurado como **encaminhamento (forwarding)** no Porkbun
+- Redireciona para `casallunga@hotmail.com`
+- Formulário de suporte salva mensagens no PostgreSQL ✅
+- Falta configurar envio automático de email
+
+**Opções Avaliadas:**
+1. **SMTP Hotmail** (curto prazo)
+   - Usar `casallunga@hotmail.com` como remetente
+   - Servidor: `smtp-mail.outlook.com` porta 587
+   - Precisa: Senha ou App Password do Hotmail
+
+2. **Porkbun Email Hosting** (profissional)
+   - Criar caixa real em `suporte@libermedia.app` com SMTP
+   - Custo: ~$1-2/mês
+   - Precisa: Ativar no painel Porkbun
+
+3. **Serviço Transacional** (escalável)
+   - SendGrid, Mailgun, ou Resend
+   - Free tier: 3k emails/mês
+   - Precisa: Criar conta + configurar DNS
+
+**Tarefas para próxima sessão:**
+- [ ] Decidir qual opção usar (avaliar com calma)
+- [ ] Se Hotmail: Gerar App Password no Microsoft Account
+- [ ] Se Porkbun: Ativar email hosting no painel
+- [ ] Se Transacional: Criar conta Resend e configurar
+- [ ] Instalar Flask-Mail no requirements.txt
+- [ ] Configurar variáveis de ambiente (.env)
+- [ ] Implementar envio no endpoint `/api/suporte`
+- [ ] Testar envio real de email
+- [ ] Adicionar notificação ao admin por email
 
 **PRIORIDADE 2: Onboarding de Novos Usuários** 👋
 - [ ] Modal de boas-vindas para primeiro acesso
