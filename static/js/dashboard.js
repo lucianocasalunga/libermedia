@@ -301,14 +301,25 @@ async function upload(files) {
       }
     };
     
-    await new Promise((resolve) => {
-      xhr.onload = () => resolve();
+    await new Promise((resolve, reject) => {
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          resolve();
+        } else {
+          reject(new Error(`Erro ${xhr.status}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Erro de rede'));
       xhr.open('POST', '/api/upload');
       xhr.send(fd);
     });
   }
-  
+
   progress.classList.add('hidden');
+
+  // Mensagem de sucesso
+  showToast(`✅ ${files.length} arquivo${files.length > 1 ? 's' : ''} enviado${files.length > 1 ? 's' : ''} com sucesso!`, 'success');
+
   loadFiles();
 }
 

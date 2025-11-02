@@ -256,6 +256,15 @@ class Usuario(db.Model):
     nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@libermedia.app
     nip05_verified = db.Column(db.Boolean, default=False)  # Se está verificado
 
+# --- Modelo de Suporte ---
+class Suporte(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    mensagem = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.Integer, default=lambda: int(time.time()))
+    respondido = db.Column(db.Boolean, default=False)
+
 with app.app_context():
     db.create_all()
 
@@ -2292,4 +2301,77 @@ def revogar_link_publico(arquivo_id):
 
     except Exception as e:
         db.session.rollback()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+# ============================================
+# SUPORTE: Formulário de Contato
+# ============================================
+
+@app.route("/api/suporte", methods=["POST"])
+def enviar_suporte():
+    """Recebe mensagem do formulário de suporte"""
+    try:
+        data = request.get_json()
+        nome = data.get('nome', '').strip()
+        email = data.get('email', '').strip()
+        mensagem = data.get('mensagem', '').strip()
+
+        # Validações
+        if not nome or len(nome) < 2:
+            return jsonify({"status": "error", "error": "Nome inválido"}), 400
+
+        if not email or '@' not in email:
+            return jsonify({"status": "error", "error": "Email inválido"}), 400
+
+        if not mensagem or len(mensagem) < 10:
+            return jsonify({"status": "error", "error": "Mensagem muito curta (mínimo 10 caracteres)"}), 400
+
+        # Salva no banco
+        suporte = Suporte(
+            nome=nome,
+            email=email,
+            mensagem=mensagem
+        )
+        db.session.add(suporte)
+        db.session.commit()
+
+        print(f"[SUPORTE] Nova mensagem de {nome} ({email})")
+
+        # TODO: Enviar email via SMTP Porkbun (configurar depois)
+
+        return jsonify({
+            "status": "ok",
+            "message": "Mensagem enviada com sucesso! Responderemos em breve."
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[SUPORTE] Erro: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": "Erro ao enviar mensagem"}), 500
+
+
+@app.route("/api/admin/suporte", methods=["GET"])
+@admin_required
+def listar_suporte():
+    """Lista mensagens de suporte (admin only)"""
+    try:
+        mensagens = Suporte.query.order_by(Suporte.created_at.desc()).all()
+
+        return jsonify({
+            "status": "ok",
+            "mensagens": [{
+                "id": m.id,
+                "nome": m.nome,
+                "email": m.email,
+                "mensagem": m.mensagem,
+                "created_at": m.created_at,
+                "respondido": m.respondido
+            } for m in mensagens]
+        })
+
+    except Exception as e:
+        print(f"[SUPORTE] Erro ao listar: {e}")
         return jsonify({"status": "error", "error": str(e)}), 500
