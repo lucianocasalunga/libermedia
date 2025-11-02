@@ -879,6 +879,57 @@ def api_check_invoice(checking_id):
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+@app.route("/api/upgrade-plan", methods=["POST"])
+def api_upgrade_plan():
+    """Faz upgrade do plano do usuário após pagamento confirmado"""
+    try:
+        data = request.get_json()
+        npub = data.get('npub')
+        plan_id = data.get('plan_id')
+        checking_id = data.get('checking_id')
+
+        if not npub or not plan_id or not checking_id:
+            return jsonify({"status": "error", "error": "Parâmetros incompletos"}), 400
+
+        # Verifica se o pagamento foi confirmado
+        cfg = _load_lnbits_env()
+        url = f"{cfg['LNBITS_URL'].rstrip('/')}/api/v1/payments/{checking_id}"
+        headers = {"X-Api-Key": cfg["LNBITS_INVOICE_KEY"]}
+        r = requests.get(url, headers=headers, timeout=15)
+
+        if r.status_code not in [200, 201]:
+            return jsonify({"status": "error", "error": "Erro ao verificar pagamento"}), 500
+
+        payment_data = r.json()
+
+        if not payment_data.get("paid", False):
+            return jsonify({"status": "error", "error": "Pagamento não confirmado"}), 400
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Atualiza plano
+        usuario.plano = plan_id
+        db.session.commit()
+
+        print(f"[UPGRADE] ✅ Usuário {usuario.nome} ({npub[:16]}...) upgraded para {plan_id}")
+
+        return jsonify({
+            "status": "ok",
+            "message": f"Plano atualizado para {plan_id}!",
+            "new_plan": plan_id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[UPGRADE] ❌ Erro: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 
 # === [INTEGRAÇÃO LOGIN/CADASTRO COM BANCO] ===
 @app.route("/api/auth/register", methods=["POST"])

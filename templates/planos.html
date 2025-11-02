@@ -89,36 +89,149 @@
 </section>
 
 <script>
+// Variável global para controlar polling
+let pollingInterval = null;
+
 // Pagar plano específico
 async function pagar(planId){
   const btn = document.getElementById('btn-'+planId);
   const qr = document.getElementById('qr-'+planId);
   const img = document.getElementById('imgqr-'+planId);
   const code = document.getElementById('code-'+planId);
-  
+
   btn.disabled = true;
   btn.innerHTML = '⏳ Gerando fatura...';
-  
+
   try {
     const r = await fetch('/api/invoice/'+planId, {method:'POST'});
     const j = await r.json();
-    
+
     if (j.status === 'ok' && j.bolt11) {
       const bolt = j.bolt11;
+      const checkingId = j.checking_id;
+
       const url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=lightning:'+encodeURIComponent(bolt);
       img.src = url;
       code.innerText = bolt;
       qr.classList.remove('hidden');
-      btn.innerHTML = '✅ Fatura gerada!';
+      btn.innerHTML = '⏳ Aguardando pagamento...';
+
+      // Inicia verificação automática
+      iniciarVerificacaoPagamento(planId, checkingId, btn);
+
     } else {
       alert('❌ Erro: ' + (j.error || j.status));
       btn.innerHTML = '⚡ Pagar com Lightning';
+      btn.disabled = false;
     }
   } catch (e) {
     alert('❌ Falha: ' + e);
     btn.innerHTML = '⚡ Pagar com Lightning';
-  } finally {
     btn.disabled = false;
+  }
+}
+
+// Inicia polling de verificação de pagamento
+function iniciarVerificacaoPagamento(planId, checkingId, btn) {
+  // Para qualquer polling anterior
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+
+  // Mostra mensagem de aguardo
+  mostrarNotificacao('⏳ Aguardando confirmação do pagamento...', 'info', false);
+
+  // Verifica a cada 3 segundos
+  pollingInterval = setInterval(async () => {
+    try {
+      const r = await fetch(`/api/invoice/check/${checkingId}`);
+      const j = await r.json();
+
+      if (j.status === 'ok' && j.paid) {
+        // Pagamento confirmado!
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+
+        btn.innerHTML = '✅ Pago! Atualizando...';
+        mostrarNotificacao('✅ Pagamento confirmado!', 'success');
+
+        // Faz upgrade do plano
+        await processarUpgrade(planId, checkingId);
+      }
+    } catch (e) {
+      console.error('Erro ao verificar pagamento:', e);
+    }
+  }, 3000); // Verifica a cada 3 segundos
+
+  // Para após 10 minutos (timeout)
+  setTimeout(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+      btn.innerHTML = '⏱️ Tempo expirado';
+      btn.disabled = false;
+      mostrarNotificacao('⏱️ Verificação expirada. Por favor, gere uma nova fatura.', 'warning');
+    }
+  }, 600000); // 10 minutos
+}
+
+// Processa upgrade após pagamento confirmado
+async function processarUpgrade(planId, checkingId) {
+  try {
+    const npub = localStorage.getItem('libermedia_npub');
+    if (!npub) {
+      alert('❌ Faça login para continuar');
+      window.location.href = '/';
+      return;
+    }
+
+    const r = await fetch('/api/upgrade-plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        npub: npub,
+        plan_id: planId,
+        checking_id: checkingId
+      })
+    });
+
+    const j = await r.json();
+
+    if (j.status === 'ok') {
+      mostrarNotificacao('🎉 ' + j.message, 'success');
+
+      // Aguarda 2 segundos e redireciona para dashboard
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 2000);
+    } else {
+      alert('❌ Erro ao atualizar plano: ' + j.error);
+    }
+  } catch (e) {
+    alert('❌ Erro: ' + e);
+  }
+}
+
+// Mostra notificação visual
+function mostrarNotificacao(mensagem, tipo, autoClose = true) {
+  // Remove notificação anterior se existir
+  const antiga = document.querySelector('.notificacao-pagamento');
+  if (antiga) antiga.remove();
+
+  const cores = {
+    info: 'bg-blue-500',
+    success: 'bg-green-500',
+    warning: 'bg-yellow-500',
+    error: 'bg-red-500'
+  };
+
+  const notif = document.createElement('div');
+  notif.className = `notificacao-pagamento fixed top-4 right-4 ${cores[tipo]} text-white px-6 py-4 rounded-lg shadow-2xl z-50 font-bold text-lg`;
+  notif.innerHTML = mensagem;
+  document.body.appendChild(notif);
+
+  if (autoClose) {
+    setTimeout(() => notif.remove(), 5000);
   }
 }
 
