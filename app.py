@@ -821,6 +821,89 @@ def lnbits_create_invoice(amount_sats: int, memo: str):
         "bolt11": data.get("bolt11"),
         "checking_id": data.get("checking_id")
     }
+
+# === OPENNODE INTEGRATION ===
+def _load_opennode_env():
+    """Carrega configuração do OpenNode"""
+    env_path = os.path.join(os.path.dirname(__file__), "secrets", "opennode.env")
+    cfg = {}
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    cfg[k.strip()] = v.strip()
+    return cfg
+
+def opennode_create_invoice(amount_sats: int, memo: str):
+    """Cria invoice no OpenNode"""
+    cfg = _load_opennode_env()
+    api_key = cfg.get("OPENNODE_API_KEY", "")
+    base_url = cfg.get("OPENNODE_API_URL", "https://api.opennode.com/v1")
+
+    if not api_key:
+        raise RuntimeError("OpenNode não configurado (API_KEY ausente)")
+
+    url = f"{base_url}/charges"
+    headers = {
+        "Authorization": api_key,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "amount": amount_sats,
+        "currency": "btc",
+        "description": memo,
+        "callback_url": "https://libermedia.app/api/webhook/opennode"
+    }
+
+    r = requests.post(url, headers=headers, json=payload, timeout=20)
+
+    if r.status_code not in [200, 201]:
+        raise RuntimeError(f"OpenNode erro HTTP {r.status_code}: {r.text}")
+
+    data = r.json()
+    charge_data = data.get("data", {})
+
+    print(f"[OPENNODE] ✅ Invoice criado: {amount_sats} sats - {charge_data.get('id')}")
+
+    return {
+        "bolt11": charge_data.get("lightning_invoice", {}).get("payreq", ""),
+        "payment_hash": charge_data.get("id")  # usado como checking_id
+    }
+
+def opennode_check_invoice(charge_id: str):
+    """Verifica status de pagamento no OpenNode"""
+    cfg = _load_opennode_env()
+    api_key = cfg.get("OPENNODE_API_KEY", "")
+    base_url = cfg.get("OPENNODE_API_URL", "https://api.opennode.com/v1")
+
+    if not api_key:
+        raise RuntimeError("OpenNode não configurado (API_KEY ausente)")
+
+    url = f"{base_url}/charge/{charge_id}"
+    headers = {
+        "Authorization": api_key
+    }
+
+    r = requests.get(url, headers=headers, timeout=15)
+
+    if r.status_code not in [200, 201]:
+        raise RuntimeError(f"OpenNode erro HTTP {r.status_code}: {r.text}")
+
+    data = r.json()
+    charge_data = data.get("data", {})
+
+    # OpenNode retorna status: "paid", "unpaid", "processing", etc
+    status = charge_data.get("status", "unpaid")
+    is_paid = (status == "paid")
+
+    return {
+        "paid": is_paid,
+        "amount_sat": charge_data.get("amount", 0)
+    }
 @app.route("/api/invoice/<plan_id>", methods=["POST","GET"])
 def api_invoice(plan_id):
     plans, meta = _load_plans_config()
@@ -832,13 +915,13 @@ def api_invoice(plan_id):
         return jsonify({"status":"free","message":"Plano gratuito — contribua livre se desejar."})
     memo = f"LiberMedia {plan.get('name')} ({plan_id})"
     try:
-        inv = lnbits_create_invoice(amount, memo)
+        inv = opennode_create_invoice(amount, memo)
         return jsonify({
             "status": "ok",
             "plan": plan_id,
             "amount_sats": amount,
             "bolt11": inv["bolt11"],
-            "checking_id": inv["checking_id"]
+            "checking_id": inv["payment_hash"]
         })
     except Exception as e:
         return jsonify({"status":"error","error":str(e)}), 500
@@ -853,28 +936,26 @@ def api_create_invoice(plan_id):
             return jsonify({"status": "error", "error": "Plano não encontrado"}), 404
         if plan["amount_sats"] == 0:
             return jsonify({"status": "free", "message": "Plano gratuito"}), 200
-        cfg = _load_lnbits_env()
-        url = f"{cfg['LNBITS_URL'].rstrip('/')}/api/v1/payments"
-        headers = {"X-Api-Key": cfg["LNBITS_INVOICE_KEY"], "Content-Type": "application/json"}
-        payload = {"out": False, "amount": plan["amount_sats"], "memo": f"LiberMedia Plano {plan['name']}"}
-        r = requests.post(url, headers=headers, json=payload, timeout=15)
-        if r.status_code not in [200, 201]:
-            return jsonify({"status": "error", "error": "Falha LNBits", "details": r.text}), 500
-        data = r.json()
-        return jsonify({"status": "ok", "plan": plan["name"], "bolt11": data.get("bolt11"), "checking_id": data.get("checking_id")})
+
+        memo = f"LiberMedia Plano {plan['name']}"
+        inv = opennode_create_invoice(plan["amount_sats"], memo)
+
+        return jsonify({
+            "status": "ok",
+            "plan": plan["name"],
+            "bolt11": inv["bolt11"],
+            "checking_id": inv["payment_hash"]
+        })
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 @app.route("/api/invoice/check/<checking_id>", methods=["GET"])
 def api_check_invoice(checking_id):
     try:
-        cfg = _load_lnbits_env()
-        url = f"{cfg['LNBITS_URL'].rstrip('/')}/api/v1/payments/{checking_id}"
-        headers = {"X-Api-Key": cfg["LNBITS_INVOICE_KEY"]}
-        r = requests.get(url, headers=headers, timeout=15)
-        if r.status_code not in [200, 201]:
-            return jsonify({"status": "error", "error": "Falha LNBits", "details": r.text}), 500
-        data = r.json()
-        return jsonify({"status": "ok", "paid": data.get("paid", False)})
+        result = opennode_check_invoice(checking_id)
+        return jsonify({
+            "status": "ok",
+            "paid": result["paid"]
+        })
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
@@ -891,18 +972,10 @@ def api_upgrade_plan():
         if not npub or not plan_id or not checking_id:
             return jsonify({"status": "error", "error": "Parâmetros incompletos"}), 400
 
-        # Verifica se o pagamento foi confirmado
-        cfg = _load_lnbits_env()
-        url = f"{cfg['LNBITS_URL'].rstrip('/')}/api/v1/payments/{checking_id}"
-        headers = {"X-Api-Key": cfg["LNBITS_INVOICE_KEY"]}
-        r = requests.get(url, headers=headers, timeout=15)
+        # Verifica pagamento no OpenNode
+        payment_result = opennode_check_invoice(checking_id)
 
-        if r.status_code not in [200, 201]:
-            return jsonify({"status": "error", "error": "Erro ao verificar pagamento"}), 500
-
-        payment_data = r.json()
-
-        if not payment_data.get("paid", False):
+        if not payment_result.get("paid", False):
             return jsonify({"status": "error", "error": "Pagamento não confirmado"}), 400
 
         # Busca usuário
@@ -914,7 +987,7 @@ def api_upgrade_plan():
         usuario.plano = plan_id
         db.session.commit()
 
-        print(f"[UPGRADE] ✅ Usuário {usuario.nome} ({npub[:16]}...) upgraded para {plan_id}")
+        print(f"[UPGRADE] ✅ Usuário {usuario.nome} ({npub[:16]}...) upgraded para {plan_id} - {payment_result['amount_sat']} sats")
 
         return jsonify({
             "status": "ok",
@@ -1200,22 +1273,19 @@ def create_donation():
     try:
         data = request.get_json()
         amount = int(data.get("amount", 1000))
-        
+
         if amount < 1:
             return jsonify({"status": "error", "error": "Valor mínimo: 1 sat"}), 400
-        
-        cfg = _load_lnbits_env()
-        url = f"{cfg['LNBITS_URL'].rstrip('/')}/api/v1/payments"
-        headers = {"X-Api-Key": cfg["LNBITS_INVOICE_KEY"], "Content-Type": "application/json"}
-        payload = {"out": False, "amount": amount, "memo": f"Doação livre LiberMedia ({amount} sats)"}
-        
-        r = requests.post(url, headers=headers, json=payload, timeout=15)
-        if r.status_code not in [200, 201]:
-            return jsonify({"status": "error", "error": "Falha LNBits"}), 500
-        
-        data = r.json()
-        return jsonify({"status": "ok", "bolt11": data.get("bolt11"), "checking_id": data.get("checking_id")})
-    
+
+        memo = f"Doação livre LiberMedia ({amount} sats)"
+        inv = opennode_create_invoice(amount, memo)
+
+        return jsonify({
+            "status": "ok",
+            "bolt11": inv["bolt11"],
+            "checking_id": inv["payment_hash"]
+        })
+
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 

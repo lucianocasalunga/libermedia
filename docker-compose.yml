@@ -10,7 +10,10 @@ services:
       - ./app.py:/app/app.py
       - ./templates:/app/templates
       - ./static:/app/static
+      - ./secrets:/app/secrets
       - ./.well-known:/.well-known
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://libermedia:libermedia123@db:5432/libermedia
