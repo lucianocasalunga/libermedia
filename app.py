@@ -252,6 +252,12 @@ class Usuario(db.Model):
     plano = db.Column(db.String(32), default="free")
     created_at = db.Column(db.Integer, default=lambda: int(time.time()))
 
+    # Sistema de assinaturas
+    expiration_date = db.Column(db.Integer, nullable=True)  # Unix timestamp de expiração
+    subscription_months = db.Column(db.Integer, default=0)  # Duração em meses (0 = free)
+    email = db.Column(db.String(120), nullable=True)  # Email para notificações
+    last_notification = db.Column(db.Integer, nullable=True)  # Última notificação enviada
+
     # NIP-05: Verificação de identidade
     nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@libermedia.app
     nip05_verified = db.Column(db.Boolean, default=False)  # Se está verificado
@@ -904,22 +910,49 @@ def opennode_check_invoice(charge_id: str):
         "paid": is_paid,
         "amount_sat": charge_data.get("amount", 0)
     }
+def _calculate_subscription_price(base_price, months):
+    """Calcula preço com desconto baseado no período"""
+    discount_rates = {
+        1: 0.00,   # 0% desconto
+        2: 0.02,   # 2% desconto
+        6: 0.04,   # 4% desconto
+        12: 0.08   # 8% desconto
+    }
+
+    discount = discount_rates.get(months, 0)
+    total = base_price * months
+    final_price = int(total * (1 - discount))
+
+    return final_price
+
 @app.route("/api/invoice/<plan_id>", methods=["POST","GET"])
 def api_invoice(plan_id):
     plans, meta = _load_plans_config()
     plan = next((p for p in plans if p.get("id")==plan_id), None)
     if not plan:
         abort(404, description="Plano não encontrado")
-    amount = int(plan.get("amount_sats", 0))
-    if amount <= 0:
+
+    base_amount = int(plan.get("amount_sats", 0))
+    if base_amount <= 0:
         return jsonify({"status":"free","message":"Plano gratuito — contribua livre se desejar."})
-    memo = f"LiberMedia {plan.get('name')} ({plan_id})"
+
+    # Obtém período (padrão: 1 mês)
+    months = int(request.args.get('months', 1))
+    if months not in [1, 2, 6, 12]:
+        months = 1
+
+    # Calcula preço final com desconto
+    final_amount = _calculate_subscription_price(base_amount, months)
+
+    memo = f"LiberMedia {plan.get('name')} - {months} {'mês' if months == 1 else 'meses'}"
+
     try:
-        inv = opennode_create_invoice(amount, memo)
+        inv = opennode_create_invoice(final_amount, memo)
         return jsonify({
             "status": "ok",
             "plan": plan_id,
-            "amount_sats": amount,
+            "amount_sats": final_amount,
+            "months": months,
             "bolt11": inv["bolt11"],
             "checking_id": inv["payment_hash"]
         })
@@ -968,6 +1001,7 @@ def api_upgrade_plan():
         npub = data.get('npub')
         plan_id = data.get('plan_id')
         checking_id = data.get('checking_id')
+        months = int(data.get('months', 1))
 
         if not npub or not plan_id or not checking_id:
             return jsonify({"status": "error", "error": "Parâmetros incompletos"}), 400
@@ -983,16 +1017,35 @@ def api_upgrade_plan():
         if not usuario:
             return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
 
-        # Atualiza plano
+        # Calcula data de expiração
+        from datetime import datetime, timedelta
+        from dateutil.relativedelta import relativedelta
+
+        now = datetime.now()
+
+        # Se já tem expiração futura, estende a partir dela
+        if usuario.expiration_date and usuario.expiration_date > int(now.timestamp()):
+            expiration_datetime = datetime.fromtimestamp(usuario.expiration_date)
+            new_expiration = expiration_datetime + relativedelta(months=months)
+        else:
+            # Nova assinatura, inicia agora
+            new_expiration = now + relativedelta(months=months)
+
+        # Atualiza usuário
         usuario.plano = plan_id
+        usuario.expiration_date = int(new_expiration.timestamp())
+        usuario.subscription_months = months
         db.session.commit()
 
-        print(f"[UPGRADE] ✅ Usuário {usuario.nome} ({npub[:16]}...) upgraded para {plan_id} - {payment_result['amount_sat']} sats")
+        expiration_str = new_expiration.strftime('%d/%m/%Y')
+        print(f"[UPGRADE] ✅ Usuário {usuario.nome} ({npub[:16]}...) upgraded para {plan_id} - {months} {'mês' if months == 1 else 'meses'} - Expira: {expiration_str}")
 
         return jsonify({
             "status": "ok",
-            "message": f"Plano atualizado para {plan_id}!",
-            "new_plan": plan_id
+            "message": f"Plano atualizado para {plan_id} por {months} {'mês' if months == 1 else 'meses'}!",
+            "new_plan": plan_id,
+            "expiration_date": int(new_expiration.timestamp()),
+            "expiration_formatted": expiration_str
         })
 
     except Exception as e:

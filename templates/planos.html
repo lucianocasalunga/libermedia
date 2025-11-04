@@ -31,9 +31,32 @@
         </p>
         
         {% if plan.amount_sats > 0 %}
-          <p class="text-orange-600 dark:text-orange-400 text-center font-bold text-xl mt-2">
-            ⚡ {{ plan.amount_sats }} sats
-          </p>
+          <!-- Período de assinatura -->
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              📅 Período:
+            </label>
+            <select
+              id="period-{{ plan.id }}"
+              onchange="calcularPreco('{{ plan.id }}', {{ plan.amount_sats }})"
+              class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-center font-medium"
+            >
+              <option value="1">1 mês</option>
+              <option value="2">2 meses (2% OFF)</option>
+              <option value="6">6 meses (4% OFF)</option>
+              <option value="12">12 meses (8% OFF)</option>
+            </select>
+          </div>
+
+          <!-- Preço calculado -->
+          <div class="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+            <p id="price-{{ plan.id }}" class="text-orange-600 dark:text-orange-400 text-center font-bold text-xl">
+              ⚡ {{ plan.amount_sats }} sats
+            </p>
+            <p id="discount-{{ plan.id }}" class="text-green-600 dark:text-green-400 text-center text-sm font-medium mt-1 hidden">
+              💰 Economia: <span id="savings-{{ plan.id }}"></span> sats
+            </p>
+          </div>
         {% else %}
           <p class="text-green-600 dark:text-green-400 text-center font-bold text-xl mt-2">
             💚 Gratuito
@@ -45,9 +68,9 @@
       <div class="mt-6">
         {% if plan.amount_sats > 0 %}
           <!-- Planos pagos -->
-          <button 
-            id="btn-{{ plan.id }}" 
-            onclick="pagar('{{ plan.id }}')" 
+          <button
+            id="btn-{{ plan.id }}"
+            onclick="pagar('{{ plan.id }}', {{ plan.amount_sats }})"
             class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 rounded-lg shadow-lg transition"
           >
             ⚡ Pagar com Lightning
@@ -92,18 +115,52 @@
 // Variável global para controlar polling
 let pollingInterval = null;
 
+// Calcula preço com desconto baseado no período
+function calcularPreco(planId, precomensal) {
+  const periodSelect = document.getElementById('period-' + planId);
+  const priceEl = document.getElementById('price-' + planId);
+  const discountEl = document.getElementById('discount-' + planId);
+  const savingsEl = document.getElementById('savings-' + planId);
+
+  const meses = parseInt(periodSelect.value);
+  let desconto = 0;
+
+  // Define desconto por período
+  switch(meses) {
+    case 2: desconto = 0.02; break;  // 2%
+    case 6: desconto = 0.04; break;  // 4%
+    case 12: desconto = 0.08; break; // 8%
+  }
+
+  const precoTotal = precomensal * meses;
+  const precoComDesconto = Math.floor(precoTotal * (1 - desconto));
+  const economia = precoTotal - precoComDesconto;
+
+  priceEl.innerHTML = `⚡ ${precoComDesconto.toLocaleString()} sats`;
+
+  if (economia > 0) {
+    savingsEl.textContent = economia.toLocaleString();
+    discountEl.classList.remove('hidden');
+  } else {
+    discountEl.classList.add('hidden');
+  }
+}
+
 // Pagar plano específico
-async function pagar(planId){
+async function pagar(planId, precomensal){
   const btn = document.getElementById('btn-'+planId);
   const qr = document.getElementById('qr-'+planId);
   const img = document.getElementById('imgqr-'+planId);
   const code = document.getElementById('code-'+planId);
+  const periodSelect = document.getElementById('period-' + planId);
+
+  const meses = parseInt(periodSelect.value);
 
   btn.disabled = true;
   btn.innerHTML = '⏳ Gerando fatura...';
 
   try {
-    const r = await fetch('/api/invoice/'+planId, {method:'POST'});
+    const r = await fetch('/api/invoice/'+planId+'?months='+meses, {method:'POST'});
     const j = await r.json();
 
     if (j.status === 'ok' && j.bolt11) {
@@ -117,7 +174,7 @@ async function pagar(planId){
       btn.innerHTML = '⏳ Aguardando pagamento...';
 
       // Inicia verificação automática
-      iniciarVerificacaoPagamento(planId, checkingId, btn);
+      iniciarVerificacaoPagamento(planId, checkingId, btn, meses);
 
     } else {
       alert('❌ Erro: ' + (j.error || j.status));
@@ -132,7 +189,7 @@ async function pagar(planId){
 }
 
 // Inicia polling de verificação de pagamento
-function iniciarVerificacaoPagamento(planId, checkingId, btn) {
+function iniciarVerificacaoPagamento(planId, checkingId, btn, meses) {
   // Para qualquer polling anterior
   if (pollingInterval) {
     clearInterval(pollingInterval);
@@ -156,7 +213,7 @@ function iniciarVerificacaoPagamento(planId, checkingId, btn) {
         mostrarNotificacao('✅ Pagamento confirmado!', 'success');
 
         // Faz upgrade do plano
-        await processarUpgrade(planId, checkingId);
+        await processarUpgrade(planId, checkingId, meses);
       }
     } catch (e) {
       console.error('Erro ao verificar pagamento:', e);
@@ -176,7 +233,7 @@ function iniciarVerificacaoPagamento(planId, checkingId, btn) {
 }
 
 // Processa upgrade após pagamento confirmado
-async function processarUpgrade(planId, checkingId) {
+async function processarUpgrade(planId, checkingId, meses) {
   try {
     const npub = localStorage.getItem('libermedia_npub');
     if (!npub) {
@@ -191,7 +248,8 @@ async function processarUpgrade(planId, checkingId) {
       body: JSON.stringify({
         npub: npub,
         plan_id: planId,
-        checking_id: checkingId
+        checking_id: checkingId,
+        months: meses
       })
     });
 
