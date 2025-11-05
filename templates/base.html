@@ -77,13 +77,14 @@
     /* Grades/Cards - Tema Escuro */
     .dark-theme .bg-white\/95,
     .dark-theme .bg-white\/90,
-    .dark-theme .bg-white,
     .dark-theme .bg-gray-900\/95,
     .dark-theme .bg-gray-800\/95,
     .dark-theme .bg-gray-800 {
       background-color: rgba(17, 24, 39, 0.85) !important;
       color: #ffffff !important;
     }
+
+    /* .bg-white não é forçado aqui - Tailwind dark: classes irão gerenciar */
 
     .dark-theme .text-gray-800,
     .dark-theme .text-gray-900 {
@@ -131,14 +132,11 @@
     }
 
     /* Regras de contraste para botões - Tema Escuro */
-    /* Botões brancos/claros devem ter letras pretas */
-    .dark-theme .bg-white,
-    .dark-theme .bg-gray-100,
-    .dark-theme .bg-gray-200 {
-      background-color: #f3f4f6 !important;
-      color: #000000 !important;
-    }
+    /* Removidas regras de .bg-white para evitar conflitos */
+    /* Tailwind dark: classes gerenciam automaticamente */
 
+    .dark-theme .bg-gray-100,
+    .dark-theme .bg-gray-200,
     .dark-theme .bg-gray-300 {
       background-color: #d1d5db !important;
       color: #000000 !important;
@@ -313,7 +311,15 @@
       if (theme === 'auto') {
         theme = getSystemTheme();
       }
+      // Aplica classes no body para CSS customizado
       document.body.className = theme === 'dark' ? 'dark-theme text-gray-100' : 'light-theme text-gray-900';
+
+      // Aplica/remove classe 'dark' no html para Tailwind CSS
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
 
     // Carrega tema inicial (default = light)
