@@ -312,16 +312,26 @@
   </header>
 
   <!-- Menu Mobile Fullscreen -->
-  <nav id="mobileMenu" class="hidden fixed inset-0 bg-gray-900/98 backdrop-blur-md z-[100] flex flex-col items-center justify-center">
-    <button id="closeMobileMenu" class="absolute top-6 right-6 text-white text-5xl hover:text-yellow-400">
+  <nav id="mobileMenu" class="hidden fixed inset-0 bg-white/80 dark:bg-gray-900/90 backdrop-blur-lg z-[100] flex flex-col items-center justify-center p-8">
+    <button id="closeMobileMenu" class="absolute top-6 right-6 text-gray-900 dark:text-white text-5xl hover:text-yellow-500 transition">
       ×
     </button>
-    <div class="flex flex-col items-center space-y-8 text-2xl text-white">
-      <a href="/" class="hover:text-yellow-400 transition">Início</a>
-      <a href="/planos" class="hover:text-yellow-400 transition">Planos</a>
-      <a href="/dashboard" class="hover:text-yellow-400 transition">Dashboard</a>
-      <a href="/sobre" class="hover:text-yellow-400 transition">Sobre</a>
-      <a href="/suporte" class="hover:text-yellow-400 transition">Suporte</a>
+    <div class="grid grid-cols-1 gap-4 w-full max-w-xs">
+      <a href="/" class="bg-gray-200/60 dark:bg-gray-700/60 text-gray-900 dark:text-white text-center py-4 px-6 rounded-lg text-xl font-semibold hover:bg-yellow-400 hover:text-gray-900 transition-all">
+        Início
+      </a>
+      <a href="/planos" class="bg-gray-200/60 dark:bg-gray-700/60 text-gray-900 dark:text-white text-center py-4 px-6 rounded-lg text-xl font-semibold hover:bg-yellow-400 hover:text-gray-900 transition-all">
+        Planos
+      </a>
+      <a href="/dashboard" class="bg-gray-200/60 dark:bg-gray-700/60 text-gray-900 dark:text-white text-center py-4 px-6 rounded-lg text-xl font-semibold hover:bg-yellow-400 hover:text-gray-900 transition-all">
+        Dashboard
+      </a>
+      <a href="/sobre" class="bg-gray-200/60 dark:bg-gray-700/60 text-gray-900 dark:text-white text-center py-4 px-6 rounded-lg text-xl font-semibold hover:bg-yellow-400 hover:text-gray-900 transition-all">
+        Sobre
+      </a>
+      <a href="/suporte" class="bg-gray-200/60 dark:bg-gray-700/60 text-gray-900 dark:text-white text-center py-4 px-6 rounded-lg text-xl font-semibold hover:bg-yellow-400 hover:text-gray-900 transition-all">
+        Suporte
+      </a>
     </div>
   </nav>
 
