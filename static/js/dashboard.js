@@ -2111,13 +2111,13 @@ async function loadNip05Status() {
     if (data.verified) {
       // Usuário verificado
       statusDiv.innerHTML = `
-        <div class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
+        <div class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-400 dark:border-green-700">
           <span class="text-2xl">✅</span>
           <div class="flex-1">
-            <p class="text-sm font-semibold text-green-700 dark:text-green-300">
+            <p class="text-sm font-semibold text-green-900 dark:text-green-300">
               Verificado!
             </p>
-            <p class="text-xs text-green-600 dark:text-green-400">
+            <p class="text-xs text-green-800 dark:text-green-400">
               ${data.identifier}
             </p>
           </div>
@@ -2131,13 +2131,13 @@ async function loadNip05Status() {
     } else if (data.username) {
       // Solicitação pendente
       statusDiv.innerHTML = `
-        <div class="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-700">
+        <div class="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-400 dark:border-yellow-700">
           <span class="text-2xl">⏳</span>
           <div class="flex-1">
-            <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+            <p class="text-sm font-semibold text-yellow-900 dark:text-yellow-300">
               Aguardando aprovação
             </p>
-            <p class="text-xs text-yellow-600 dark:text-yellow-400">
+            <p class="text-xs text-yellow-800 dark:text-yellow-400">
               Username solicitado: ${data.username}@libermedia.app
             </p>
           </div>
@@ -2148,7 +2148,7 @@ async function loadNip05Status() {
     } else {
       // Sem verificação
       statusDiv.innerHTML = `
-        <p class="text-sm text-gray-600 dark:text-gray-400">
+        <p class="text-sm text-gray-900 dark:text-gray-400">
           Solicite seu username verificado @libermedia.app
         </p>
       `;
