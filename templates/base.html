@@ -22,21 +22,69 @@
     }
   </script>
   <style>
-    body.light-theme { 
-      background-image: url('/static/img/praiatemaclaro.jpg'); 
+    body.light-theme {
+      background-image: url('/static/img/praiatemaclaro.jpg');
     }
-    body.dark-theme { 
-      background-image: url('/static/img/praiatemaescuro.jpg'); 
+    body.dark-theme {
+      background-image: url('/static/img/praiatemaescuro.jpg');
     }
     body {
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
       min-height: 100vh;
-      transition: background-image 0.3s ease;
+      transition: background-image 0.3s ease, color 0.3s ease;
     }
     body.dark-theme {
       color: #f3f4f6;
+    }
+
+    /* Grades/Cards - Tema Claro */
+    .light-theme .bg-white\/95,
+    .light-theme .bg-white\/90,
+    .light-theme .bg-white {
+      background-color: rgba(255, 255, 255, 0.85) !important;
+      color: #000000 !important;
+    }
+
+    .light-theme .text-gray-800,
+    .light-theme .text-gray-900 {
+      color: #000000 !important;
+    }
+
+    .light-theme .text-gray-600 {
+      color: #374151 !important;
+    }
+
+    /* Grades/Cards - Tema Escuro */
+    .dark-theme .bg-white\/95,
+    .dark-theme .bg-white\/90,
+    .dark-theme .bg-white,
+    .dark-theme .bg-gray-900\/95,
+    .dark-theme .bg-gray-800 {
+      background-color: rgba(17, 24, 39, 0.85) !important;
+      color: #ffffff !important;
+    }
+
+    .dark-theme .text-gray-800,
+    .dark-theme .text-gray-900 {
+      color: #ffffff !important;
+    }
+
+    .dark-theme .text-gray-600,
+    .dark-theme .text-gray-400 {
+      color: #d1d5db !important;
+    }
+
+    /* nsec/Chave Privada - Baixo contraste (anti-espião) */
+    .light-theme .text-secret {
+      color: #d1d5db !important; /* Cinza claro em fundo claro */
+      user-select: none;
+    }
+
+    .dark-theme .text-secret {
+      color: #4b5563 !important; /* Cinza escuro em fundo escuro */
+      user-select: none;
     }
     /* Mobile: Sidebar acima da navbar */
     @media (max-width: 768px) {
@@ -175,38 +223,65 @@
   </footer>
 
   <script>
-    // Carrega tema inicial
+    // Função para detectar preferência do sistema
+    function getSystemTheme() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Função para aplicar tema
+    function applyTheme(theme) {
+      if (theme === 'auto') {
+        theme = getSystemTheme();
+      }
+      document.body.className = theme === 'dark' ? 'dark-theme text-gray-100' : 'light-theme text-gray-900';
+    }
+
+    // Carrega tema inicial (default = light)
     (function() {
       const savedTheme = localStorage.getItem('libermedia_theme') || 'light';
-      document.body.className = savedTheme === 'dark' ? 'dark-theme text-gray-100' : 'light-theme text-gray-900';
+      applyTheme(savedTheme);
     })();
 
     document.addEventListener('DOMContentLoaded', function() {
-      console.log("🔍 DEBUG: Script carregou!");
-      console.log("🔍 mobileMenuBtn:", document.getElementById("mobileMenuBtn"));
-      console.log("🔍 Largura tela:", window.innerWidth);
       const themeToggle = document.getElementById('themeToggle');
       const themeIcon = document.getElementById('themeIcon');
       const body = document.body;
 
+      // Mapeia tema → ícone
+      const themeIcons = {
+        'light': '☀️',
+        'auto': '🔄',
+        'dark': '🌙'
+      };
+
+      // Ordem do ciclo: light → auto → dark → light
+      const themeOrder = ['light', 'auto', 'dark'];
+
       // Atualiza ícone inicial
       const currentTheme = localStorage.getItem('libermedia_theme') || 'light';
-      themeIcon.innerText = currentTheme === 'dark' ? '🌙' : '☀️';
+      themeIcon.innerText = themeIcons[currentTheme];
 
-      // Toggle tema
+      // Toggle tema (ciclo: ☀️ → 🔄 → 🌙 → ☀️)
       themeToggle.addEventListener('click', function() {
-        const isDark = body.classList.contains('dark-theme');
-        
-        if (isDark) {
-          body.className = 'light-theme text-gray-900';
-          localStorage.setItem('libermedia_theme', 'light');
-          themeIcon.innerText = '☀️';
-        } else {
-          body.className = 'dark-theme text-gray-100';
-          localStorage.setItem('libermedia_theme', 'dark');
-          themeIcon.innerText = '🌙';
-        }
+        const current = localStorage.getItem('libermedia_theme') || 'light';
+        const currentIndex = themeOrder.indexOf(current);
+        const nextIndex = (currentIndex + 1) % themeOrder.length;
+        const nextTheme = themeOrder[nextIndex];
+
+        localStorage.setItem('libermedia_theme', nextTheme);
+        applyTheme(nextTheme);
+        themeIcon.innerText = themeIcons[nextTheme];
       });
+
+      // Listener para mudanças no sistema (quando modo auto)
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          const savedTheme = localStorage.getItem('libermedia_theme');
+          if (savedTheme === 'auto') {
+            applyTheme('auto');
+          }
+        });
+      }
 
       // Menu mobile
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
