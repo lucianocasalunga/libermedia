@@ -1,5 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
+<script>
+// Aplica tema antes de renderizar para evitar flash
+(function() {
+  const savedTheme = localStorage.getItem('libermedia_theme') || 'light';
+  const theme = savedTheme === 'auto'
+    ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : savedTheme;
+
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+})();
+</script>
 <head>
   <!-- PWA Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -66,12 +81,29 @@
       color: #1f2937 !important;
     }
 
-    /* Regras de contraste para botões - Tema Claro */
+    /* Regras de contraste para botões e elementos escuros - Tema Claro */
+    /* Garante que elementos com bg-gray escuro tenham fundo escuro e texto branco */
     .light-theme .bg-gray-600,
-    .light-theme .bg-gray-700,
-    .light-theme .bg-gray-800,
-    .light-theme .bg-gray-900 {
+    .light-theme .bg-gray-700 {
+      background-color: #4b5563 !important;
       color: #ffffff !important;
+    }
+
+    .light-theme .bg-gray-800 {
+      background-color: #1f2937 !important;
+      color: #ffffff !important;
+    }
+
+    .light-theme .bg-gray-900 {
+      background-color: #111827 !important;
+      color: #ffffff !important;
+    }
+
+    /* Garante que elementos com bg-gray claro tenham texto escuro */
+    .light-theme .bg-gray-50,
+    .light-theme .bg-gray-100 {
+      background-color: #f9fafb !important;
+      color: #000000 !important;
     }
 
     /* Grades/Cards - Tema Escuro */
@@ -125,6 +157,12 @@
 
     .dark-theme .bg-gray-50 {
       background-color: rgba(17, 24, 39, 0.5) !important;
+      color: #d1d5db !important;
+    }
+
+    .dark-theme .bg-gray-100 {
+      background-color: rgba(31, 41, 55, 0.7) !important;
+      color: #ffffff !important;
     }
 
     .dark-theme .bg-gray-800\/50 {
@@ -135,7 +173,6 @@
     /* Removidas regras de .bg-white para evitar conflitos */
     /* Tailwind dark: classes gerenciam automaticamente */
 
-    .dark-theme .bg-gray-100,
     .dark-theme .bg-gray-200,
     .dark-theme .bg-gray-300 {
       background-color: #d1d5db !important;
