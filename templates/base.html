@@ -56,6 +56,14 @@
       color: #374151 !important;
     }
 
+    /* Regras de contraste para botões - Tema Claro */
+    .light-theme .bg-gray-600,
+    .light-theme .bg-gray-700,
+    .light-theme .bg-gray-800,
+    .light-theme .bg-gray-900 {
+      color: #ffffff !important;
+    }
+
     /* Grades/Cards - Tema Escuro */
     .dark-theme .bg-white\/95,
     .dark-theme .bg-white\/90,
@@ -97,6 +105,32 @@
 
     .dark-theme .bg-gray-800\/50 {
       background-color: rgba(17, 24, 39, 0.5) !important;
+    }
+
+    /* Regras de contraste para botões - Tema Escuro */
+    /* Botões brancos/claros devem ter letras pretas */
+    .dark-theme .bg-white,
+    .dark-theme .bg-gray-100,
+    .dark-theme .bg-gray-200 {
+      background-color: #f3f4f6 !important;
+      color: #000000 !important;
+    }
+
+    .dark-theme .bg-gray-300 {
+      background-color: #d1d5db !important;
+      color: #000000 !important;
+    }
+
+    /* Botões amarelos mantêm letras pretas ou brancas dependendo do tom */
+    .dark-theme .bg-yellow-400 {
+      background-color: #facc15 !important;
+      color: #000000 !important;
+    }
+
+    .dark-theme .bg-yellow-500,
+    .dark-theme .bg-yellow-600 {
+      background-color: #eab308 !important;
+      color: #ffffff !important;
     }
 
     /* nsec/Chave Privada - Baixo contraste (anti-espião) */
