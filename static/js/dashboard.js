@@ -1839,8 +1839,8 @@ function carregarDashboardUso() {
     // Histórico simplificado (últimos 7 dias)
     if (data.historico && document.getElementById('historico7dias')) {
       const historicoHTML = `
-        <div class="col-span-7 text-center py-2 bg-gray-100 dark:bg-gray-700 rounded">
-          <p class="text-xs text-gray-600 dark:text-gray-400">
+        <div class="col-span-7 text-center py-2 bg-gray-200 dark:bg-gray-700 rounded">
+          <p class="text-xs text-gray-700 dark:text-gray-200">
             <span class="font-bold text-gray-900 dark:text-white">${data.historico.uploads_7d || 0}</span>
             arquivo${(data.historico.uploads_7d || 0) !== 1 ? 's' : ''} enviado${(data.historico.uploads_7d || 0) !== 1 ? 's' : ''} nos últimos 7 dias
           </p>
