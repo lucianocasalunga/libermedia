@@ -1,7 +1,7 @@
 import os
 import time
 import jwt
-from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, session, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -817,16 +817,34 @@ async def publicar_event_async(event):
 # BLOSSOM: ENDPOINTS DE FILE STORAGE
 # ============================================
 
-@app.route("/upload", methods=["PUT", "OPTIONS"])
-@validate_blossom_auth(required=True)
+@app.route("/upload", methods=["PUT", "HEAD", "OPTIONS"])
+@app.route("/media", methods=["PUT", "HEAD", "OPTIONS"])
 def blossom_upload():
     """
-    Endpoint Blossom para upload de arquivos (BUD-02)
-    PUT /upload - recebe binário raw, retorna blob descriptor
+    Endpoint Blossom para upload de arquivos (BUD-02 e BUD-05)
+    HEAD /upload ou /media - verifica se servidor aceita uploads (sem auth)
+    PUT /upload ou /media - recebe binário raw, retorna blob descriptor (com auth)
+
+    /media é usado por Primal para uploads com otimização (BUD-05)
+    Por enquanto, tratamos /media igual a /upload (sem otimização)
     """
+    # HEAD request - verifica se servidor aceita uploads (sem autenticação)
+    if request.method == "HEAD":
+        response = make_response('', 200)
+        response.headers['Accept'] = 'application/octet-stream'
+        return response
+
+    # OPTIONS preflight
     if request.method == "OPTIONS":
         return '', 204
 
+    # PUT request - exige autenticação
+    return _blossom_upload_put()
+
+
+@validate_blossom_auth(required=True)
+def _blossom_upload_put():
+    """Handler de PUT após validação Blossom"""
     try:
         # Lê dados binários do body
         file_data = request.get_data()
