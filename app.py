@@ -464,17 +464,35 @@ def _add_cors_headers(response):
 def _nip96_upload_post():
     """Handler de POST após validação NIP-98"""
     try:
-        # Aceita 'file' (padrão NIP-96) ou 'fileToUpload' (iris.to)
+        # Log detalhado para debug
+        print(f"[NIP-96] 📨 Request files: {list(request.files.keys())}")
+        print(f"[NIP-96] 📨 Request form: {list(request.form.keys())}")
+
+        # Aceita qualquer campo de arquivo (diferentes clientes usam nomes diferentes)
+        file = None
+        file_field_name = None
+
+        # Tenta campos conhecidos primeiro
         if 'file' in request.files:
             file = request.files['file']
+            file_field_name = 'file'
         elif 'fileToUpload' in request.files:
             file = request.files['fileToUpload']
-            print(f"[NIP-96] 📎 Arquivo recebido como 'fileToUpload' (iris.to format)")
-        else:
+            file_field_name = 'fileToUpload'
+        elif request.files:
+            # Pega o primeiro arquivo encontrado
+            file_field_name = list(request.files.keys())[0]
+            file = request.files[file_field_name]
+            print(f"[NIP-96] 📎 Arquivo recebido em campo não-padrão: '{file_field_name}'")
+
+        if not file or file.filename == '':
+            print(f"[NIP-96] ❌ Nenhum arquivo válido encontrado")
             return jsonify({
                 "status": "error",
                 "message": "No file provided"
             }), 400
+
+        print(f"[NIP-96] ✅ Arquivo recebido: {file.filename} (campo: {file_field_name})")
         npub = request.nip98_pubkey  # Vem do decorator NIP-98
 
         # Parâmetros opcionais NIP-96
@@ -572,34 +590,38 @@ def _nip96_upload_post():
         else:
             nip94_event = None
 
-        # Resposta NIP-96 - SEMPRE incluir nip94_event no formato de tags
-        # Alguns clientes como iris.to rejeitam resposta sem nip94_event válido
-        nip94_tags = {
+        # Resposta NIP-96 - Formato conforme especificação
+        # CRÍTICO: "content" é obrigatório (deve ser string vazia)
+        nip94_response = {
             "tags": [
                 ["url", download_url],
                 ["ox", sha256_hash],  # original hash (antes de transformação)
                 ["x", sha256_hash],   # hash atual (mesmo, pois não transformamos)
                 ["m", mime_type],
                 ["size", str(tamanho_real)]
-            ]
+            ],
+            "content": ""  # OBRIGATÓRIO - deve ser string vazia
         }
 
-        # Se conseguimos publicar evento NIP-94 assinado, incluir também
+        # Se conseguimos publicar evento NIP-94 assinado, incluir campos adicionais
         if nip94_event:
-            nip94_tags["id"] = nip94_event.get("id", "")
-            nip94_tags["pubkey"] = nip94_event.get("pubkey", "")
-            nip94_tags["sig"] = nip94_event.get("sig", "")
+            nip94_response["id"] = nip94_event.get("id", "")
+            nip94_response["pubkey"] = nip94_event.get("pubkey", "")
+            nip94_response["created_at"] = nip94_event.get("created_at", 0)
+            nip94_response["kind"] = 1063
+            nip94_response["sig"] = nip94_event.get("sig", "")
 
         response = {
             "status": "success",
             "message": "File uploaded successfully",
-            "nip94_event": nip94_tags
+            "nip94_event": nip94_response
         }
 
-        print(f"[NIP-96] ✅ Upload: {file.filename} ({tamanho_real} bytes) por {npub[:16]}...")
+        print(f"[NIP-96] ✅ Upload completo: {file.filename} ({tamanho_real} bytes) por {npub[:16]}...")
+        print(f"[NIP-96] 🔗 URL: {download_url}")
 
-        # Retorna com CORS headers (crítico para clientes web como iris.to)
-        return _add_cors_headers(jsonify(response)), 200
+        # Retorna com CORS headers e status 201 Created (não 200!)
+        return _add_cors_headers(jsonify(response)), 201
 
     except Exception as e:
         db.session.rollback()
