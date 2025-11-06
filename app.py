@@ -180,6 +180,99 @@ def validate_nip98_auth(required=True):
     return decorator
 
 
+def validate_blossom_auth(required=True):
+    """
+    Decorator para validar autenticação Blossom (kind 24242)
+
+    Usage:
+        @app.route('/upload', methods=['PUT'])
+        @validate_blossom_auth(required=True)
+        def blossom_upload():
+            pubkey = request.blossom_pubkey  # Pubkey autenticado
+            ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization', '')
+
+            # Se não é obrigatório e não tem header, permite
+            if not required and not auth_header:
+                request.blossom_pubkey = None
+                return f(*args, **kwargs)
+
+            # Valida formato: "Nostr <base64_event>"
+            if not auth_header.startswith('Nostr '):
+                if required:
+                    return jsonify({'message': 'Missing authorization'}), 401
+                request.blossom_pubkey = None
+                return f(*args, **kwargs)
+
+            try:
+                # Decodifica evento base64
+                event_b64 = auth_header[6:]  # Remove "Nostr "
+                event_json = base64.b64decode(event_b64).decode('utf-8')
+
+                # Parse evento Nostr
+                event = NostrEvent.from_json(event_json)
+
+                # Valida kind 24242 (Blossom Auth)
+                if event.kind().as_u16() != 24242:
+                    return jsonify({'message': 'Invalid auth event kind (expected 24242)'}), 401
+
+                # Valida assinatura
+                if not event.verify():
+                    return jsonify({'message': 'Invalid signature'}), 401
+
+                # Valida timestamp (máximo 10 minutos de diferença)
+                event_time = event.created_at().as_secs()
+                now = int(time.time())
+                if abs(now - event_time) > 600:
+                    return jsonify({'message': 'Authorization expired'}), 401
+
+                # Extrai tags
+                tags = {}
+                for tag in event.tags().to_vec():
+                    tag_list = tag.as_vec()
+                    if len(tag_list) >= 2:
+                        tags[tag_list[0]] = tag_list[1]
+
+                # Tag 't' deve ser 'upload' para uploads
+                action = tags.get('t', '')
+                if action and action not in ['upload', 'list', 'get', 'delete']:
+                    return jsonify({'message': f'Invalid action: {action}'}), 401
+
+                # Extrai pubkey
+                pubkey = event.author()
+                pubkey_hex = pubkey.to_hex()
+
+                # Verifica blacklist
+                if is_blacklisted(pubkey_hex):
+                    print(f"[BLACKLIST] ⛔ Acesso bloqueado: {pubkey.to_bech32()}")
+                    return jsonify({'message': 'Access denied'}), 403
+
+                # Sucesso! Anexa pubkey ao request
+                request.blossom_pubkey = pubkey.to_bech32()
+                request.blossom_pubkey_hex = pubkey_hex
+                request.blossom_event = event
+                request.blossom_action = action
+                request.blossom_sha256 = tags.get('x', '')  # Hash SHA256 se presente
+
+                print(f"[Blossom] ✅ Auth válido: {pubkey.to_bech32()[:16]}... action={action} método={request.method}")
+
+                return f(*args, **kwargs)
+
+            except Exception as e:
+                print(f"[Blossom] ❌ Erro ao validar: {e}")
+                if required:
+                    return jsonify({'message': f'Authorization error: {str(e)}'}), 401
+                request.blossom_pubkey = None
+                return f(*args, **kwargs)
+
+        return decorated_function
+    return decorator
+
+
 @app.route("/api/nip98/sign", methods=["POST"])
 def api_nip98_sign():
     """
@@ -440,6 +533,38 @@ def nip96_discovery_alt():
     return response
 
 
+@app.route("/.well-known/blossom")
+def blossom_discovery():
+    """
+    Endpoint de descoberta Blossom (BUD-01)
+    Informa capacidades do servidor para clientes Blossom
+    """
+    config = {
+        "name": "LiberMedia Blossom Server",
+        "description": "Decentralized file storage with Nostr authentication",
+        "pubkey": "9b31915dd140b34774cb60c42fc0e015d800cde7f5e4f82a5f2d4e21d72803e4",  # Pubkey do servidor
+        "icons": ["https://libermedia.app/static/img/logo.jpg"],
+        "upload": {
+            "enabled": True,
+            "max_size": 3221225472,  # 3GB para free, ajustado por plano
+            "mime_types": [
+                "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+                "video/mp4", "video/webm", "video/mov", "video/avi",
+                "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a",
+                "application/pdf"
+            ]
+        },
+        "storage": {
+            "enabled": True,
+            "retention": 0,  # 0 = permanent
+            "public": True
+        }
+    }
+    response = jsonify(config)
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+
 @app.route("/api/upload/nip96", methods=["POST", "OPTIONS"])
 def nip96_upload():
     """
@@ -686,6 +811,242 @@ async def publicar_event_async(event):
         await client.disconnect()
     except Exception as e:
         print(f"[NIP-94] ❌ Erro ao publicar: {e}")
+
+
+# ============================================
+# BLOSSOM: ENDPOINTS DE FILE STORAGE
+# ============================================
+
+@app.route("/upload", methods=["PUT", "OPTIONS"])
+@validate_blossom_auth(required=True)
+def blossom_upload():
+    """
+    Endpoint Blossom para upload de arquivos (BUD-02)
+    PUT /upload - recebe binário raw, retorna blob descriptor
+    """
+    if request.method == "OPTIONS":
+        return '', 204
+
+    try:
+        # Lê dados binários do body
+        file_data = request.get_data()
+
+        if not file_data or len(file_data) == 0:
+            return jsonify({'message': 'No file data provided'}), 400
+
+        # Pega informações do auth
+        npub = request.blossom_pubkey
+        pubkey_hex = request.blossom_pubkey_hex
+
+        # Busca ou cria usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            usuario = Usuario(
+                nome="Nostr User",
+                pubkey=npub,
+                privkey="",
+                senha_hash="blossom_auth",
+                plano="free"
+            )
+            db.session.add(usuario)
+            db.session.commit()
+
+        # Valida tamanho do arquivo
+        plano_limites = LIMITES_PLANO.get(usuario.plano, LIMITES_PLANO['free'])
+        file_size = len(file_data)
+
+        if file_size > plano_limites:
+            return jsonify({
+                'message': f'File too large. Max: {plano_limites / (1024**3):.0f}GB'
+            }), 413
+
+        # Calcula SHA256
+        import hashlib
+        sha256_hash = hashlib.sha256(file_data).hexdigest()
+
+        # Verifica se já existe arquivo com esse hash (deduplicação)
+        arquivo_existente = Arquivo.query.filter_by(usuario_id=usuario.id).filter(
+            Arquivo.caminho.like(f'%{sha256_hash}%')
+        ).first()
+
+        if arquivo_existente:
+            # Arquivo já existe - retorna descriptor existente
+            print(f"[Blossom] 📦 Arquivo já existe (dedupe): {sha256_hash[:16]}...")
+
+            # Detecta MIME type
+            import mimetypes
+            ext = arquivo_existente.nome.rsplit('.', 1)[1] if '.' in arquivo_existente.nome else 'bin'
+            mime_type = mimetypes.guess_type(arquivo_existente.nome)[0] or 'application/octet-stream'
+
+            blob_descriptor = {
+                "url": f"https://libermedia.app/{sha256_hash}",
+                "sha256": sha256_hash,
+                "size": arquivo_existente.tamanho,
+                "type": mime_type,
+                "uploaded": arquivo_existente.created_at
+            }
+
+            return jsonify(blob_descriptor), 200
+
+        # Detecta tipo de arquivo pelo header (magic bytes)
+        mime_type = 'application/octet-stream'
+        ext = 'bin'
+
+        # Magic bytes para tipos comuns
+        if file_data[:4] == b'\xff\xd8\xff\xe0' or file_data[:4] == b'\xff\xd8\xff\xe1':
+            mime_type, ext = 'image/jpeg', 'jpg'
+        elif file_data[:8] == b'\x89PNG\r\n\x1a\n':
+            mime_type, ext = 'image/png', 'png'
+        elif file_data[:4] == b'GIF8':
+            mime_type, ext = 'image/gif', 'gif'
+        elif file_data[:4] == b'RIFF' and file_data[8:12] == b'WEBP':
+            mime_type, ext = 'image/webp', 'webp'
+        elif file_data[:12] == b'\x00\x00\x00\x1cftypmp42' or file_data[4:12] == b'ftypmp42':
+            mime_type, ext = 'video/mp4', 'mp4'
+        elif file_data[:4] == b'\x1aE\xdf\xa3':
+            mime_type, ext = 'video/webm', 'webm'
+        elif file_data[:4] == b'ID3\x03' or file_data[:4] == b'ID3\x04':
+            mime_type, ext = 'audio/mpeg', 'mp3'
+        elif file_data[:4] == b'%PDF':
+            mime_type, ext = 'application/pdf', 'pdf'
+
+        # Salva arquivo com nome baseado no SHA256
+        nome_arquivo = f"{sha256_hash}.{ext}"
+        caminho = os.path.join('uploads', nome_arquivo)
+
+        with open(caminho, 'wb') as f:
+            f.write(file_data)
+
+        # Detecta tipo LiberMedia
+        tipos = {
+            'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
+            'mp4': 'video', 'webm': 'video', 'mov': 'video', 'avi': 'video',
+            'pdf': 'document', 'doc': 'document', 'docx': 'document', 'txt': 'document',
+            'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'm4a': 'audio'
+        }
+        tipo = tipos.get(ext, 'document')
+
+        # Salva no banco
+        novo_arquivo = Arquivo(
+            usuario_id=usuario.id,
+            nome=nome_arquivo,
+            nome_original=f"blossom_{sha256_hash[:8]}.{ext}",
+            tipo=tipo,
+            tamanho=file_size,
+            pasta='Blossom',
+            caminho=caminho
+        )
+        db.session.add(novo_arquivo)
+        db.session.commit()
+
+        # Blob descriptor response
+        blob_descriptor = {
+            "url": f"https://libermedia.app/{sha256_hash}",
+            "sha256": sha256_hash,
+            "size": file_size,
+            "type": mime_type,
+            "uploaded": novo_arquivo.created_at
+        }
+
+        print(f"[Blossom] ✅ Upload: {sha256_hash[:16]}... ({file_size} bytes) por {npub[:16]}...")
+
+        return jsonify(blob_descriptor), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Blossom] ❌ Erro no upload: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'message': str(e)}), 500
+
+
+@app.route("/list/<pubkey>", methods=["GET"])
+def blossom_list(pubkey):
+    """
+    Lista todos os blobs de um pubkey (BUD-04)
+    GET /list/<pubkey> - retorna array de blob descriptors
+    """
+    try:
+        # Converte npub para hex se necessário
+        if pubkey.startswith('npub'):
+            from nostr_sdk import Nip19
+            decoded = Nip19.from_bech32(pubkey)
+            pubkey_hex = decoded.as_enum().npub.to_hex()
+            pubkey_npub = pubkey
+        else:
+            # Assume que já é hex
+            pubkey_hex = pubkey
+            # Converte para npub
+            from nostr_sdk import PublicKey
+            pk = PublicKey.from_hex(pubkey_hex)
+            pubkey_npub = pk.to_bech32()
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=pubkey_npub).first()
+        if not usuario:
+            return jsonify([]), 200
+
+        # Busca todos arquivos do usuário na pasta Blossom
+        arquivos = Arquivo.query.filter_by(usuario_id=usuario.id, pasta='Blossom').all()
+
+        blob_list = []
+        import mimetypes
+
+        for arquivo in arquivos:
+            # Extrai SHA256 do nome do arquivo
+            sha256_hash = arquivo.nome.split('.')[0] if '.' in arquivo.nome else arquivo.nome
+
+            # Detecta MIME type
+            mime_type = mimetypes.guess_type(arquivo.nome)[0] or 'application/octet-stream'
+
+            blob_list.append({
+                "url": f"https://libermedia.app/{sha256_hash}",
+                "sha256": sha256_hash,
+                "size": arquivo.tamanho,
+                "type": mime_type,
+                "uploaded": arquivo.created_at
+            })
+
+        print(f"[Blossom] 📋 List: {len(blob_list)} blobs para {pubkey_npub[:16]}...")
+        return jsonify(blob_list), 200
+
+    except Exception as e:
+        print(f"[Blossom] ❌ Erro ao listar: {e}")
+        return jsonify({'message': str(e)}), 500
+
+
+@app.route("/<sha256>", methods=["GET", "HEAD"])
+def blossom_get_blob(sha256):
+    """
+    Retorna blob por SHA256 (BUD-02)
+    GET /<sha256> - retorna arquivo
+    HEAD /<sha256> - verifica existência
+    """
+    try:
+        # Valida formato SHA256 (64 caracteres hex)
+        if len(sha256) != 64 or not all(c in '0123456789abcdef' for c in sha256.lower()):
+            return jsonify({'message': 'Invalid SHA256 format'}), 400
+
+        # Procura arquivo com esse hash no nome
+        arquivo = Arquivo.query.filter(Arquivo.nome.like(f'{sha256}%')).first()
+
+        if not arquivo:
+            return jsonify({'message': 'Blob not found'}), 404
+
+        # HEAD request - apenas verifica existência
+        if request.method == "HEAD":
+            response = make_response('', 200)
+            response.headers['Content-Type'] = 'application/octet-stream'
+            response.headers['Content-Length'] = str(arquivo.tamanho)
+            return response
+
+        # GET request - retorna arquivo
+        # Redireciona para o caminho real
+        return redirect(f"/uploads/{arquivo.nome}")
+
+    except Exception as e:
+        print(f"[Blossom] ❌ Erro ao buscar blob: {e}")
+        return jsonify({'message': str(e)}), 500
 
 
 @app.route("/cadastro")
