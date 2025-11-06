@@ -291,8 +291,9 @@ def index():
 
     # Handle POST (WORKAROUND para clientes que enviam na raiz)
     if request.method == "POST":
-        # Verifica se é um upload (tem arquivo)
-        if 'file' in request.files or 'fileToUpload' in request.files:
+        # Verifica se é um upload (tem arquivo - qualquer campo)
+        if request.files:
+            print(f"[NIP-96] ⚠️ Cliente enviou upload para raiz '/' ao invés de '/api/upload/nip96'")
             # Chama o handler NIP-96 diretamente
             return _nip96_upload_post()
 
