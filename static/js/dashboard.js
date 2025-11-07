@@ -305,65 +305,18 @@ async function upload(files) {
 
   try {
     for (let i = 0; i < files.length; i++) {
-      console.log(`[UPLOAD] Processando arquivo ${i+1}/${files.length}:`, files[i].name, `(${files[i].size} bytes)`);
+      const file = files[i];
+      console.log(`[UPLOAD] Processando arquivo ${i+1}/${files.length}:`, file.name, `(${file.size} bytes)`);
 
-      const fd = new FormData();
-      fd.append('file', files[i]);
-      fd.append('npub', npub);
-      fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
-
-      console.log('[UPLOAD] FormData criado com:', {
-        file: files[i].name,
-        npub: npub.substring(0, 20) + '...',
-        pasta: pastaAtual === 'Mesa' ? 'Geral' : pastaAtual
-      });
-
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          progressBar.style.width = pct + '%';
-          progressText.textContent = `${i+1}/${files.length} - ${pct}%`;
-          console.log(`[UPLOAD] Progresso: ${pct}% (${e.loaded}/${e.total} bytes)`);
-        }
-      };
-
-      console.log('[UPLOAD] Abrindo conexão XHR para POST /api/upload');
-
-      await new Promise((resolve, reject) => {
-        xhr.onload = () => {
-          console.log('[UPLOAD] XHR onload - Status:', xhr.status);
-          console.log('[UPLOAD] Response:', xhr.responseText);
-          if (xhr.status === 200) {
-            resolve();
-          } else {
-            reject(new Error(`Erro ${xhr.status}: ${xhr.responseText}`));
-          }
-        };
-
-        xhr.onerror = (e) => {
-          console.error('[UPLOAD] XHR onerror - Erro de rede', e);
-          reject(new Error('Erro de rede ao fazer upload'));
-        };
-
-        xhr.onabort = () => {
-          console.error('[UPLOAD] XHR onabort - Upload cancelado');
-          reject(new Error('Upload cancelado'));
-        };
-
-        xhr.ontimeout = () => {
-          console.error('[UPLOAD] XHR ontimeout - Timeout');
-          reject(new Error('Timeout no upload'));
-        };
-
-        console.log('[UPLOAD] Chamando xhr.open()');
-        xhr.open('POST', '/api/upload');
-
-        console.log('[UPLOAD] Chamando xhr.send()');
-        xhr.send(fd);
-        console.log('[UPLOAD] xhr.send() executado com sucesso');
-      });
+      // Se arquivo > 90MB, fazer upload chunked (compatível com Cloudflare Pro)
+      const CHUNK_SIZE = 80 * 1024 * 1024; // 80MB por chunk
+      if (file.size > 90 * 1024 * 1024) {
+        console.log('[UPLOAD] Arquivo grande detectado! Usando upload chunked...');
+        await uploadChunked(file, i, files.length, progressBar, progressText);
+      } else {
+        console.log('[UPLOAD] Arquivo pequeno, upload normal...');
+        await uploadSingle(file, i, files.length, progressBar, progressText);
+      }
 
       console.log(`[UPLOAD] Arquivo ${i+1}/${files.length} enviado com sucesso!`);
     }
@@ -379,6 +332,161 @@ async function upload(files) {
     progress.classList.add('hidden');
     showToast(`❌ Erro ao enviar arquivo: ${error.message}`, 'error');
   }
+}
+
+// Upload de arquivo pequeno (< 90MB) - método tradicional
+async function uploadSingle(file, fileIndex, totalFiles, progressBar, progressText) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('npub', npub);
+  fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
+
+  console.log('[UPLOAD] FormData criado com:', {
+    file: file.name,
+    npub: npub.substring(0, 20) + '...',
+    pasta: pastaAtual === 'Mesa' ? 'Geral' : pastaAtual
+  });
+
+  const xhr = new XMLHttpRequest();
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      progressBar.style.width = pct + '%';
+      progressText.textContent = `${fileIndex+1}/${totalFiles} - ${pct}%`;
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    xhr.onload = () => {
+      console.log('[UPLOAD] XHR onload - Status:', xhr.status);
+      if (xhr.status === 200) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        reject(new Error(`Erro ${xhr.status}: ${xhr.responseText}`));
+      }
+    };
+
+    xhr.onerror = (e) => {
+      console.error('[UPLOAD] XHR onerror', e);
+      reject(new Error('Erro de rede ao fazer upload'));
+    };
+
+    xhr.open('POST', '/api/upload');
+    xhr.send(fd);
+  });
+}
+
+// Upload chunked para arquivos grandes (> 90MB) - compatível com Cloudflare Pro
+async function uploadChunked(file, fileIndex, totalFiles, progressBar, progressText) {
+  const CHUNK_SIZE = 80 * 1024 * 1024; // 80MB por chunk
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const uploadId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  console.log(`[UPLOAD CHUNKED] Arquivo será dividido em ${totalChunks} partes de ${(CHUNK_SIZE/1024/1024).toFixed(0)}MB`);
+
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const start = chunkIndex * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    console.log(`[UPLOAD CHUNKED] Enviando parte ${chunkIndex + 1}/${totalChunks} (${(chunk.size/1024/1024).toFixed(2)}MB)`);
+
+    const fd = new FormData();
+    fd.append('chunk', chunk);
+    fd.append('npub', npub);
+    fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
+    fd.append('uploadId', uploadId);
+    fd.append('chunkIndex', chunkIndex);
+    fd.append('totalChunks', totalChunks);
+    fd.append('fileName', file.name);
+    fd.append('fileSize', file.size);
+
+    // Retry automático em caso de erro
+    let retries = 0;
+    const MAX_RETRIES = 3;
+
+    while (retries <= MAX_RETRIES) {
+      try {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const chunkProgress = (e.loaded / e.total) * 100;
+            const totalProgress = ((chunkIndex * 100) + chunkProgress) / totalChunks;
+            progressBar.style.width = totalProgress + '%';
+            const retryText = retries > 0 ? ` (Tent. ${retries+1})` : '';
+            progressText.textContent = `${fileIndex+1}/${totalFiles} - Parte ${chunkIndex+1}/${totalChunks}${retryText} - ${Math.round(totalProgress)}%`;
+          }
+        };
+
+        await new Promise((resolve, reject) => {
+          xhr.onload = () => {
+            console.log(`[UPLOAD CHUNKED] Parte ${chunkIndex+1}/${totalChunks} enviada - Status:`, xhr.status);
+            if (xhr.status === 200) {
+              resolve();
+            } else {
+              reject(new Error(`Erro ao enviar parte ${chunkIndex+1}: ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = (e) => {
+            console.error(`[UPLOAD CHUNKED] Erro na parte ${chunkIndex+1}`, e);
+            reject(new Error(`Erro de rede na parte ${chunkIndex+1}`));
+          };
+
+          xhr.ontimeout = () => {
+            console.error(`[UPLOAD CHUNKED] Timeout na parte ${chunkIndex+1}`);
+            reject(new Error(`Timeout na parte ${chunkIndex+1}`));
+          };
+
+          xhr.timeout = 300000; // 5 minutos
+          xhr.open('POST', '/api/upload/chunk');
+          xhr.send(fd);
+        });
+
+        // Sucesso - sai do loop
+        break;
+
+      } catch (error) {
+        retries++;
+        if (retries > MAX_RETRIES) {
+          console.error(`[UPLOAD CHUNKED] ❌ Falha após ${MAX_RETRIES} tentativas na parte ${chunkIndex+1}`);
+          throw error;
+        }
+
+        console.warn(`[UPLOAD CHUNKED] ⚠️ Tentativa ${retries}/${MAX_RETRIES} falhou para parte ${chunkIndex+1}. Tentando novamente em 2s...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Aguarda 2s antes de retry
+      }
+    }
+  }
+
+  console.log('[UPLOAD CHUNKED] Todas as partes enviadas! Finalizando upload...');
+
+  // Finalizar upload - backend junta os chunks
+  const finalizeData = {
+    npub: npub,
+    pasta: pastaAtual === 'Mesa' ? 'Geral' : pastaAtual,
+    uploadId: uploadId,
+    fileName: file.name,
+    fileSize: file.size,
+    totalChunks: totalChunks
+  };
+
+  const response = await fetch('/api/upload/finalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(finalizeData)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro ao finalizar upload: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('[UPLOAD CHUNKED] Upload finalizado com sucesso!', result);
+
+  return result;
 }
 
 async function loadFiles() {

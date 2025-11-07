@@ -15,7 +15,7 @@ nostr.libernet.app {
     
     # Frontend
     handle {
-        root * /opt/libermedia/static
+        root * /mnt/projetos/libermedia
         file_server
         try_files {path} /index.html
     }

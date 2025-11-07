@@ -1863,6 +1863,160 @@ def upload_arquivo():
         db.session.rollback()
         return jsonify({"status": "error", "error": str(e)}), 500
 
+# Upload chunked - Receber chunk
+@app.route("/api/upload/chunk", methods=["POST"])
+def upload_chunk():
+    """
+    Recebe um chunk de arquivo grande
+    Compatível com Cloudflare Pro (cada chunk < 100MB)
+    """
+    try:
+        if 'chunk' not in request.files:
+            return jsonify({"status": "error", "error": "Nenhum chunk recebido"}), 400
+
+        chunk = request.files['chunk']
+        npub = request.form.get('npub')
+        upload_id = request.form.get('uploadId')
+        chunk_index = int(request.form.get('chunkIndex'))
+        total_chunks = int(request.form.get('totalChunks'))
+        file_name = request.form.get('fileName')
+
+        if not npub or not upload_id:
+            return jsonify({"status": "error", "error": "Dados incompletos"}), 400
+
+        # Verifica blacklist
+        is_blocked, _ = check_blacklist_npub(npub)
+        if is_blocked:
+            print(f"[CHUNKED UPLOAD] ⛔ Upload bloqueado: {npub[:20]}...")
+            return jsonify({"status": "error", "error": "Acesso negado"}), 403
+
+        # Busca ou cria usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            usuario = Usuario(
+                nome="Usuário Nostr",
+                pubkey=npub,
+                privkey="",
+                senha_hash="nostr_auth",
+                plano="free"
+            )
+            db.session.add(usuario)
+            db.session.commit()
+
+        # Cria diretório temporário para chunks
+        chunks_dir = os.path.join('uploads', 'chunks', upload_id)
+        os.makedirs(chunks_dir, exist_ok=True)
+
+        # Salva chunk
+        chunk_path = os.path.join(chunks_dir, f"chunk_{chunk_index}")
+        chunk.save(chunk_path)
+
+        print(f"[CHUNKED UPLOAD] ✅ Chunk {chunk_index+1}/{total_chunks} salvo ({os.path.getsize(chunk_path)} bytes)")
+
+        return jsonify({
+            "status": "ok",
+            "chunk_index": chunk_index,
+            "message": f"Chunk {chunk_index+1}/{total_chunks} recebido"
+        })
+
+    except Exception as e:
+        print(f"[CHUNKED UPLOAD] ❌ Erro ao receber chunk: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+# Upload chunked - Finalizar (juntar chunks)
+@app.route("/api/upload/finalize", methods=["POST"])
+def upload_finalize():
+    """
+    Junta todos os chunks em um arquivo final
+    """
+    try:
+        data = request.get_json()
+        npub = data.get('npub')
+        upload_id = data.get('uploadId')
+        file_name = data.get('fileName')
+        file_size = int(data.get('fileSize'))
+        total_chunks = int(data.get('totalChunks'))
+        pasta = data.get('pasta', 'Geral')
+
+        if not npub or not upload_id or not file_name:
+            return jsonify({"status": "error", "error": "Dados incompletos"}), 400
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        # Diretório de chunks
+        chunks_dir = os.path.join('uploads', 'chunks', upload_id)
+        if not os.path.exists(chunks_dir):
+            return jsonify({"status": "error", "error": "Chunks não encontrados"}), 404
+
+        # Gera nome único para arquivo final
+        ext = file_name.rsplit('.', 1)[1].lower() if '.' in file_name else ''
+        nome_unico = f"{int(time.time())}_{usuario.id}.{ext}"
+        caminho_final = os.path.join('uploads', nome_unico)
+
+        print(f"[CHUNKED UPLOAD] 🔗 Juntando {total_chunks} chunks em {nome_unico}...")
+
+        # Junta os chunks
+        with open(caminho_final, 'wb') as f_out:
+            for i in range(total_chunks):
+                chunk_path = os.path.join(chunks_dir, f"chunk_{i}")
+                if not os.path.exists(chunk_path):
+                    # Limpa arquivo parcial
+                    if os.path.exists(caminho_final):
+                        os.remove(caminho_final)
+                    return jsonify({"status": "error", "error": f"Chunk {i} não encontrado"}), 404
+
+                with open(chunk_path, 'rb') as f_in:
+                    f_out.write(f_in.read())
+
+        # Remove chunks temporários
+        import shutil
+        shutil.rmtree(chunks_dir)
+
+        tamanho_final = os.path.getsize(caminho_final)
+        print(f"[CHUNKED UPLOAD] ✅ Arquivo final criado: {tamanho_final} bytes (esperado: {file_size})")
+
+        # Detecta tipo
+        tipos = {
+            'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
+            'mp4': 'video', 'avi': 'video', 'mov': 'video', 'webm': 'video',
+            'pdf': 'document', 'doc': 'document', 'docx': 'document', 'txt': 'document',
+            'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'm4a': 'audio'
+        }
+        tipo = tipos.get(ext, 'document')
+
+        # Salva no banco
+        novo_arquivo = Arquivo(
+            usuario_id=usuario.id,
+            nome=nome_unico,
+            nome_original=file_name,
+            tipo=tipo,
+            tamanho=tamanho_final,
+            pasta=pasta,
+            caminho=caminho_final
+        )
+        db.session.add(novo_arquivo)
+        db.session.commit()
+
+        print(f"[CHUNKED UPLOAD] 🎉 Upload finalizado! ID: {novo_arquivo.id}")
+
+        return jsonify({
+            "status": "ok",
+            "arquivo": {
+                "id": novo_arquivo.id,
+                "nome": file_name,
+                "tipo": tipo,
+                "tamanho": tamanho_final
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[CHUNKED UPLOAD] ❌ Erro ao finalizar: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
 # Listar arquivos do usuário
 @app.route("/api/arquivos", methods=["GET"])
 def listar_arquivos():
