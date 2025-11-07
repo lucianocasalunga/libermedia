@@ -1554,10 +1554,21 @@ function showDetails(fileId) {
 function logout() {
   const npub = localStorage.getItem('libermedia_npub');
 
-  // Remove todas as chaves relacionadas ao libermedia
+  // Remove TODAS as chaves relacionadas ao libermedia (fix bug de vazamento de dados entre usuários)
   localStorage.removeItem('libermedia_npub');
   localStorage.removeItem('libermedia_pastas_' + npub);
   localStorage.removeItem('grid_size');
+
+  // Remove dados do perfil Nostr (estava faltando - causava vazamento de dados!)
+  localStorage.removeItem('libermedia_nome');
+  localStorage.removeItem('libermedia_display_name');
+  localStorage.removeItem('libermedia_avatar');
+  localStorage.removeItem('libermedia_about');
+  localStorage.removeItem('libermedia_banner');
+  localStorage.removeItem('libermedia_website');
+  localStorage.removeItem('libermedia_nip05');
+  localStorage.removeItem('libermedia_lud16');
+  localStorage.removeItem('libermedia_last_sync');
 
   // Limpa seleções em memória
   arquivosSelecionados = [];
