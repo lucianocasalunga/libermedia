@@ -665,7 +665,7 @@ const cardIcons = {
 
 function renderMediaPreview(arquivo) {
   const ext = getExtensao(arquivo.nome);
-  const linkComExt = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  const linkComExt = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
 
   // VÍDEO
   const videoMimeTypes = {
@@ -830,7 +830,7 @@ function renderFiles() {
   if (viewMode === 'grade') {
     filesDiv.innerHTML = arquivosPaginados.map(f => {
       const ext = getExtensao(f.nome);
-      const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
+      const linkComExt = `https://media.libernet.app/f/${f.id}.${ext}`;
       const isSelected = arquivosSelecionados.includes(f.id);
       return `
       <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden border ${isSelected ? 'border-yellow-500 border-2' : 'border-gray-200 dark:border-gray-700'} relative">
@@ -846,7 +846,7 @@ function renderFiles() {
   } else {
     filesDiv.innerHTML = arquivosPaginados.map(f => {
       const ext = getExtensao(f.nome);
-      const linkComExt = `https://libermedia.app/f/${f.id}.${ext}`;
+      const linkComExt = `https://media.libernet.app/f/${f.id}.${ext}`;
       return `
       <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
         <img src="${linkComExt}" 
@@ -1317,7 +1317,7 @@ function showModalImage() {
   
   const arquivo = modalArquivos[currentModalIndex];
   const ext = getExtensao(arquivo.nome);
-  document.getElementById('modalImg').src = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  document.getElementById('modalImg').src = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
   document.getElementById('modalNome').textContent = arquivo.nome;
   document.getElementById('modalInfo').textContent = `${formatSize(arquivo.tamanho)} • ${currentModalIndex + 1}/${modalArquivos.length}`;
   document.getElementById('modal').classList.remove('hidden');
@@ -1372,7 +1372,7 @@ function showDetails(fileId) {
   if (!arquivo) return;
   
   const ext = getExtensao(arquivo.nome);
-  const linkComExt = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  const linkComExt = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
   
   const detalhes = `
 📄 Nome: ${arquivo.nome}
@@ -1515,7 +1515,7 @@ function closeFileMenu() {
 function copyFileLink() {
   const arquivo = todosArquivos.find(f => f.id === currentFileId);
   const ext = getExtensao(arquivo.nome);
-  const link = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  const link = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
   copyLinkDiscrete(link);
   closeFileMenu();
 }
@@ -1523,7 +1523,7 @@ function copyFileLink() {
 function showFileDetails() {
   const arquivo = todosArquivos.find(f => f.id === currentFileId);
   const ext = getExtensao(arquivo.nome);
-  const link = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  const link = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
 
   alert(`📄 Nome: ${arquivo.nome}\n📦 Tamanho: ${formatSize(arquivo.tamanho)}\n📁 Pasta: ${arquivo.pasta}\n🔗 Link: ${link}`);
   closeFileMenu();
@@ -2138,7 +2138,7 @@ async function loadNip05Status() {
               Aguardando aprovação
             </p>
             <p class="text-xs text-yellow-800 dark:text-yellow-400">
-              Username solicitado: ${data.username}@libermedia.app
+              Username solicitado: ${data.username}@media.libernet.app
             </p>
           </div>
         </div>
@@ -2149,7 +2149,7 @@ async function loadNip05Status() {
       // Sem verificação
       statusDiv.innerHTML = `
         <p class="text-sm text-gray-900 dark:text-gray-400">
-          Solicite seu username verificado @libermedia.app
+          Solicite seu username verificado @media.libernet.app
         </p>
       `;
       formDiv.classList.remove('hidden');

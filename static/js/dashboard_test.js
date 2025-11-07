@@ -1,7 +1,7 @@
 // Função para renderizar mídia corretamente
 function renderMediaCard(arquivo) {
   const ext = getExtensao(arquivo.nome);
-  const linkComExt = `https://libermedia.app/f/${arquivo.id}.${ext}`;
+  const linkComExt = `https://media.libernet.app/f/${arquivo.id}.${ext}`;
   
   let mediaHTML = '';
   

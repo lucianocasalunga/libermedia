@@ -154,7 +154,7 @@ function filtrarNip05(){
 }
 
 async function aprovar(userId, username){
-  if(!confirm(`Aprovar verificação de '${username}@libermedia.app'?`)) return;
+  if(!confirm(`Aprovar verificação de '${username}@media.libernet.app'?`)) return;
 
   try{
     const r = await fetch('/api/admin/nip05/verify', {
@@ -165,7 +165,7 @@ async function aprovar(userId, username){
     const d = await r.json();
 
     if(d.status === 'ok'){
-      alert(`✅ ${username}@libermedia.app verificado com sucesso!`);
+      alert(`✅ ${username}@media.libernet.app verificado com sucesso!`);
       carregarNip05(); // Recarrega lista
     } else {
       alert('❌ Erro: ' + d.error);
@@ -198,7 +198,7 @@ async function rejeitar(userId, username){
 }
 
 async function revogar(userId, username){
-  if(!confirm(`Revogar verificação de '${username}@libermedia.app'?\n\nO usuário perderá o badge verificado.`)) return;
+  if(!confirm(`Revogar verificação de '${username}@media.libernet.app'?\n\nO usuário perderá o badge verificado.`)) return;
 
   try{
     const r = await fetch('/api/admin/nip05/verify', {

@@ -8,6 +8,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./app.py:/app/app.py
+      - ./sofia_selfcheck.py:/app/sofia_selfcheck.py
       - ./templates:/app/templates
       - ./static:/app/static
       - ./secrets:/app/secrets
@@ -17,7 +18,7 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://libermedia:libermedia123@db:5432/libermedia
-    command: gunicorn --bind 0.0.0.0:8081 --workers 2 --reload --log-level debug --access-logfile - --error-logfile - app:app
+    command: gunicorn --bind 0.0.0.0:8081 --workers 2 --timeout 600 --reload --log-level debug --access-logfile - --error-logfile - app:app
     depends_on:
       - db
 

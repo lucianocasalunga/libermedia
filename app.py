@@ -1,3 +1,10 @@
+# Importação do módulo de autoanálise
+from sofia_selfcheck import SelfCheck
+
+# Inicialização do módulo de autoanálise
+self_check = SelfCheck()
+self_check.record_interaction('Sistema iniciado', 'Autoanálise ativada.')
+
 import os
 import time
 import jwt
@@ -30,11 +37,11 @@ def admin_required(f):
             return redirect("/admin/login")
         return f(*args, **kwargs)
     return decorated_function
+
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://libermedia:libermedia123@libermedia-db:5432/libermedia"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB limite para uploads
 db = SQLAlchemy(app)
-
-JWT_SECRET = os.environ.get("JWT_SECRET", "libermedia-secret")
 JWT_ALGO = "HS256"
 
 # ============================================
@@ -352,7 +359,7 @@ class Usuario(db.Model):
     last_notification = db.Column(db.Integer, nullable=True)  # Última notificação enviada
 
     # NIP-05: Verificação de identidade
-    nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@libermedia.app
+    nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@media.libernet.app
     nip05_verified = db.Column(db.Boolean, default=False)  # Se está verificado
 
 # --- Modelo de Suporte ---
@@ -400,7 +407,7 @@ def index():
 
 
 # ============================================
-# NIP-05: VERIFICATION (username@libermedia.app)
+# NIP-05: VERIFICATION (username@media.libernet.app)
 # ============================================
 
 @app.route("/.well-known/nostr.json")
@@ -463,11 +470,11 @@ def nip05_verification():
 def _get_nip96_config():
     """Retorna configuração NIP-96 (compartilhado entre endpoints)"""
     return {
-        "api_url": "https://libermedia.app/api/upload/nip96",
-        "download_url": "https://libermedia.app/f",
+        "api_url": "https://media.libernet.app/api/upload/nip96",
+        "download_url": "https://media.libernet.app/f",
         "delegated_to_url": None,
         "supported_nips": [96, 98],
-        "tos_url": "https://libermedia.app/terms",
+        "tos_url": "https://media.libernet.app/terms",
         "content_types": [
             "image/jpeg",
             "image/jpg",
@@ -488,7 +495,7 @@ def _get_nip96_config():
             "free": {
                 "name": "Free",
                 "is_nip98_required": True,
-                "url": "https://libermedia.app/plans",
+                "url": "https://media.libernet.app/plans",
                 "max_byte_size": 3 * 1024 * 1024 * 1024,  # 3 GB
                 "file_expiration": [0, 0],  # nunca expira
                 "media_transformations": {
@@ -498,14 +505,14 @@ def _get_nip96_config():
             "alpha": {
                 "name": "Alpha",
                 "is_nip98_required": True,
-                "url": "https://libermedia.app/plans",
+                "url": "https://media.libernet.app/plans",
                 "max_byte_size": 6 * 1024 * 1024 * 1024,  # 6 GB
                 "file_expiration": [0, 0]
             },
             "bravo": {
                 "name": "Bravo",
                 "is_nip98_required": True,
-                "url": "https://libermedia.app/plans",
+                "url": "https://media.libernet.app/plans",
                 "max_byte_size": 12 * 1024 * 1024 * 1024,  # 12 GB
                 "file_expiration": [0, 0]
             }
@@ -543,7 +550,7 @@ def blossom_discovery():
         "name": "LiberMedia Blossom Server",
         "description": "Decentralized file storage with Nostr authentication",
         "pubkey": "9b31915dd140b34774cb60c42fc0e015d800cde7f5e4f82a5f2d4e21d72803e4",  # Pubkey do servidor
-        "icons": ["https://libermedia.app/static/img/logo.jpg"],
+        "icons": ["https://media.libernet.app/static/img/logo.jpg"],
         "upload": {
             "enabled": True,
             "max_size": 3221225472,  # 3GB para free, ajustado por plano
@@ -695,7 +702,7 @@ def _nip96_upload_post():
         db.session.commit()
 
         # Cria URL de download
-        download_url = f"https://libermedia.app/f/{novo_arquivo.id}.{ext}"
+        download_url = f"https://media.libernet.app/f/{novo_arquivo.id}.{ext}"
 
         # Cria evento NIP-94 (kind 1063) - File Metadata
         # Publica em relays Nostr para descoberta
@@ -897,7 +904,7 @@ def _blossom_upload_put():
             mime_type = mimetypes.guess_type(arquivo_existente.nome)[0] or 'application/octet-stream'
 
             blob_descriptor = {
-                "url": f"https://libermedia.app/{sha256_hash}",
+                "url": f"https://media.libernet.app/{sha256_hash}",
                 "sha256": sha256_hash,
                 "size": arquivo_existente.tamanho,
                 "type": mime_type,
@@ -959,7 +966,7 @@ def _blossom_upload_put():
 
         # Blob descriptor response
         blob_descriptor = {
-            "url": f"https://libermedia.app/{sha256_hash}",
+            "url": f"https://media.libernet.app/{sha256_hash}",
             "sha256": sha256_hash,
             "size": file_size,
             "type": mime_type,
@@ -1018,7 +1025,7 @@ def blossom_list(pubkey):
             mime_type = mimetypes.guess_type(arquivo.nome)[0] or 'application/octet-stream'
 
             blob_list.append({
-                "url": f"https://libermedia.app/{sha256_hash}",
+                "url": f"https://media.libernet.app/{sha256_hash}",
                 "sha256": sha256_hash,
                 "size": arquivo.tamanho,
                 "type": mime_type,
@@ -1264,7 +1271,7 @@ def opennode_create_invoice(amount_sats: int, memo: str):
         "amount": amount_sats,
         "currency": "btc",
         "description": memo,
-        "callback_url": "https://libermedia.app/api/webhook/opennode"
+        "callback_url": "https://media.libernet.app/api/webhook/opennode"
     }
 
     r = requests.post(url, headers=headers, json=payload, timeout=20)
@@ -1628,7 +1635,7 @@ def admin_nip05_pending():
                 "nome": u.nome if hasattr(u, 'nome') else u.pubkey[:12] + "...",
                 "pubkey": u.pubkey,
                 "username": u.nip05_username,
-                "identifier": f"{u.nip05_username}@libermedia.app",
+                "identifier": f"{u.nip05_username}@media.libernet.app",
                 "verified": u.nip05_verified,
                 "created_at": u.created_at if hasattr(u, 'created_at') else None
             }
@@ -1712,7 +1719,7 @@ def check_nip05():
             "status": "ok",
             "verified": usuario.nip05_verified,
             "username": usuario.nip05_username,
-            "identifier": f"{usuario.nip05_username}@libermedia.app" if usuario.nip05_username else None
+            "identifier": f"{usuario.nip05_username}@media.libernet.app" if usuario.nip05_username else None
         })
 
     except Exception as e:
@@ -2797,7 +2804,7 @@ def criar_link_publico(arquivo_id):
                 "status": "ok",
                 "token": link_existente.token,
                 "expira_em": link_existente.expira_em,
-                "url": f"https://libermedia.app/share/{link_existente.token}"
+                "url": f"https://media.libernet.app/share/{link_existente.token}"
             })
 
         # Cria novo link
@@ -2816,7 +2823,7 @@ def criar_link_publico(arquivo_id):
             "status": "ok",
             "token": token,
             "expira_em": expira_em,
-            "url": f"https://libermedia.app/share/{token}"
+            "url": f"https://media.libernet.app/share/{token}"
         })
 
     except Exception as e:
