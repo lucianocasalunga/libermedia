@@ -280,47 +280,105 @@ dropArea.ondrop = (e) => {
 fileInput.onchange = (e) => upload(Array.from(e.target.files));
 
 async function upload(files) {
+  console.log('[UPLOAD] Iniciando upload de', files.length, 'arquivo(s)');
+  console.log('[UPLOAD] npub:', npub);
+  console.log('[UPLOAD] pastaAtual:', pastaAtual);
+
+  // Validações críticas
+  if (!npub) {
+    console.error('[UPLOAD] ERRO: npub não definido!');
+    showToast('❌ Erro: Sessão inválida. Faça login novamente.', 'error');
+    return;
+  }
+
+  if (!files || files.length === 0) {
+    console.error('[UPLOAD] ERRO: Nenhum arquivo selecionado!');
+    showToast('❌ Erro: Nenhum arquivo selecionado.', 'error');
+    return;
+  }
+
   const progress = document.getElementById('progress');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
-  
+
   progress.classList.remove('hidden');
-  
-  for (let i = 0; i < files.length; i++) {
-    const fd = new FormData();
-    fd.append('file', files[i]);
-    fd.append('npub', npub);
-    fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
-    
-    const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        progressBar.style.width = pct + '%';
-        progressText.textContent = `${i+1}/${files.length} - ${pct}%`;
-      }
-    };
-    
-    await new Promise((resolve, reject) => {
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve();
-        } else {
-          reject(new Error(`Erro ${xhr.status}`));
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+      console.log(`[UPLOAD] Processando arquivo ${i+1}/${files.length}:`, files[i].name, `(${files[i].size} bytes)`);
+
+      const fd = new FormData();
+      fd.append('file', files[i]);
+      fd.append('npub', npub);
+      fd.append('pasta', pastaAtual === 'Mesa' ? 'Geral' : pastaAtual);
+
+      console.log('[UPLOAD] FormData criado com:', {
+        file: files[i].name,
+        npub: npub.substring(0, 20) + '...',
+        pasta: pastaAtual === 'Mesa' ? 'Geral' : pastaAtual
+      });
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = pct + '%';
+          progressText.textContent = `${i+1}/${files.length} - ${pct}%`;
+          console.log(`[UPLOAD] Progresso: ${pct}% (${e.loaded}/${e.total} bytes)`);
         }
       };
-      xhr.onerror = () => reject(new Error('Erro de rede'));
-      xhr.open('POST', '/api/upload');
-      xhr.send(fd);
-    });
+
+      console.log('[UPLOAD] Abrindo conexão XHR para POST /api/upload');
+
+      await new Promise((resolve, reject) => {
+        xhr.onload = () => {
+          console.log('[UPLOAD] XHR onload - Status:', xhr.status);
+          console.log('[UPLOAD] Response:', xhr.responseText);
+          if (xhr.status === 200) {
+            resolve();
+          } else {
+            reject(new Error(`Erro ${xhr.status}: ${xhr.responseText}`));
+          }
+        };
+
+        xhr.onerror = (e) => {
+          console.error('[UPLOAD] XHR onerror - Erro de rede', e);
+          reject(new Error('Erro de rede ao fazer upload'));
+        };
+
+        xhr.onabort = () => {
+          console.error('[UPLOAD] XHR onabort - Upload cancelado');
+          reject(new Error('Upload cancelado'));
+        };
+
+        xhr.ontimeout = () => {
+          console.error('[UPLOAD] XHR ontimeout - Timeout');
+          reject(new Error('Timeout no upload'));
+        };
+
+        console.log('[UPLOAD] Chamando xhr.open()');
+        xhr.open('POST', '/api/upload');
+
+        console.log('[UPLOAD] Chamando xhr.send()');
+        xhr.send(fd);
+        console.log('[UPLOAD] xhr.send() executado com sucesso');
+      });
+
+      console.log(`[UPLOAD] Arquivo ${i+1}/${files.length} enviado com sucesso!`);
+    }
+
+    progress.classList.add('hidden');
+
+    console.log('[UPLOAD] Todos os arquivos enviados com sucesso!');
+    showToast(`✅ ${files.length} arquivo${files.length > 1 ? 's' : ''} enviado${files.length > 1 ? 's' : ''} com sucesso!`, 'success');
+
+    loadFiles();
+  } catch (error) {
+    console.error('[UPLOAD] ERRO CRÍTICO:', error);
+    progress.classList.add('hidden');
+    showToast(`❌ Erro ao enviar arquivo: ${error.message}`, 'error');
   }
-
-  progress.classList.add('hidden');
-
-  // Mensagem de sucesso
-  showToast(`✅ ${files.length} arquivo${files.length > 1 ? 's' : ''} enviado${files.length > 1 ? 's' : ''} com sucesso!`, 'success');
-
-  loadFiles();
 }
 
 async function loadFiles() {
