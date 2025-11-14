@@ -8,7 +8,7 @@ self_check.record_interaction('Sistema iniciado', 'Autoanálise ativada.')
 import os
 import time
 import jwt
-from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, session, make_response
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file, redirect, session, make_response, after_this_request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,11 +17,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'LiberMedia2025SecretKey!@#$%Sofia'
 
-# CORS configurado para endpoints NIP-96 e arquivos públicos
+# CORS configurado para endpoints NIP-96, Blossom e arquivos públicos
 CORS(app, resources={
-    r"/.well-known/*": {"origins": "*"},
+    r"/.well-known/*": {"origins": "*", "methods": ["GET", "HEAD", "OPTIONS"]},
     r"/nip96.json": {"origins": "*"},
     r"/api/upload/nip96": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]},
+    r"/upload": {"origins": "*", "methods": ["PUT", "HEAD", "OPTIONS"], "allow_headers": "*"},
+    r"/media": {"origins": "*", "methods": ["PUT", "HEAD", "OPTIONS"], "allow_headers": "*"},
+    r"/list/*": {"origins": "*", "methods": ["GET", "OPTIONS"]},
+    r"/<sha256>": {"origins": "*", "methods": ["GET", "HEAD", "DELETE", "OPTIONS"]},
     r"/f/*": {"origins": "*"},
     r"/uploads/*": {"origins": "*"}
 })
@@ -342,6 +346,70 @@ def api_nip98_sign():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+@app.route("/api/blossom/sign", methods=["POST"])
+def api_blossom_sign():
+    """
+    Endpoint para criar e assinar evento Blossom (kind 24242)
+    Usado quando usuário tem privkey no banco
+    Permite clientes sem extensão Nostr fazer upload
+    """
+    try:
+        data = request.get_json()
+        npub = data.get("npub")
+        action = data.get("action", "upload")  # upload, list, get, delete
+        sha256_hash = data.get("sha256")  # Opcional: hash do arquivo
+
+        if not npub:
+            return jsonify({"status": "error", "error": "npub obrigatório"}), 400
+
+        # Valida action
+        if action not in ['upload', 'list', 'get', 'delete']:
+            return jsonify({"status": "error", "error": "action inválida (upload/list/get/delete)"}), 400
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({"status": "error", "error": "Usuário não encontrado"}), 404
+
+        if not usuario.privkey or usuario.privkey == "":
+            return jsonify({"status": "error", "error": "Usuário sem privkey"}), 400
+
+        # Cria evento Blossom (kind 24242)
+        keys = Keys.parse(usuario.privkey)
+
+        # Tags Blossom
+        tags = [
+            Tag.parse(["t", action])  # Tipo de ação
+        ]
+
+        # Se tem hash SHA256, adiciona tag 'x'
+        if sha256_hash:
+            tags.append(Tag.parse(["x", sha256_hash]))
+
+        # Cria evento kind 24242
+        builder = EventBuilder(NostrKind(24242), "", tags)
+        event = builder.sign_with_keys(keys)
+
+        # Serializa para JSON e converte para base64
+        event_json = event.as_json()
+        event_b64 = base64.b64encode(event_json.encode()).decode()
+
+        print(f"[Blossom] ✅ Evento kind 24242 assinado para {npub[:16]}... action={action}")
+
+        return jsonify({
+            "status": "ok",
+            "auth_event": event_b64,  # Base64 do evento para header Authorization: Nostr <base64>
+            "event_id": event.id().to_hex(),
+            "action": action
+        })
+
+    except Exception as e:
+        print(f"[Blossom] ❌ Erro ao assinar: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 # --- Modelo de usuário ---
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -359,7 +427,7 @@ class Usuario(db.Model):
     last_notification = db.Column(db.Integer, nullable=True)  # Última notificação enviada
 
     # NIP-05: Verificação de identidade
-    nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@media.libernet.app
+    nip05_username = db.Column(db.String(64), unique=True, nullable=True)  # username@libernet.app
     nip05_verified = db.Column(db.Boolean, default=False)  # Se está verificado
 
 # --- Modelo de Suporte ---
@@ -407,7 +475,7 @@ def index():
 
 
 # ============================================
-# NIP-05: VERIFICATION (username@media.libernet.app)
+# NIP-05: VERIFICATION (username@libernet.app)
 # ============================================
 
 @app.route("/.well-known/nostr.json")
@@ -473,7 +541,7 @@ def _get_nip96_config():
         "api_url": "https://media.libernet.app/api/upload/nip96",
         "download_url": "https://media.libernet.app/f",
         "delegated_to_url": None,
-        "supported_nips": [96, 98],
+        "supported_nips": [9, 42, 50, 96, 98],
         "tos_url": "https://media.libernet.app/terms",
         "content_types": [
             "image/jpeg",
@@ -898,13 +966,13 @@ def _blossom_upload_put():
             # Arquivo já existe - retorna descriptor existente
             print(f"[Blossom] 📦 Arquivo já existe (dedupe): {sha256_hash[:16]}...")
 
-            # Detecta MIME type
+            # Detecta MIME type e extensão
             import mimetypes
             ext = arquivo_existente.nome.rsplit('.', 1)[1] if '.' in arquivo_existente.nome else 'bin'
             mime_type = mimetypes.guess_type(arquivo_existente.nome)[0] or 'application/octet-stream'
 
             blob_descriptor = {
-                "url": f"https://media.libernet.app/{sha256_hash}",
+                "url": f"https://media.libernet.app/{sha256_hash}.{ext}",
                 "sha256": sha256_hash,
                 "size": arquivo_existente.tamanho,
                 "type": mime_type,
@@ -917,37 +985,85 @@ def _blossom_upload_put():
         mime_type = 'application/octet-stream'
         ext = 'bin'
 
-        # Magic bytes para tipos comuns
-        if file_data[:4] == b'\xff\xd8\xff\xe0' or file_data[:4] == b'\xff\xd8\xff\xe1':
+        # Magic bytes para tipos comuns (expandido para mais formatos)
+        # IMAGENS
+        if file_data[:2] == b'\xff\xd8':  # JPEG (qualquer marker)
             mime_type, ext = 'image/jpeg', 'jpg'
-        elif file_data[:8] == b'\x89PNG\r\n\x1a\n':
+        elif file_data[:8] == b'\x89PNG\r\n\x1a\n':  # PNG
             mime_type, ext = 'image/png', 'png'
-        elif file_data[:4] == b'GIF8':
+        elif file_data[:4] == b'GIF8':  # GIF
             mime_type, ext = 'image/gif', 'gif'
-        elif file_data[:4] == b'RIFF' and file_data[8:12] == b'WEBP':
+        elif file_data[:4] == b'RIFF' and len(file_data) > 12 and file_data[8:12] == b'WEBP':  # WEBP
             mime_type, ext = 'image/webp', 'webp'
-        elif file_data[:12] == b'\x00\x00\x00\x1cftypmp42' or file_data[4:12] == b'ftypmp42':
+        elif file_data[:2] == b'BM':  # BMP
+            mime_type, ext = 'image/bmp', 'bmp'
+        elif file_data[:4] in [b'II*\x00', b'MM\x00*']:  # TIFF
+            mime_type, ext = 'image/tiff', 'tiff'
+        elif len(file_data) > 12 and file_data[4:12] == b'ftypheic':  # HEIC (iPhone)
+            mime_type, ext = 'image/heic', 'heic'
+        elif len(file_data) > 12 and file_data[4:12] == b'ftypheif':  # HEIF
+            mime_type, ext = 'image/heif', 'heif'
+
+        # VÍDEOS
+        elif len(file_data) > 12 and (file_data[:12] == b'\x00\x00\x00\x1cftypmp42' or file_data[4:12] == b'ftypmp42'):  # MP4
             mime_type, ext = 'video/mp4', 'mp4'
-        elif file_data[:4] == b'\x1aE\xdf\xa3':
+        elif len(file_data) > 12 and file_data[4:12] == b'ftypisom':  # MP4/MOV
+            mime_type, ext = 'video/mp4', 'mp4'
+        elif len(file_data) > 12 and file_data[4:8] == b'ftyp':  # MOV/M4V genérico
+            mime_type, ext = 'video/mp4', 'mp4'
+        elif file_data[:4] == b'\x1aE\xdf\xa3':  # WEBM
             mime_type, ext = 'video/webm', 'webm'
-        elif file_data[:4] == b'ID3\x03' or file_data[:4] == b'ID3\x04':
+        elif file_data[:4] == b'RIFF' and len(file_data) > 12 and file_data[8:12] == b'AVI ':  # AVI
+            mime_type, ext = 'video/avi', 'avi'
+
+        # ÁUDIO
+        elif file_data[:4] in [b'ID3\x03', b'ID3\x04']:  # MP3 com ID3
             mime_type, ext = 'audio/mpeg', 'mp3'
-        elif file_data[:4] == b'%PDF':
+        elif file_data[:2] == b'\xff\xfb' or file_data[:2] == b'\xff\xf3' or file_data[:2] == b'\xff\xf2':  # MP3 sem ID3
+            mime_type, ext = 'audio/mpeg', 'mp3'
+        elif file_data[:4] == b'fLaC':  # FLAC
+            mime_type, ext = 'audio/flac', 'flac'
+        elif file_data[:4] == b'OggS':  # OGG
+            mime_type, ext = 'audio/ogg', 'ogg'
+        elif file_data[:4] == b'RIFF' and len(file_data) > 12 and file_data[8:12] == b'WAVE':  # WAV
+            mime_type, ext = 'audio/wav', 'wav'
+        elif len(file_data) > 12 and file_data[4:8] == b'ftyp' and b'M4A' in file_data[8:12]:  # M4A
+            mime_type, ext = 'audio/m4a', 'm4a'
+
+        # DOCUMENTOS
+        elif file_data[:4] == b'%PDF':  # PDF
             mime_type, ext = 'application/pdf', 'pdf'
+        elif file_data[:4] == b'PK\x03\x04':  # ZIP/DOCX/XLSX
+            # Detecta se é documento Office
+            if b'word/' in file_data[:1024]:
+                mime_type, ext = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx'
+            elif b'xl/' in file_data[:1024]:
+                mime_type, ext = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'
+            else:
+                mime_type, ext = 'application/zip', 'zip'
 
         # Salva arquivo com nome baseado no SHA256
         nome_arquivo = f"{sha256_hash}.{ext}"
         caminho = os.path.join('uploads', nome_arquivo)
+
+        # Cria diretório se não existir
+        os.makedirs('uploads', exist_ok=True)
 
         with open(caminho, 'wb') as f:
             f.write(file_data)
 
         # Detecta tipo LiberMedia
         tipos = {
+            # Imagens
             'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'webp': 'image',
-            'mp4': 'video', 'webm': 'video', 'mov': 'video', 'avi': 'video',
+            'bmp': 'image', 'tiff': 'image', 'heic': 'image', 'heif': 'image',
+            # Vídeos
+            'mp4': 'video', 'webm': 'video', 'mov': 'video', 'avi': 'video', 'm4v': 'video',
+            # Áudio
+            'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'm4a': 'audio', 'flac': 'audio',
+            # Documentos
             'pdf': 'document', 'doc': 'document', 'docx': 'document', 'txt': 'document',
-            'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'm4a': 'audio'
+            'xlsx': 'document', 'zip': 'document'
         }
         tipo = tipos.get(ext, 'document')
 
@@ -964,9 +1080,9 @@ def _blossom_upload_put():
         db.session.add(novo_arquivo)
         db.session.commit()
 
-        # Blob descriptor response
+        # Blob descriptor response (com extensão para compatibilidade Nostr)
         blob_descriptor = {
-            "url": f"https://media.libernet.app/{sha256_hash}",
+            "url": f"https://media.libernet.app/{sha256_hash}.{ext}",
             "sha256": sha256_hash,
             "size": file_size,
             "type": mime_type,
@@ -1040,14 +1156,18 @@ def blossom_list(pubkey):
         return jsonify({'message': str(e)}), 500
 
 
-@app.route("/<sha256>", methods=["GET", "HEAD"])
-def blossom_get_blob(sha256):
+@app.route("/<path:sha256_path>", methods=["GET", "HEAD"])
+def blossom_get_blob(sha256_path):
     """
     Retorna blob por SHA256 (BUD-02)
-    GET /<sha256> - retorna arquivo
+    GET /<sha256> - retorna arquivo (Blossom)
+    GET /<sha256>.ext - retorna arquivo (Nostr-friendly)
     HEAD /<sha256> - verifica existência
     """
     try:
+        # Remove extensão se presente (permite ambos formatos)
+        sha256 = sha256_path.split('.')[0]
+
         # Valida formato SHA256 (64 caracteres hex)
         if len(sha256) != 64 or not all(c in '0123456789abcdef' for c in sha256.lower()):
             return jsonify({'message': 'Invalid SHA256 format'}), 400
@@ -1058,16 +1178,35 @@ def blossom_get_blob(sha256):
         if not arquivo:
             return jsonify({'message': 'Blob not found'}), 404
 
+        # Detecta MIME type
+        import mimetypes
+        mime_type = mimetypes.guess_type(arquivo.nome)[0] or 'application/octet-stream'
+
         # HEAD request - apenas verifica existência
         if request.method == "HEAD":
             response = make_response('', 200)
-            response.headers['Content-Type'] = 'application/octet-stream'
+            response.headers['Content-Type'] = mime_type
             response.headers['Content-Length'] = str(arquivo.tamanho)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, HEAD, OPTIONS'
+            response.headers['Cache-Control'] = 'public, max-age=31536000'
             return response
 
-        # GET request - retorna arquivo
-        # Redireciona para o caminho real
-        return redirect(f"/uploads/{arquivo.nome}")
+        # GET request - retorna arquivo diretamente (sem redirect para evitar CORS duplicado)
+        file_path = os.path.join("uploads", arquivo.nome)
+
+        if not os.path.exists(file_path):
+            return jsonify({'message': 'File not found on disk'}), 404
+
+        # Serve arquivo diretamente
+        @after_this_request
+        def add_cors_headers(response):
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, HEAD, OPTIONS'
+            response.headers['Cache-Control'] = 'public, max-age=31536000'
+            return response
+
+        return send_file(file_path, mimetype=mime_type)
 
     except Exception as e:
         print(f"[Blossom] ❌ Erro ao buscar blob: {e}")
@@ -1178,7 +1317,8 @@ def api_me():
 @app.route("/health")
 def health():
     try:
-        db.session.execute("SELECT 1")
+        from sqlalchemy import text
+        db.session.execute(text("SELECT 1"))
         return jsonify({"status": "ok", "db": True})
     except Exception:
         return jsonify({"status": "erro", "db": False}), 500
@@ -1635,7 +1775,7 @@ def admin_nip05_pending():
                 "nome": u.nome if hasattr(u, 'nome') else u.pubkey[:12] + "...",
                 "pubkey": u.pubkey,
                 "username": u.nip05_username,
-                "identifier": f"{u.nip05_username}@media.libernet.app",
+                "identifier": f"{u.nip05_username}@libernet.app",
                 "verified": u.nip05_verified,
                 "created_at": u.created_at if hasattr(u, 'created_at') else None
             }
@@ -1719,7 +1859,7 @@ def check_nip05():
             "status": "ok",
             "verified": usuario.nip05_verified,
             "username": usuario.nip05_username,
-            "identifier": f"{usuario.nip05_username}@media.libernet.app" if usuario.nip05_username else None
+            "identifier": f"{usuario.nip05_username}@libernet.app" if usuario.nip05_username else None
         })
 
     except Exception as e:
@@ -2141,10 +2281,140 @@ def deletar_pasta():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
-# Servir arquivos
+# NIP-50: SEARCH (Pesquisa de arquivos)
+@app.route("/api/search", methods=["GET"])
+@validate_nip98_auth(required=False)
+def search_arquivos():
+    """
+    NIP-50: Pesquisa de arquivos por nome, tipo, pasta
+    Query params:
+      - npub: Public key do usuário (ou via NIP-98)
+      - q: Query string (busca no nome do arquivo)
+      - type: Tipo de arquivo (image, video, audio, document, etc)
+      - pasta: Nome da pasta
+      - limit: Limite de resultados (default: 50, max: 200)
+    """
+    try:
+        # Autenticação via NIP-98 ou npub query param
+        npub = getattr(request, 'nip98_pubkey', None) or request.args.get('npub')
+
+        if not npub:
+            return jsonify({
+                "status": "error",
+                "error": "npub não informado e sem autenticação NIP-98"
+            }), 401
+
+        # Parâmetros de busca
+        query = request.args.get('q', '').strip()
+        tipo = request.args.get('type', '').strip()
+        pasta = request.args.get('pasta', '').strip()
+        limit = min(int(request.args.get('limit', 50)), 200)
+
+        # Busca usuário
+        usuario = Usuario.query.filter_by(pubkey=npub).first()
+        if not usuario:
+            return jsonify({
+                "status": "ok",
+                "files": [],
+                "count": 0,
+                "message": "Usuário não encontrado"
+            })
+
+        # Query base
+        files_query = Arquivo.query.filter_by(usuario_id=usuario.id)
+
+        # Filtro por query string (nome do arquivo)
+        if query:
+            files_query = files_query.filter(
+                Arquivo.nome_original.ilike(f'%{query}%')
+            )
+
+        # Filtro por tipo
+        if tipo:
+            tipo_map = {
+                'image': ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'],
+                'video': ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'],
+                'audio': ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'],
+                'document': ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'],
+                'archive': ['zip', 'rar', '7z', 'tar', 'gz']
+            }
+
+            if tipo in tipo_map:
+                extensions = tipo_map[tipo]
+                files_query = files_query.filter(
+                    db.or_(*[Arquivo.nome_original.ilike(f'%.{ext}') for ext in extensions])
+                )
+
+        # Filtro por pasta
+        if pasta:
+            files_query = files_query.filter_by(pasta=pasta)
+
+        # Ordena por data de upload (mais recente primeiro)
+        files_query = files_query.order_by(Arquivo.data_upload.desc())
+
+        # Limita resultados
+        files = files_query.limit(limit).all()
+
+        # Formata resposta
+        results = []
+        for f in files:
+            results.append({
+                "id": f.id,
+                "filename": f.nome_salvo,
+                "original_name": f.nome_original,
+                "url": f"/uploads/{f.nome_salvo}",
+                "type": f.nome_original.split('.')[-1].lower() if '.' in f.nome_original else 'unknown',
+                "size": f.tamanho,
+                "pasta": f.pasta or "Geral",
+                "uploaded_at": f.data_upload.isoformat() if f.data_upload else None,
+                "sha256": f.sha256
+            })
+
+        return jsonify({
+            "status": "ok",
+            "files": results,
+            "count": len(results),
+            "query": query,
+            "filters": {
+                "type": tipo or None,
+                "pasta": pasta or None
+            }
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+# Servir arquivos com suporte a thumbnails
 @app.route("/uploads/<filename>")
 def servir_arquivo(filename):
+    """
+    Serve arquivos com suporte a thumbnails WebP
+    Query params:
+      - size: 320, 960 ou 1600 (retorna thumbnail WebP se disponível)
+    Exemplos:
+      /uploads/image.jpg?size=320 -> retorna thumbs/320/image.webp (se existir)
+      /uploads/image.jpg -> retorna o arquivo original
+    """
+    size = request.args.get('size')
+
+    # Se foi solicitado thumbnail
+    if size and size in ['320', '960', '1600']:
+        # Converter nome do arquivo para .webp
+        filename_without_ext = os.path.splitext(filename)[0]
+        thumb_filename = f"{filename_without_ext}.webp"
+        thumb_path = os.path.join('uploads', 'thumbs', size, thumb_filename)
+
+        # Verificar se thumbnail existe
+        if os.path.exists(thumb_path):
+            return send_from_directory(
+                os.path.join('uploads', 'thumbs', size),
+                thumb_filename,
+                mimetype='image/webp'
+            )
+
+    # Fallback: servir original
     return send_from_directory('uploads', filename)
+
 
 @app.route("/f/<int:arquivo_id>")
 @app.route("/f/<int:arquivo_id>.<ext>")
@@ -2251,12 +2521,20 @@ def move_arquivo(arquivo_id):
         return jsonify({"status": "error", "error": str(e)}), 500
 
 # Deletar arquivo (validação por npub)
+# NIP-09: Event Deletion (Delete de arquivos)
 @app.route("/api/arquivo/delete/<int:arquivo_id>", methods=["DELETE"])
+@validate_nip98_auth(required=False)
 def delete_arquivo(arquivo_id):
+    """
+    NIP-09: Permite deletar arquivos (eventos)
+    Suporta autenticação via NIP-98 ou npub query param
+    """
     try:
-        npub = request.args.get('npub')
+        # Prioriza NIP-98, fallback para npub
+        npub = getattr(request, 'nip98_pubkey', None) or request.args.get('npub')
+
         if not npub:
-            return jsonify({"status": "error", "error": "npub não fornecido"}), 401
+            return jsonify({"status": "error", "error": "Autenticação necessária"}), 401
 
         usuario = Usuario.query.filter_by(pubkey=npub).first()
         if not usuario:
@@ -2278,7 +2556,8 @@ def delete_arquivo(arquivo_id):
         db.session.delete(arquivo)
         db.session.commit()
 
-        return jsonify({"status": "ok"})
+        print(f"[NIP-09] Arquivo {arquivo_id} deletado por {npub[:12]}...")
+        return jsonify({"status": "ok", "message": "Arquivo deletado com sucesso"})
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 

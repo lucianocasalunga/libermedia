@@ -570,6 +570,65 @@ async function createNip98Event(method, url, payload = null) {
   }
 }
 
+async function createBlossomEvent(action = 'upload', sha256Hash = null) {
+  try {
+    const npub = localStorage.getItem('libermedia_npub');
+    if (!npub) throw new Error('NPub não encontrado');
+
+    // Busca usuário no backend para verificar privkey
+    const usuario = await fetch(`/api/usuario?npub=${npub}`).then(r => r.json());
+
+    if (!usuario.privkey || usuario.privkey === '') {
+      console.warn('[Blossom] Usuário sem privkey, tentando extensão Nostr...');
+
+      // Tenta usar extensão Nostr (NIP-07)
+      if (window.nostr) {
+        const event = {
+          kind: 24242,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [
+            ['t', action]  // Tipo de ação: upload, list, get, delete
+          ],
+          content: ''
+        };
+
+        // Se tem hash SHA256, adiciona tag 'x'
+        if (sha256Hash) {
+          event.tags.push(['x', sha256Hash]);
+        }
+
+        const signedEvent = await window.nostr.signEvent(event);
+        return btoa(JSON.stringify(signedEvent));
+      }
+
+      throw new Error('Sem chave privada e sem extensão Nostr');
+    }
+
+    // Cria evento no backend (usuário tem privkey)
+    const response = await fetch('/api/blossom/sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        npub,
+        action: action,
+        sha256: sha256Hash
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      console.log(`[Blossom] ✅ Evento kind 24242 criado: action=${action}`);
+      return data.auth_event;  // Base64 do evento
+    } else {
+      throw new Error(data.error || 'Erro ao assinar evento Blossom');
+    }
+  } catch (error) {
+    console.error('[Blossom] Erro ao criar evento:', error);
+    return null;
+  }
+}
+
 /**
  * Helper para calcular SHA256 de uma string
  */
@@ -999,7 +1058,7 @@ function renderFiles() {
       const linkComExt = `https://media.libernet.app/f/${f.id}.${ext}`;
       const isSelected = arquivosSelecionados.includes(f.id);
       return `
-      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden border ${isSelected ? 'border-yellow-500 border-2' : 'border-gray-200 dark:border-gray-700'} relative">
+      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden ${isSelected ? 'border border-yellow-500 border-2' : ''} relative">
         ${modoSelecao ? `<input type="checkbox"
                onchange="toggleSelection(${f.id})"
                ${isSelected ? 'checked' : ''}
@@ -1014,7 +1073,7 @@ function renderFiles() {
       const ext = getExtensao(f.nome);
       const linkComExt = `https://media.libernet.app/f/${f.id}.${ext}`;
       return `
-      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
+      <div class="file-card group bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition">
         <img src="${linkComExt}" 
              class="cursor-pointer"
              onclick="openModal(${f.id})"
@@ -2315,7 +2374,7 @@ async function loadNip05Status() {
               Aguardando aprovação
             </p>
             <p class="text-xs text-yellow-800 dark:text-yellow-400">
-              Username solicitado: ${data.username}@media.libernet.app
+              Username solicitado: ${data.username}@libernet.app
             </p>
           </div>
         </div>
@@ -2326,7 +2385,7 @@ async function loadNip05Status() {
       // Sem verificação
       statusDiv.innerHTML = `
         <p class="text-sm text-gray-900 dark:text-gray-400">
-          Solicite seu username verificado @media.libernet.app
+          Solicite seu username verificado @libernet.app
         </p>
       `;
       formDiv.classList.remove('hidden');

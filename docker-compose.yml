@@ -17,7 +17,7 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       - FLASK_ENV=development
-      - DATABASE_URL=postgresql://libermedia:libermedia123@db:5432/libermedia
+      - DATABASE_URL=postgresql://libermedia:libermedia123@libermedia-db:5432/libermedia
     command: gunicorn --bind 0.0.0.0:8081 --workers 2 --timeout 600 --reload --log-level debug --access-logfile - --error-logfile - app:app
     depends_on:
       - db
