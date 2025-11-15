@@ -512,9 +512,9 @@ def nip05_verification():
                 names[usuario.nip05_username] = pubkey_hex
                 # Adiciona relays recomendados (opcional)
                 relays[usuario.nip05_username] = [
+                    "wss://relay.libernet.app",
                     "wss://relay.damus.io",
-                    "wss://nos.lol",
-                    "wss://relay.nostr.band"
+                    "wss://nos.lol"
                 ]
 
         # Retorna JSON conforme especificação NIP-05
@@ -1336,6 +1336,12 @@ def sobre():
 @app.route("/suporte")
 def suporte():
     return render_template("suporte.html")
+
+@app.route("/generate-keys")
+def generate_keys():
+    """Página para solicitar username NIP-05 (nome@libernet.app)"""
+    return render_template("generate-keys.html")
+
 import json, os
 def _load_plans_config():
     conf_path = os.path.join(os.path.dirname(__file__), "config", "plans.json")

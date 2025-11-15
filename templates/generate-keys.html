@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar nome@libernet.app | NIP-05</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .info-box {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-hint {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .example {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            font-family: monospace;
+            color: #555;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .rules {
+            background: #fff9e6;
+            border: 1px solid #ffd966;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .rules h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .rules ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .rules li {
+            color: #856404;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .rules li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Solicitar nome@libernet.app</h1>
+        <p class="subtitle">Identidade verificada no protocolo Nostr (NIP-05)</p>
+
+        <div class="info-box">
+            <p><strong>O que é NIP-05?</strong></p>
+            <p>É um identificador legível que conecta seu nome a sua chave pública Nostr. Em vez de npub1xxx..., você será conhecido como <strong>seunome@libernet.app</strong>.</p>
+        </div>
+
+        <div class="rules">
+            <h3>Regras para username:</h3>
+            <ul>
+                <li>Apenas letras minúsculas, números, hífen (-) e underscore (_)</li>
+                <li>Entre 3 e 20 caracteres</li>
+                <li>Não pode ser palavra reservada (admin, api, www, etc)</li>
+                <li>Deve ser único (verificamos se já existe)</li>
+            </ul>
+        </div>
+
+        <form id="nip05-form">
+            <div class="form-group">
+                <label for="username">Escolha seu username:</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="seunome"
+                    pattern="[a-z0-9_-]{3,20}"
+                    required
+                    autocomplete="off"
+                >
+                <div class="input-hint">Seu identificador será: <span id="preview">seunome@libernet.app</span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="npub">Sua chave pública Nostr (npub):</label>
+                <input
+                    type="text"
+                    id="npub"
+                    name="npub"
+                    placeholder="npub1..."
+                    pattern="npub1[a-z0-9]{58,}"
+                    required
+                    autocomplete="off"
+                >
+                <div class="input-hint">Começa com "npub1" e tem 63 caracteres</div>
+                <div class="example">Exemplo: npub1abc123def456...</div>
+            </div>
+
+            <button type="submit" id="submit-btn">📨 Solicitar verificação</button>
+        </form>
+
+        <div id="status" class="status"></div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <p><strong>Após enviar:</strong></p>
+            <p>Sua solicitação será revisada por um administrador. Você será notificado quando seu username for aprovado. Geralmente leva até 24 horas.</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('nip05-form');
+        const usernameInput = document.getElementById('username');
+        const npubInput = document.getElementById('npub');
+        const submitBtn = document.getElementById('submit-btn');
+        const statusDiv = document.getElementById('status');
+        const preview = document.getElementById('preview');
+
+        // Preview do username
+        usernameInput.addEventListener('input', (e) => {
+            const username = e.target.value.toLowerCase().trim();
+            preview.textContent = username ? `${username}@libernet.app` : 'seunome@libernet.app';
+        });
+
+        // Submit form
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = usernameInput.value.toLowerCase().trim();
+            const npub = npubInput.value.trim();
+
+            // Validações front-end
+            if (!/^[a-z0-9_-]{3,20}$/.test(username)) {
+                showStatus('Username inválido. Use apenas letras minúsculas, números, hífen e underscore (3-20 caracteres)', 'error');
+                return;
+            }
+
+            if (!npub.startsWith('npub1') || npub.length < 60) {
+                showStatus('npub inválido. Deve começar com "npub1" e ter pelo menos 60 caracteres', 'error');
+                return;
+            }
+
+            // Desabilitar botão
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Enviando...';
+
+            try {
+                const response = await fetch('/api/nip05/request-username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, npub })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(`✅ ${data.message}`, 'success');
+                    form.reset();
+                    preview.textContent = 'seunome@libernet.app';
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Erro ao conectar com servidor: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📨 Solicitar verificação';
+            }
+        });
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+
+            // Auto-hide após 10 segundos
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 10000);
+            }
+        }
+    </script>
+</body>
+</html>
