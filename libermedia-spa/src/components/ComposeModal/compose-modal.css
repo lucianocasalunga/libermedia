@@ -1,0 +1,84 @@
+/* Compositor — overlay modal tema-aware */
+.lm-compose-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 12px 12px;
+}
+.lm-compose-box {
+  width: 100%;
+  max-width: 560px;
+  background: var(--lm-bg-card);
+  border: 1px solid var(--lm-border-str);
+  border-radius: 16px;
+  padding: 12px 16px 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.lm-compose-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.lm-compose-cancel {
+  background: none;
+  border: none;
+  color: var(--lm-text-sec);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+.lm-compose-send {
+  background: var(--lm-accent);
+  color: var(--lm-accent-txt);
+  border: none;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.lm-compose-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lm-compose-replyctx {
+  font-size: 13px;
+  color: var(--lm-text-muted);
+  margin-bottom: 8px;
+}
+.lm-compose-textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--lm-text-pri);
+  font-size: 17px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+.lm-compose-textarea::placeholder {
+  color: var(--lm-text-muted);
+}
+.lm-compose-error {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #f87171;
+}
+.lm-compose-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--lm-text-muted);
+}
+
+/* FAB (.lm-fab) — definição ÚNICA agora em src/index.css (flex ancorado na coluna central).
+   A duplicata que existia aqui tinha position:fixed/right:18px e VENCIA o index.css (vinha
+   depois no bundle) → no DESKTOP o botão escapava pra borda da TELA em vez da coluna. Removida. */

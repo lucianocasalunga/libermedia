@@ -1,0 +1,42 @@
+/* Picker de presentes (conteúdo pago) — modal central. */
+.lm-gift-root {
+  position: fixed; inset: 0; z-index: 222;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.5); padding: 16px;
+}
+.lm-gift {
+  width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto;
+  border-radius: 18px; padding: 18px;
+  background: var(--lm-bg-main); border: 1px solid var(--lm-border);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+}
+.lm-gift-title { font-size: 16px; font-weight: 700; color: var(--lm-text-pri); }
+.lm-gift-sub { margin-top: 2px; font-size: 13px; color: var(--lm-text-muted); }
+.lm-gift-grid {
+  margin-top: 14px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.lm-gift-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; border: 1px solid var(--lm-border); border-radius: 12px;
+  background: var(--lm-bg-card); cursor: pointer; transition: transform .08s, border-color .12s;
+}
+.lm-gift-cell:hover { border-color: var(--lm-accent); }
+.lm-gift-cell:active { transform: scale(.95); }
+.lm-gift-cell img { width: 40px; height: 40px; object-fit: contain; }
+.lm-gift-name { font-size: 11px; color: var(--lm-text-pri); }
+.lm-gift-sats { font-size: 11px; font-weight: 700; color: var(--lm-accent); }
+/* 8º card: "Outro valor" (símbolo + campinho) — fecha a grade 4×2 sem banguela. */
+.lm-gift-custom-cell { justify-content: center; gap: 4px; }
+.lm-gift-sym { font-size: 20px; line-height: 1; color: var(--lm-accent); }
+.lm-gift-custom-row { display: flex; align-items: center; gap: 3px; width: 100%; }
+.lm-gift-custom-row input {
+  width: 100%; min-width: 0; padding: 3px 4px; border-radius: 7px;
+  background: var(--lm-bg-input); border: none; outline: none; color: var(--lm-text-pri);
+  font-size: 12px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.lm-gift-custom-row button {
+  flex-shrink: 0; padding: 2px 7px; border-radius: 7px; border: none; cursor: pointer;
+  background: var(--lm-accent); color: #fff; font-weight: 700; font-size: 13px; line-height: 1;
+}
+.lm-gift-custom-row button:disabled { opacity: .4; cursor: default; }

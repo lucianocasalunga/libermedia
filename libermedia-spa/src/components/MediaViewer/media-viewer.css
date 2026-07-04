@@ -1,0 +1,155 @@
+/* Visualizador de mídia (lightbox) — galeria horizontal. Fundo escuro, conteúdo
+   contido, setas laterais (desktop) + swipe (mobile), transição slide. */
+.lm-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.94);
+  backdrop-filter: blur(6px);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.lm-viewer-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
+  color: #fff;
+}
+.lm-viewer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  opacity: 0.9;
+}
+.lm-viewer-actions { display: flex; flex-shrink: 0; gap: 4px; }
+.lm-viewer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.lm-viewer-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+.lm-viewer-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 56px 16px;
+  overflow: hidden;
+}
+.lm-viewer-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+.lm-viewer-img,
+.lm-viewer-video {
+  max-width: 100%;
+  max-height: calc(100svh - 96px);
+  object-fit: contain;
+  border-radius: 8px;
+}
+.lm-viewer-pdf {
+  width: min(900px, 92vw);
+  height: calc(100svh - 110px);
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+}
+.lm-viewer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 90vw;
+  color: #fff;
+  text-align: center;
+}
+.lm-viewer-cardname { max-width: 80vw; overflow-wrap: anywhere; font-size: 15px; opacity: 0.9; }
+.lm-viewer-audio { width: min(420px, 80vw); }
+.lm-viewer-open {
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--lm-accent);
+  color: var(--lm-accent-txt);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Setas (desktop e tablet) */
+.lm-viewer-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.lm-viewer-arrow:hover { background: rgba(255, 255, 255, 0.25); }
+.lm-viewer-arrow-l { left: 12px; }
+.lm-viewer-arrow-r { right: 12px; }
+
+.lm-viewer-counter {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Transição slide entre itens */
+@keyframes lm-viewer-slide-r {
+  from { transform: translateX(48px); opacity: 0.25; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes lm-viewer-slide-l {
+  from { transform: translateX(-48px); opacity: 0.25; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.lm-viewer-enter-r { animation: lm-viewer-slide-r 220ms ease; }
+.lm-viewer-enter-l { animation: lm-viewer-slide-l 220ms ease; }
+
+/* Mobile: setas menores e mais discretas (o gesto é o principal) */
+@media (max-width: 767px) {
+  .lm-viewer-arrow { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.1); }
+}

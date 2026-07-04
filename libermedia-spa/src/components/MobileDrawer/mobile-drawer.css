@@ -1,0 +1,43 @@
+/* Drawer mobile (sidebar esquerda off-canvas). */
+.lm-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+.lm-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.lm-drawer-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 82%;
+  max-width: 320px;
+  background: var(--lm-bg-sidebar);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+.lm-drawer-root.is-open {
+  pointer-events: auto;
+}
+.lm-drawer-root.is-open .lm-drawer-backdrop {
+  opacity: 1;
+}
+.lm-drawer-root.is-open .lm-drawer-panel {
+  transform: translateX(0);
+}
+
+/* A Sidebar dentro do drawer: sempre visível (sem hidden md:flex) e ocupa o painel. */
+.lm-drawer-panel .lm-sidebar.lm-sidebar--drawer {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,46 @@
+/* Árvore de respostas (cascata estilo YouTube). */
+.lm-thread-children {
+  margin-left: 18px;
+  padding-left: 2px;
+  border-left: 2px solid var(--lm-border);
+}
+.lm-thread-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px 18px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lm-accent);
+}
+.lm-thread-toggle:hover {
+  text-decoration: underline;
+}
+/* Tracinho à esquerda do "Ver N respostas" (igual ao YouTube). */
+.lm-thread-toggle-line {
+  width: 22px;
+  height: 1px;
+  background: var(--lm-border-str);
+  flex-shrink: 0;
+}
+/* Resposta em foco (aberta pela notificação, ?focus=): pisca um destaque no post
+   correspondente (só o card, não as filhas) p/ o olho achar a resposta na conversa. */
+.lm-thread-focus > :first-child {
+  border-radius: 14px;
+  animation: lm-focus-flash 2.6s ease-out 1;
+}
+@keyframes lm-focus-flash {
+  0%,
+  65% {
+    box-shadow: 0 0 0 2px var(--lm-accent);
+    background: color-mix(in srgb, var(--lm-accent) 14%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+  }
+}

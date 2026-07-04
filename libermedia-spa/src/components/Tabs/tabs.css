@@ -1,0 +1,43 @@
+/* Tabs — grid responsivo (N colunas no desktop, 3 no mobile) + pílula no ativo.
+   Botão baixo/compacto. Cores 100% do tema (--lm-*). Base de design: Mistral. */
+.lm-tabs {
+  display: grid;
+  grid-template-columns: repeat(var(--lm-tabs-count), 1fr);
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  background: var(--lm-bg-card);
+  border: 1px solid var(--lm-border);
+  border-radius: 12px;
+}
+
+.lm-tabs__trigger {
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lm-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+.lm-tabs__trigger.is-active {
+  background: var(--lm-accent);
+  color: var(--lm-accent-txt);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--lm-accent) 30%, transparent);
+}
+.lm-tabs__trigger:focus-visible {
+  outline: 2px solid var(--lm-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .lm-tabs { grid-template-columns: repeat(var(--lm-tabs-count-m), 1fr); }
+  .lm-tabs__trigger { font-size: 12px; padding: 6px 4px; }
+}

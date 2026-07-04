@@ -1,0 +1,40 @@
+/* Filtro canvas NSFW — cobre o conteúdo. */
+.lm-nsfw-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.lm-nsfw-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.lm-nsfw-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #fff;
+  text-align: center;
+  padding: 12px;
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
+}
+.lm-nsfw-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+.lm-nsfw-hint {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.9;
+}

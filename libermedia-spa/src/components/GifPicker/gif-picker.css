@@ -1,0 +1,89 @@
+/* Picker de GIF — modal central. */
+.lm-gifpick-root {
+  position: fixed;
+  inset: 0;
+  z-index: 221;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 16px;
+}
+.lm-gifpick {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  max-height: 74vh;
+  border-radius: 18px;
+  background: var(--lm-bg-main);
+  border: 1px solid var(--lm-border);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.lm-gifpick-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin: 10px;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  background: var(--lm-bg-input);
+  color: var(--lm-text-muted);
+}
+.lm-gifpick-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--lm-text-pri);
+  /* 16px é o LIMIAR do iOS: abaixo disso o Safari/PWA dá auto-zoom ao focar o campo
+     (com autoFocus, o zoom dispara só de abrir o GIF picker e não volta). 16px inibe. */
+  font-size: 16px;
+}
+.lm-gifpick-grid {
+  display: grid;
+  /* miniaturas pequenas e consistentes — mais por linha, sem amontoar */
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-auto-rows: 92px;
+  gap: 6px;
+  padding: 0 10px 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  align-content: start;
+}
+.lm-gifpick-cell {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: var(--lm-bg-input);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  width: 100%;
+  height: 92px; /* altura fixa: nunca depende de aspect-ratio (à prova de empilhar) */
+}
+.lm-gifpick-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-gifpick-msg {
+  grid-column: 1 / -1;
+  padding: 40px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--lm-text-muted);
+}
+.lm-gifpick-credit {
+  flex-shrink: 0;
+  padding: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--lm-text-muted);
+}

@@ -1,0 +1,369 @@
+/* Tailwind v4 — injetado pelo plugin @tailwindcss/vite */
+@import 'tailwindcss';
+
+/* Classes Tailwind usadas pelo pacote da carteira (fora do projeto → o scanner
+ * não varre sozinho). Mantém o visual idêntico ao standalone. */
+@source '../../wallet-core/src';
+
+/* Temas LiberMedia (CSS custom properties --lm-*) */
+@import './styles/themes.css';
+
+/* ============================================================
+ * Base global do shell
+ * ============================================================ */
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100svh;
+  /* Contenção de scroll lateral: qualquer elemento que exceda a largura do viewport é
+   * cortado em vez de gerar rolagem horizontal. 'clip' (não 'hidden') NÃO cria contexto
+   * de rolagem → preserva os position:sticky (topbar/FAB/pílula). Cinto de segurança:
+   * a causa real (FAB deslizando p/ fora) está corrigida abaixo; isto blinda o caso geral. */
+  overflow-x: clip;
+}
+
+body {
+  background: var(--lm-bg-main);
+  color: var(--lm-text-pri);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS dá ZOOM automático ao focar campo de formulário com font-size < 16px, deslocando a
+ * página. Regra base no MOBILE que garante 16px em todo campo de texto — atual e futuro.
+ * O seletor :not() eleva a especificidade (0-2-1) acima das classes Tailwind text-sm/text-xs
+ * (0-1-0), senão não venceria. Checkbox/radio não disparam zoom → ficam de fora. */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Scrollbar fina tema-aware */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--lm-scrollbar) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--lm-scrollbar);
+  border-radius: 8px;
+}
+
+/* Ícones SVG monocromáticos seguem o tema */
+.lm-icon-themed {
+  filter: var(--lm-icon-filter);
+}
+
+/* ============================================================
+ * Transição padrão de troca de página
+ * O shell é keep-alive (display:block/none). Animações CSS REINICIAM quando o
+ * elemento volta de display:none → visível, então a transição toca a cada troca
+ * sem remontar a página (preserva scroll/estado). Overlays remontam → tocam ao
+ * montar. Respeita prefers-reduced-motion.
+ * ============================================================ */
+@keyframes lm-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.lm-page {
+  animation: lm-page-in 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+/* Fade suave da thread inline (estilo YouTube) ao expandir. */
+@keyframes lm-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-page {
+    animation: none;
+  }
+}
+
+/* Abertura do menu de mensagem (⋮ / swipe) — fade + slide SEM scale/zoom.
+   Deliberadamente sem transform:scale p/ inibir a sensação de "zoom" na abertura
+   do modal (iOS e Android). */
+@keyframes lm-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.lm-menu-in {
+  animation: lm-menu-in 150ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  transform-origin: top center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-menu-in {
+    animation: none;
+  }
+}
+
+/* Balão SELECIONADO (long-press abriu o modal): "pop" rápido + anel de acento + leve
+   elevação. Fica enquanto o modal está aberto; ao fechar, o transform inline volta
+   com transição (encolhe suave). */
+@keyframes lm-msg-pop {
+  0%   { transform: scale(1); }
+  55%  { transform: scale(1.05); }
+  100% { transform: scale(1.03); }
+}
+.lm-msg-active {
+  animation: lm-msg-pop 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  box-shadow: 0 0 0 2px var(--lm-accent), 0 10px 28px rgba(0, 0, 0, 0.28);
+  position: relative;
+  z-index: 5;
+  border-radius: 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-msg-active { animation: none; }
+}
+/* Mensagens PRÓPRIAS: o balão já é da cor de acento → anel BRANCO (com contorno externo
+   escuro fininho p/ segurar contraste mesmo se a cor do balão for clara). Vem DEPOIS do
+   .lm-msg-active p/ sobrescrever só o box-shadow; pop/elevação seguem iguais. */
+.lm-msg-active-mine {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 3.5px rgba(0, 0, 0, 0.18),
+    0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+/* Abertura do modal de opções da MENSAGEM: "pop" com leve mola (overshoot 1.02) —
+   distinto do slide do lm-menu-in, porém rápido (190ms) p/ NÃO virar "zoom" lento. */
+@keyframes lm-menu-pop {
+  0%   { opacity: 0; transform: scale(0.9) translateY(4px); }
+  60%  { opacity: 1; transform: scale(1.02) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.lm-menu-pop {
+  animation: lm-menu-pop 190ms cubic-bezier(0.34, 1.25, 0.5, 1) both;
+  transform-origin: top center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-menu-pop { animation: none; }
+}
+
+/* FAB — botão flutuante. O wrap é sticky DENTRO da coluna central (<main>), com
+   altura 0 colado no rodapé → o botão (absolute) ancora na borda direita da
+   COLUNA, nunca invade a RightSidebar. pointer-events:none deixa o clique passar
+   fora do botão. */
+/* FAB ancorado por FLEX na COLUNA (não por position:absolute — o absolute escapava p/ a
+   borda da TELA quando a referência de containing-block falhava). A wrap é uma barra sticky
+   de altura 0, largura da coluna, que empurra o botão pro canto INFERIOR DIREITO da coluna. */
+.lm-fab-wrap {
+  position: sticky;
+  bottom: calc(90px + env(safe-area-inset-bottom)); /* mobile: acima da bottom nav */
+  z-index: 140;
+  height: 0;                  /* não ocupa espaço no fluxo da coluna */
+  display: flex;
+  justify-content: flex-end;  /* canto DIREITO da COLUNA, nunca da tela */
+  align-items: flex-end;      /* gruda na linha sticky (rodapé) */
+  padding-right: 20px;        /* respiro da borda direita da coluna */
+  pointer-events: none;
+}
+.lm-fab {
+  position: static;           /* fluxo flex — sem containing-block ambíguo */
+  pointer-events: auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--lm-accent);
+  color: var(--lm-accent-txt);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+.lm-fab svg {
+  width: 26px;
+  height: 26px;
+}
+/* Mobile: ao recolher as barras (rolar p/ baixo) o FAB some encolhendo (scale) + fade;
+   volta junto com as barras. Antes usava translateX(150%), que jogava ~64px do botão p/
+   FORA da coluna → gerava SCROLL LATERAL no feed ao rolar (o opacity:0 escondia da vista,
+   mas o overflow continuava). scale(0.4) some sem sair da caixa → zero overflow horizontal. */
+@media (max-width: 767px) {
+  .lm-fab-wrap.lm-fab-hidden .lm-fab {
+    transform: scale(0.4);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+/* Desktop: sem bottom nav → cola o FAB mais perto do rodapé da coluna. */
+@media (min-width: 768px) {
+  .lm-fab-wrap {
+    bottom: 24px;
+  }
+}
+
+/* Mensageiro no CELULAR: conversa aberta esconde as DUAS barras globais (topbar de
+   cima + nav de baixo) → chat em tela cheia, só com o cabeçalho da conversa. Classe
+   posta no <body> pela MensagensPage. Desktop não muda. */
+@media (max-width: 767px) {
+  body.lm-dm-fullchat .lm-topbar,
+  body.lm-dm-fullchat .lm-bottom-nav {
+    display: none !important;
+  }
+
+  /* TRAVA a rolagem da PÁGINA na conversa: só o box de mensagens rola. Se a conversa
+     é curta (nada a rolar), forçar o dedo NÃO move nada — as barras ficam fixas, sem
+     o rubber-band do iOS arrastando a página inteira (classe posta no <html> e <body>). */
+  html.lm-dm-fullchat,
+  body.lm-dm-fullchat {
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100svh;
+  }
+  /* Na conversa em tela cheia o bottom-nav some, então o pb-28 (reserva dele) do
+     <main> vira ESPAÇO MORTO. Zera. */
+  body.lm-dm-fullchat main {
+    padding-bottom: 0;
+  }
+  /* Scroll interno da conversa (WebView/iOS): momentum + pan contido no box, sem
+     encadear pro body. */
+  body.lm-dm-fullchat .lm-dm-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  /* ⚠️ REGRA MOBILE (ver MEMORIA "REGRA MOBILE"): a faixa do topo do celular
+     (câmera/relógio/notch/indicadores) é ZONA MORTA — NENHUM elemento clicável ou
+     de texto pode encostar nela. Toda superfície de tela cheia no mobile respeita
+     env(safe-area-inset-top) no topo e env(safe-area-inset-bottom) embaixo. */
+
+  /* Barras da conversa = PÍLULAS flutuantes SOBREPOSTAS (position:absolute via Tailwind:
+     head=top-0, input=bottom-0, z-30). O scroll é um flex-1 LIMPO que preenche a carta e
+     rola POR TRÁS das barras (conteúdo desliza sob elas, sobre o wallpaper). O JS mede a
+     altura real das barras e dá o padding vertical exato ao scroll (input cresce).
+     ⚠️ HISTÓRICO (26/Jun): uma tentativa ANTERIOR de absolute quebrou o scroll no iOS —
+     a diferença agora é que as barras são IRMÃS absolutas e o scroll NÃO aninha nada
+     absolute dentro de si (padrão header-fixo-sobre-scroll, suportado no WebView).
+     As regras abaixo (margin/safe-area/bg/blur) dão o formato de pílula no mobile.
+     A especificidade `body.lm-dm-fullchat .x` vence as utilities do Tailwind. */
+  /* As BANDAS (head/input) são TRANSPARENTES — quem tem cor/blur/borda são as bolinhas
+     e a pílula dentro (classe CHIP no TSX). Aqui só empurramos a banda p/ respeitar a
+     zona morta do topo (notch) e o home-indicator embaixo (REGRA MOBILE). */
+  body.lm-dm-fullchat .lm-dm-head {
+    margin-top: calc(4px + env(safe-area-inset-top, 0px));
+  }
+  body.lm-dm-fullchat .lm-dm-input {
+    margin-bottom: max(4px, calc(env(safe-area-inset-bottom, 0px) - 18px));
+  }
+
+  /* Painel de Configurações da conversa abre em tela cheia POR CIMA do chat (fullchat
+     ativo → barras globais escondidas), então seu cabeçalho também encostava na câmera
+     e o botão Voltar ficava intocável. Empurra abaixo da zona morta do topo. */
+  body.lm-dm-fullchat .lm-dm-settings-head {
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* "Chamar a atenção" (zumbido MSN) — treme a carta da conversa por ~0.6s. */
+@keyframes lm-nudge {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-7px, 4px) rotate(-0.6deg); }
+  20% { transform: translate(7px, -4px) rotate(0.6deg); }
+  30% { transform: translate(-6px, -4px) rotate(-0.4deg); }
+  40% { transform: translate(6px, 4px) rotate(0.4deg); }
+  50% { transform: translate(-5px, 3px); }
+  60% { transform: translate(5px, -3px); }
+  70% { transform: translate(-4px, 2px); }
+  80% { transform: translate(3px, -2px); }
+  90% { transform: translate(-2px, 1px); }
+}
+.lm-nudge-shake { animation: lm-nudge 0.6s ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  .lm-nudge-shake { animation: none; }
+}
+
+/* Efeito de confirmação de repost nos Reels — pop central que aparece e some. */
+@keyframes lm-repost-pop {
+  0% { opacity: 0; transform: scale(0.7); }
+  18% { opacity: 1; transform: scale(1.06); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+.lm-repost-fx {
+  animation: lm-repost-pop 1.4s ease forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-repost-fx { animation: none; }
+}
+
+/* Pílula de "novos posts": quando as barras recolhem no mobile, sobe p/ perto do topo
+   respeitando a safe-area (notch/relógio). No desktop fica sempre abaixo da topbar. */
+.lm-newposts-up {
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+}
+@media (min-width: 768px) {
+  .lm-newposts-up {
+    top: 3.5rem;
+  }
+}
+
+/* Bolinha de não-lido sobre ícones do nav (Notificações/Mensagens). FONTE ÚNICA —
+   usada por Sidebar e BottomNav; o ring escuro destaca em qualquer superfície. */
+.lm-nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.lm-nav-dot {
+  position: absolute;
+  top: -1px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lm-accent);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Emoji custom NIP-30 (:shortcode: com imagem própria) renderizado no texto do post.
+   Altura acompanha a linha (~1.35em), alinhado ao texto; anima GIF/WebP naturalmente. */
+.lm-custom-emoji {
+  display: inline-block;
+  height: 1.35em;
+  width: auto;
+  vertical-align: -0.25em;
+  margin: 0 1px;
+  object-fit: contain;
+}
+
+/* "Sticker" (F4): post/DM que é só emoji (custom/unicode) renderiza GRANDE — figurinha
+   estilo Telegram/jumbo do Discord. Vale p/ emoji custom (imagem, incl. GIF animado) e unicode. */
+.lm-jumbo-emoji {
+  font-size: 3.2em;
+  line-height: 1.15;
+}
+.lm-jumbo-emoji .lm-custom-emoji {
+  height: 3.4em;
+  vertical-align: -0.5em;
+  margin: 0 2px;
+}

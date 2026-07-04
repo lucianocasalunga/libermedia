@@ -1,0 +1,73 @@
+/* Teclado de PIN — moderno/minimalista, 100% nas variáveis de tema (--lm-*). */
+.lw-keypad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 34px;
+  width: 100%;
+  max-width: 290px;
+  margin: 0 auto;
+}
+
+/* Pontos indicadores */
+.lw-dots { display: flex; gap: 16px; height: 14px; align-items: center; }
+.lw-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: color-mix(in srgb, var(--lm-text-pri) 16%, transparent);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), background .18s ease, box-shadow .18s ease;
+}
+.lw-dot.filled {
+  background: var(--lm-accent, #f5a623);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lm-accent, #f5a623) 22%, transparent);
+  transform: scale(1.18);
+}
+.lw-dots.is-error { animation: lw-shake .4s ease; }
+.lw-dots.is-error .lw-dot { background: #ef4444; box-shadow: none; }
+@keyframes lw-shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); } 40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); } 80% { transform: translateX(3px); }
+}
+
+/* Grade */
+.lw-keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 22px;
+  width: 100%;
+  place-items: center;
+}
+
+.lw-key {
+  appearance: none; border: none; background: transparent; padding: 0;
+  width: 76px; height: 76px; border-radius: 50%;
+  display: grid; place-items: center; position: relative;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  color: var(--lm-text-pri);
+}
+/* realce ao pressionar — via :active (sem remontar o elemento) */
+.lw-key::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: color-mix(in srgb, var(--lm-text-pri) 10%, transparent);
+  transform: scale(.2); opacity: 0;
+  transition: transform .25s ease, opacity .35s ease;
+}
+.lw-key:active::before { transform: scale(1); opacity: 1; transition-duration: .05s, .05s; }
+.lw-key-face {
+  position: relative; z-index: 1;
+  font-size: 30px; font-weight: 300; font-variant-numeric: tabular-nums;
+  letter-spacing: .5px; line-height: 1;
+  transition: transform .08s ease;
+}
+.lw-key:active .lw-key-face { transform: scale(.9); }
+.lw-key:disabled { opacity: .3; cursor: default; }
+.lw-key:disabled::before { display: none; }
+
+.lw-key-aux { color: color-mix(in srgb, var(--lm-text-pri) 60%, transparent); }
+.lw-key-aux svg { width: 28px; height: 28px; }
+.lw-key-bio { color: var(--lm-accent, #f5a623); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lw-dot, .lw-key-face, .lw-key::before { transition: none; }
+  .lw-dots.is-error { animation: none; }
+}

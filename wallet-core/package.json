@@ -1,0 +1,31 @@
+{
+  "name": "@libernet/wallet-core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Fonte única da carteira LiberWallet — consumida pelo liberwallet-spa (standalone) e libermedia-spa (embarcada).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.18.0"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "nostr-tools": "^2.23.5",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.18.0",
+    "typescript": "~6.0.2"
+  }
+}

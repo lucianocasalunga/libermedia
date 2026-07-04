@@ -1,0 +1,215 @@
+/* Sidebar desktop — única, scrollável (nav longa), tema-aware. */
+.lm-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  width: 256px;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 10px;
+  background: var(--lm-bg-sidebar);
+  overflow-y: auto;
+}
+
+.lm-sidebar-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 8px 12px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+.lm-sidebar-logo {
+  color: var(--lm-text-pri);
+}
+.lm-sidebar-logo-accent {
+  color: var(--lm-accent);
+}
+
+/* Cabeçalho de perfil */
+.lm-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.lm-sidebar-profile:hover {
+  background: var(--lm-bg-card);
+}
+.lm-sidebar-profile-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-sidebar-profile-npub {
+  font-size: 12px;
+  color: var(--lm-text-muted);
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cabeçalho de perfil com badges + copiar npub (2 ou 3 linhas) */
+.lm-sidebar-profile-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+}
+.lm-sidebar-avatar-link {
+  flex-shrink: 0;
+  border-radius: 50%;
+  line-height: 0;
+}
+.lm-sidebar-profile-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lm-sidebar-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  text-decoration: none;
+}
+.lm-sidebar-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.lm-sidebar-ext-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lm-sidebar-npub-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.lm-sidebar-copy {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border: none;
+  background: transparent;
+  color: var(--lm-text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.lm-sidebar-copy:hover {
+  background: var(--lm-bg-card);
+  color: var(--lm-text-pri);
+}
+.lm-sidebar-copy svg {
+  width: 14px;
+  height: 14px;
+}
+.lm-sidebar-copy.copied {
+  color: #22c55e;
+  transform: scale(1.15);
+}
+.lm-sidebar-copied {
+  font-size: 11px;
+  font-weight: 600;
+  color: #22c55e;
+  white-space: nowrap;
+  animation: lm-page-in 0.2s ease both;
+}
+
+/* Espaço reservado para o botão editável (injetado por página) */
+.lm-sidebar-slot {
+  margin: 4px 6px 8px;
+  min-height: 48px;
+}
+
+/* Navegação */
+.lm-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lm-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 9999px;
+  color: var(--lm-text-pri);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+  /* funciona também para <button> (Contas/Sair) */
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.lm-sidebar-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--lm-text-pri);
+  flex-shrink: 0;
+}
+.lm-sidebar-item:hover {
+  background: var(--lm-bg-card);
+}
+.lm-sidebar-item.active {
+  color: var(--lm-accent);
+  font-weight: 700;
+}
+.lm-sidebar-item.active svg {
+  stroke: var(--lm-accent);
+}
+
+/* Rodapé: Contas + Sair */
+.lm-sidebar-foot {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--lm-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lm-sidebar-exit,
+.lm-sidebar-exit:hover {
+  color: #ff0000;
+}
+.lm-sidebar-exit svg {
+  stroke: #ff0000 !important;
+}
+
+/* Crédito — respiro de ~10 linhas + letras pequenas */
+.lm-sidebar-credit {
+  margin-top: 64px;
+  padding: 0 14px 16px;
+  font-size: 11px;
+  color: var(--lm-text-muted);
+}

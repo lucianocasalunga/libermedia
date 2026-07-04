@@ -1,0 +1,253 @@
+/* Página About — diagramação editorial/revista: tipografia serifada de display,
+   espaçamento generoso, dropcap, pull-quotes e faixas de imagem. Tudo via tokens
+   do tema (--lm-*) para conviver com abismo/neve/etc. */
+.about {
+  --about-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+}
+
+.about-tabs {
+  padding: 1rem 1rem 0.25rem;
+}
+
+/* ───────── HERO ───────── */
+.about-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 3.25rem 1.5rem 3rem;
+  text-align: center;
+  background:
+    radial-gradient(120% 120% at 50% -10%, color-mix(in srgb, var(--lm-accent) 26%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--lm-accent) 9%, var(--lm-bg-main)), var(--lm-bg-main));
+  border-bottom: 1px solid var(--lm-border);
+}
+.about-hero-mark {
+  height: 30px;
+  width: auto;
+  margin: 0 auto 1.25rem;
+  border-radius: 8px;
+  opacity: 0.92;
+}
+.about-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--lm-accent);
+  margin-bottom: 0.9rem;
+}
+.about-hero h1 {
+  font-family: var(--about-serif);
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--lm-text-pri);
+  margin: 0 auto 0.9rem;
+  max-width: 18ch;
+}
+.about-hero-sub {
+  font-size: clamp(1rem, 2.5vw, 1.18rem);
+  line-height: 1.6;
+  color: var(--lm-text-sec);
+  max-width: 54ch;
+  margin: 0 auto;
+}
+
+/* ───────── SEÇÃO EDITORIAL ───────── */
+.about-section {
+  padding: 2.5rem 1.5rem;
+  border-bottom: 1px solid var(--lm-border);
+}
+.about-section-num {
+  font-family: var(--about-serif);
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--lm-accent);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.about-h {
+  font-family: var(--about-serif);
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  line-height: 1.16;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--lm-text-pri);
+  margin: 0 0 1rem;
+}
+.about-lead {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--lm-text-pri);
+  font-weight: 500;
+  margin: 0 0 1.1rem;
+}
+.about-p {
+  font-size: 1.02rem;
+  line-height: 1.78;
+  color: var(--lm-text-sec);
+  margin: 0 0 1.1rem;
+}
+.about-p--first::first-letter {
+  font-family: var(--about-serif);
+  float: left;
+  font-size: 3.4rem;
+  line-height: 0.82;
+  font-weight: 700;
+  padding: 0.1rem 0.6rem 0 0;
+  color: var(--lm-accent);
+}
+.about-pullquote {
+  font-family: var(--about-serif);
+  font-size: clamp(1.25rem, 3.5vw, 1.6rem);
+  line-height: 1.35;
+  font-style: italic;
+  color: var(--lm-text-pri);
+  border-left: 3px solid var(--lm-accent);
+  padding: 0.35rem 0 0.35rem 1.1rem;
+  margin: 1.6rem 0 0.25rem;
+}
+
+/* ───────── FIGURA (faixa de imagem) ───────── */
+.about-figure {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  margin: 1.6rem 0 0.25rem;
+  aspect-ratio: 16 / 8;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+.about-figure img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.about-figure-grad-0 {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+}
+.about-figure-grad-1 {
+  background: linear-gradient(135deg, #f59e0b, #c2410c);
+}
+.about-figure-grad-2 {
+  background: linear-gradient(135deg, #0ea5e9, #1e3a8a);
+}
+.about-figure-grad-3 {
+  background: linear-gradient(135deg, #059669, #065f46);
+}
+.about-figure-glyph {
+  position: absolute;
+  right: 1.1rem;
+  top: 0.6rem;
+  font-size: 3.6rem;
+  opacity: 0.3;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+/* Marca igual ao topo da sidebar: "Liber" + "Media" (acento). Sobre a foto, sem
+   pílula — só o wordmark com leve sombra p/ legibilidade. */
+.about-figure-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  margin: 0 0 0.9rem 1.1rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.65);
+}
+.about-figure-logo {
+  color: #fff;
+}
+.about-figure-logo-accent {
+  color: var(--lm-accent);
+}
+
+/* ───────── ESTATÍSTICAS DA REDE ───────── */
+.about-stats {
+  padding: 2.5rem 1.5rem;
+  border-bottom: 1px solid var(--lm-border);
+}
+.about-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 600px) {
+  .about-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.about-stat {
+  text-align: center;
+  padding: 1.2rem 0.75rem;
+  border: 1px solid var(--lm-border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--lm-accent) 6%, var(--lm-bg-main));
+}
+.about-stat-num {
+  font-family: var(--about-serif);
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  line-height: 1;
+}
+.about-stat-label {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--lm-text-muted);
+}
+
+/* ───────── PROSA LEGAL (Privacidade/Termos/Seg. Infantil) ───────── */
+.about-prose {
+  padding: 2rem 1.5rem 2.5rem;
+}
+.about-prose h2 {
+  font-family: var(--about-serif);
+  font-size: clamp(1.6rem, 4.5vw, 2rem);
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  margin: 0 0 0.4rem;
+}
+.about-prose h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  margin: 1.8rem 0 0.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--lm-border);
+}
+.about-prose p {
+  font-size: 0.98rem;
+  line-height: 1.72;
+  color: var(--lm-text-sec);
+  margin: 0.5rem 0;
+}
+.about-prose ul,
+.about-prose ol {
+  margin: 0.6rem 0 0.6rem 1.25rem;
+  color: var(--lm-text-sec);
+  line-height: 1.7;
+}
+.about-prose ul {
+  list-style: disc;
+}
+.about-prose ol {
+  list-style: decimal;
+}
+.about-prose li {
+  margin: 0.3rem 0;
+}
+.about-prose strong {
+  color: var(--lm-text-pri);
+  font-weight: 600;
+}
+.about-prose a {
+  color: var(--lm-accent);
+  text-decoration: underline;
+}

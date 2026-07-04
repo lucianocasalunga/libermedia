@@ -1,0 +1,108 @@
+/* Menu do post (⋯) — bottom-sheet no mobile, modal central no desktop. */
+.lm-postmenu-root {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+.lm-postmenu {
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  margin: 0 0 calc(16px + env(safe-area-inset-bottom));
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--lm-bg-main);
+  border: 1px solid var(--lm-border);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+.lm-postmenu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--lm-text-pri);
+  transition: background 0.15s ease;
+}
+.lm-postmenu-item:hover {
+  background: var(--lm-bg-input);
+}
+.lm-postmenu-item.is-danger {
+  color: #ef4444;
+}
+.lm-postmenu-ico {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.lm-postmenu-divider {
+  height: 1px;
+  margin: 6px 10px;
+  background: var(--lm-border);
+}
+.lm-postmenu-btn {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--lm-border-str);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  cursor: pointer;
+}
+.lm-postmenu-btn:hover {
+  background: var(--lm-bg-input);
+}
+.lm-postmenu-btn.is-primary {
+  background: var(--lm-accent);
+  border-color: var(--lm-accent);
+  color: var(--lm-accent-txt);
+}
+.lm-postmenu-btn.is-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+/* "Cancelar" — só no mobile (no desktop fecha clicando fora). */
+.lm-postmenu-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--lm-bg-input);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lm-text-pri);
+  cursor: pointer;
+}
+.lm-postmenu-cancel:active {
+  opacity: 0.7;
+}
+@media (min-width: 768px) {
+  .lm-postmenu-cancel {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .lm-postmenu-root {
+    align-items: center;
+  }
+  .lm-postmenu {
+    margin: 0;
+  }
+}

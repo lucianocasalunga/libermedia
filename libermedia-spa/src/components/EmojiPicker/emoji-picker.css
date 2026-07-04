@@ -1,0 +1,51 @@
+/* Picker de emoji — modal central hospedando o <emoji-picker> (emoji-picker-element).
+   O componente usa Shadow DOM: estilizamos por CSS custom properties (que atravessam o
+   shadow), mapeando pras nossas vars de tema → segue claro/escuro automaticamente. */
+.lm-emojipick-root {
+  position: fixed;
+  inset: 0;
+  z-index: 221;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 16px;
+  /* respeita o notch/safe-area no mobile (topo é zona morta) */
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.lm-emojipick {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 18px;
+  background: var(--lm-bg-main);
+  border: 1px solid var(--lm-border);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.lm-emojipick-host {
+  display: flex;
+  min-height: 0;
+}
+.lm-emojipick emoji-picker {
+  width: 100%;
+  height: 60vh;
+  max-height: 440px;
+  /* Mapeia o tema do componente pras nossas variáveis (claro/escuro juntos). */
+  --background: var(--lm-bg-main);
+  --border-color: var(--lm-border);
+  --indicator-color: var(--lm-accent);
+  --button-active-background: color-mix(in srgb, var(--lm-accent) 20%, transparent);
+  --button-hover-background: var(--lm-bg-input);
+  --category-font-color: var(--lm-text-muted);
+  --input-border-color: var(--lm-border);
+  --input-font-color: var(--lm-text-pri);
+  --input-placeholder-color: var(--lm-text-muted);
+  --input-border-radius: 9999px;
+  --outline-color: var(--lm-accent);
+  --emoji-size: 1.55rem;
+  --emoji-padding: 0.4rem;
+  --num-columns: 8;
+}

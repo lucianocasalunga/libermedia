@@ -1,0 +1,130 @@
+/* Barra superior padrão (coluna central). Cores 100% do tema:
+   abismo → fundo #000 / texto #fff; neve → #fff / #000; demais → suas vars. */
+.lm-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 12px;
+  background: var(--lm-bg-main);
+  color: var(--lm-text-pri);
+  border-bottom: 1px solid var(--lm-border);
+}
+
+/* Slot dos children — cresce p/ ocupar a barra (permite título à esq. + ação à dir.). */
+.lm-topbar-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Botão hambúrguer — SÓ mobile (desktop: escondido). Aparece à direita no mobile
+   via @media abaixo. display:none por padrão para o desktop nunca mostrá-lo. */
+.lm-topbar-burger {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.lm-topbar-burger:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.lm-topbar-burger svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* MOBILE: barra flutuante (não encosta no teto), recolhe ao rolar p/ baixo. */
+@media (max-width: 767px) {
+  .lm-topbar {
+    /* Desce abaixo da barra de status do celular (relógio/notch) — em PWA/TWA o
+       conteúdo vai sob o status bar; safe-area-inset-top dá a altura dele. +8px de folga. */
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    margin: calc(8px + env(safe-area-inset-top, 0px)) 8px 0;
+    border-radius: 9999px;
+    border: 1px solid var(--lm-border-str);
+    background: var(--lm-nav-bg, var(--lm-bg-main));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 6px 10px;
+    /* transição/compositing só no mobile (onde a barra recolhe). No desktop a
+       barra não transforma → sem will-change (evita ~11 camadas GPU no keep-alive). */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    will-change: transform;
+  }
+  .lm-topbar.is-hidden {
+    transform: translateY(calc(-100% - 16px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Hambúrguer visível só no mobile, à direita da barra. */
+  .lm-topbar-burger {
+    display: inline-flex;
+  }
+  /* MOBILE: afasta a seta de voltar da logo/borda esquerda (canto difícil de tocar) →
+     ela forma um grupo coeso [← ícone título], mais fácil de alcançar com o polegar. */
+  .lm-topbar-back {
+    margin-left: 18px;
+  }
+}
+
+.lm-topbar-logo {
+  flex-shrink: 0;
+  line-height: 0;
+}
+.lm-topbar-logo img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.lm-topbar-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.lm-topbar-back:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.lm-topbar-back svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Slot livre — cada página coloca seus elementos aqui */
+.lm-topbar-slot {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Auxiliar opcional para o nome da página */
+.lm-topbar-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

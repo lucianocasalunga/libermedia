@@ -1,0 +1,244 @@
+/* ============================================================================
+ * LiberMedia — Sistema de Temas (extraído de libermedia-v2/static/css/themes.css)
+ * 6 temas via classe na tag <html> (ex: html.theme-noite).
+ * Apenas as CSS custom properties + tipografia base. Os 3.700+ linhas de
+ * overrides estruturais do MPA não são necessários no SPA (Tailwind + vars).
+ * ============================================================================ */
+
+/* ============================================================================
+ * FONTE DE EMOJI PRÓPRIA (self-hosted) — solução DEFINITIVA do bug recorrente.
+ * Antes a renderização de emoji dependia de o SO do usuário TER uma fonte de emoji
+ * ('Apple Color Emoji'/'Segoe UI Emoji'/'Noto Color Emoji'…). Quem não tinha NENHUMA
+ * via tofu/hex ("números e letras") — sobretudo no picker (células <button>, que no
+ * Tailwind v4 usam font:inherit). Acrescentar nomes na lista era paliativo: a lista
+ * nunca cobre todo SO. AGORA servimos a TwemojiMozilla (vetorial COLRv0, 484KB woff2)
+ * por @font-face → renderiza idêntico em qualquer aparelho, sem depender do SO.
+ *
+ * unicode-range restringe a fonte SÓ aos blocos de emoji → texto continua em Inter,
+ * mesmo com 'LmEmoji' no início da cadeia. font-display:block = durante o (curtíssimo)
+ * carregamento o glifo fica invisível, NUNCA tofu; some o flash de "código".
+ * A url() relativa é processada pelo Vite (hash de conteúdo + base correta raiz e /v2.5).
+ * ============================================================================ */
+@font-face {
+  font-family: 'LmEmoji';
+  src: url('./fonts/twemoji.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+  unicode-range: U+200D, U+20E3, U+FE0F, U+231A-231B, U+23E9-23FA,
+    U+25FD-25FE, U+2600-27BF, U+2934-2935, U+2B05-2B07, U+2B1B-2B1C, U+2B50,
+    U+2B55, U+1F000-1FAFF;
+}
+
+/* --- Tipografia padrão X/Twitter (Inter) --- */
+html,
+body {
+  /* 'LmEmoji' vem PRIMEIRO: o unicode-range acima garante que ela só pinta emojis;
+     todo o resto do texto cai em Inter → sem efeito colateral no texto. As fontes de
+     emoji do SO ficam como fallback (caso a webfont falhe). 'LmEmoji' → texto → emoji
+     do SO → genérico. */
+  font-family: 'LmEmoji', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
+}
+
+/* --- NOITE (padrão dark) --- */
+html,
+html.theme-noite {
+  --lm-bg-main: #000000;
+  --lm-bg-sidebar: #111827;
+  --lm-bg-card: #1f2937;
+  --lm-bg-input: #374151;
+  --lm-text-pri: #ffffff;
+  --lm-text-sec: #d1d5db;
+  --lm-text-muted: #9ca3af;
+  --lm-border: #1f2937;
+  --lm-border-str: #374151;
+  --lm-accent: #f59e0b;
+  --lm-accent-txt: #ffffff;
+  --lm-icon-filter: brightness(0) invert(1);
+  --lm-scrollbar: rgba(255, 255, 255, 0.2);
+  --lm-nav-bg: #000000;
+  --lm-nav-icon: #ffffff;
+  --lm-link-ext: #3b82f6;
+  --lm-mention: #0ea5e9;
+  color-scheme: dark;
+}
+
+/* --- ABISMO (preto/branco absoluto — sem matiz) ---
+   Fundo 100% preto, texto 100% branco. Cinzas são neutros (sem hue), só para
+   hierarquia de hora/handle. Bordas neutras para separar cards no preto. */
+html.theme-abismo {
+  --lm-bg-main: #000000;
+  --lm-bg-sidebar: #000000;
+  --lm-bg-card: #000000;
+  --lm-bg-input: #0d0d0d;
+  --lm-text-pri: #ffffff;
+  --lm-text-sec: #b3b3b3;
+  --lm-text-muted: #808080;
+  --lm-border: #262626;
+  --lm-border-str: #333333;
+  --lm-accent: #f59e0b;
+  --lm-accent-txt: #000000;
+  --lm-icon-filter: brightness(0) invert(1);
+  --lm-scrollbar: rgba(255, 255, 255, 0.15);
+  --lm-nav-bg: #000000;
+  --lm-nav-icon: #ffffff;
+  --lm-link-ext: #3b82f6;
+  --lm-mention: #0ea5e9;
+  color-scheme: dark;
+}
+
+/* --- PENUMBRA (dark índigo) --- */
+html.theme-penumbra {
+  --lm-bg-main: #0a0a0f;
+  --lm-bg-sidebar: #0f0f1a;
+  --lm-bg-card: #13132a;
+  --lm-bg-input: #1a1a35;
+  --lm-text-pri: #e0e7ff;
+  --lm-text-sec: #c7d2fe;
+  --lm-text-muted: #818cf8;
+  --lm-border: #1e1b4b;
+  --lm-border-str: #312e81;
+  --lm-accent: #818cf8;
+  --lm-accent-txt: #ffffff;
+  --lm-icon-filter: brightness(0) invert(1);
+  --lm-scrollbar: rgba(129, 140, 248, 0.25);
+  --lm-nav-bg: #000000;
+  --lm-nav-icon: #ffffff;
+  --lm-link-ext: #818cf8;
+  --lm-mention: #67e8f9;
+  color-scheme: dark;
+}
+
+/* --- BRUMA (light cinza) --- */
+html.theme-bruma {
+  --lm-bg-main: #ffffff;
+  --lm-bg-sidebar: #f3f4f6;
+  --lm-bg-card: #e5e7eb;
+  --lm-bg-input: #d1d5db;
+  --lm-text-pri: #000000;
+  --lm-text-sec: #374151;
+  --lm-text-muted: #6b7280;
+  --lm-border: #e5e7eb;
+  --lm-border-str: #d1d5db;
+  --lm-accent: #d97706;
+  --lm-accent-txt: #ffffff;
+  --lm-icon-filter: brightness(0);
+  --lm-scrollbar: rgba(0, 0, 0, 0.2);
+  --lm-nav-bg: #ffffff;
+  --lm-nav-icon: #000000;
+  --lm-link-ext: #1d4ed8;
+  --lm-mention: #0369a1;
+  color-scheme: light;
+}
+
+/* --- NEVE (preto/branco absoluto — oposto do Abismo, sem matiz) ---
+   Fundo 100% branco, texto 100% preto. Cinzas neutros (sem hue) só p/ hierarquia. */
+html.theme-neve {
+  --lm-bg-main: #ffffff;
+  --lm-bg-sidebar: #ffffff;
+  --lm-bg-card: #ffffff;
+  --lm-bg-input: #f2f2f2;
+  --lm-text-pri: #000000;
+  --lm-text-sec: #333333;
+  --lm-text-muted: #666666;
+  --lm-border: #e0e0e0;
+  --lm-border-str: #cccccc;
+  --lm-accent: #d97706;
+  --lm-accent-txt: #ffffff;
+  --lm-icon-filter: brightness(0);
+  --lm-scrollbar: rgba(0, 0, 0, 0.15);
+  --lm-nav-bg: #ffffff;
+  --lm-nav-icon: #000000;
+  --lm-link-ext: #1d4ed8;
+  --lm-mention: #0369a1;
+  color-scheme: light;
+}
+
+/* --- AREIA (warm light) --- */
+html.theme-areia {
+  --lm-bg-main: #fafaf8;
+  --lm-bg-sidebar: #f5f5f0;
+  --lm-bg-card: #faf9f6;
+  --lm-bg-input: #eeede6;
+  --lm-text-pri: #292524;
+  --lm-text-sec: #57534e;
+  --lm-text-muted: #78716c;
+  --lm-border: #e7e5e4;
+  --lm-border-str: #d6d3d1;
+  --lm-accent: #b45309;
+  --lm-accent-txt: #ffffff;
+  --lm-icon-filter: brightness(0);
+  --lm-scrollbar: rgba(0, 0, 0, 0.2);
+  --lm-nav-bg: #ffffff;
+  --lm-nav-icon: #000000;
+  --lm-link-ext: #1d4ed8;
+  --lm-mention: #0369a1;
+  color-scheme: light;
+}
+
+/* ============================================================================
+ * TOKENS DE DESIGN v2 (27/Jun/2026) — destilados de Linear/Discord/Stripe (open-design, MIT).
+ * Detalhes e justificativa: ../DESIGN_REFERENCE.md
+ * SEÇÃO ADITIVA: não altera nenhum token acima. Adiciona raio, sombra, status,
+ * movimento, foco e wash de menção. Seguros para usar em qualquer componente.
+ * ============================================================================ */
+
+/* Invariantes de tema (raio, movimento, presença) — iguais em todos os 6 temas. */
+:root {
+  /* Raio (Discord) */
+  --lm-r-xs: 4px;   /* inputs, chips */
+  --lm-r-sm: 8px;   /* cards, botões */
+  --lm-r-md: 12px;  /* modais, painéis */
+  --lm-r-lg: 16px;  /* avatares de comunidade */
+  --lm-r-full: 9999px; /* pills, status, botão-ícone */
+  /* Movimento */
+  --lm-ease: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Status / presença (Discord) — também servem de semânticos */
+  --lm-status-online: #23a55a;
+  --lm-status-idle: #f0b232;
+  --lm-status-dnd: #f23f43;      /* = destrutivo/erro */
+  --lm-status-offline: #80848e;
+  /* Semântica de valor — fintech (LiberWallet) + zaps/créditos (LiberMedia) */
+  --lm-amount-pos: var(--lm-status-online); /* recebido / crédito / alta */
+  --lm-amount-neg: var(--lm-status-dnd);    /* enviado / débito / baixa */
+}
+
+/* Algarismos tabulares — OBRIGATÓRIO em saldo, valores e qualquer número que
+   alinha em coluna (Stripe/Coinbase). Aplicar a classe no elemento do número. */
+.lm-tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Sombra + borda-fio + foco/wash — variam dark vs light (Linear/Stripe). */
+html.theme-noite,
+html.theme-abismo,
+html.theme-penumbra {
+  --lm-border-subtle: rgba(255, 255, 255, 0.06);
+  --lm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --lm-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --lm-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --lm-shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --lm-ring-focus: 0 0 0 2px rgba(245, 158, 11, 0.5);  /* amber */
+  --lm-mention-wash: rgba(245, 158, 11, 0.1);
+}
+
+/* Penumbra: accent é índigo (#818cf8), não amber — foco/wash acompanham. */
+html.theme-penumbra {
+  --lm-ring-focus: 0 0 0 2px rgba(129, 140, 248, 0.5);
+  --lm-mention-wash: rgba(129, 140, 248, 0.12);
+}
+
+html.theme-bruma,
+html.theme-neve,
+html.theme-areia {
+  --lm-border-subtle: rgba(0, 0, 0, 0.08);
+  --lm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --lm-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --lm-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --lm-shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.18);
+  --lm-ring-focus: 0 0 0 2px rgba(217, 119, 6, 0.45);  /* amber escuro (light) */
+  --lm-mention-wash: rgba(217, 119, 6, 0.12);
+}

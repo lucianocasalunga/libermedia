@@ -1,0 +1,117 @@
+/* ── Seletor rápido (ancorado perto do botão de like) ── */
+.lm-reactpick-root {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+}
+.lm-reactpick-root.transparent {
+  background: transparent; /* só captura clique-fora; não escurece */
+}
+.lm-reactpick {
+  /* padding horizontal maior: a pílula é totalmente arredondada (9999px) → com só 6px o
+     PRIMEIRO emoji (❤) caía dentro da curva do canto, colado na linha. 14px o tira da
+     curva e iguala o respiro dos dois lados. */
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: var(--lm-bg-main);
+  border: 1px solid var(--lm-border-str);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  /* teto de largura tbm no CSS (o JS refina com visualViewport): nunca mais que a tela. */
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+}
+.lm-reactpick.anchored {
+  position: fixed; /* left/top via inline style (perto do botão) */
+  /* Entrada estilo Telegram: a pílula "pula" de baixo (perto do botão) com leve overshoot. */
+  animation: lm-reactbar-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.5) backwards;
+  transform-origin: center bottom;
+}
+@keyframes lm-reactbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes lm-reactemoji-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.lm-reactpick-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap; /* SEMPRE uma linha só — os itens encolhem pra caber (min-width abaixo). */
+  gap: 1px;
+}
+.lm-reactpick-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 44px; /* prefere 44px, mas ENCOLHE se a tela for estreita → nunca vaza nem quebra linha */
+  min-width: 32px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  transition: transform 0.12s ease, background 0.15s ease;
+  /* Surgem em cascata (o --lm-i vem do índice, setado no ReactionPicker). */
+  animation: lm-reactemoji-in 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.6) backwards;
+  animation-delay: calc(var(--lm-i, 0) * 26ms);
+}
+/* Toque: encolhe de leve (feedback tátil visual). */
+.lm-reactpick-emoji:active {
+  transform: scale(0.88);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-reactpick.anchored,
+  .lm-reactpick-emoji {
+    animation: none;
+  }
+}
+/* Emoji como imagem Twemoji: tamanho FIXO e centralizado → todos iguais (resolve o ❤). */
+.lm-reactpick-img {
+  width: 28px;
+  height: 28px;
+  max-width: 100%; /* acompanha o botão quando ele encolhe em tela estreita */
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+.lm-reactpick-emoji:hover {
+  background: var(--lm-bg-input);
+  transform: scale(1.22);
+}
+.lm-reactpick-emoji.is-current {
+  background: color-mix(in srgb, var(--lm-accent) 22%, transparent);
+}
+.lm-reactpick-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto; /* o ⋮ NUNCA encolhe nem some — sempre visível no fim da linha */
+  width: 36px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--lm-text-muted);
+  border-radius: 9999px;
+  cursor: pointer;
+}
+.lm-reactpick-more:hover {
+  background: var(--lm-bg-input);
+  color: var(--lm-text-pri);
+}

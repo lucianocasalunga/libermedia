@@ -1,0 +1,64 @@
+/* Bottom nav — pílula flutuante tema-aware (portado de mobile.css do MPA). */
+.lm-bottom-nav {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 20px;
+  right: 20px;
+  border-radius: 28px;
+  background: var(--lm-nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--lm-border-str);
+  z-index: 150;
+  padding: 4px 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  will-change: transform;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.lm-bottom-nav.nav-hidden {
+  transform: translateY(calc(100% + 40px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lm-bottom-nav-items {
+  display: flex;
+  height: 52px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.lm-bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--lm-nav-icon);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 48px;
+}
+
+/* Sem labels — só ícones (igual ao MPA). Esconde APENAS o label (span filho direto),
+   nunca o wrapper do ícone (.lm-nav-icon-wrap), senão os ícones somem. */
+.lm-bottom-nav-item > span:not(.lm-nav-icon-wrap) {
+  display: none;
+}
+
+.lm-bottom-nav-item svg {
+  width: 26px;
+  height: 26px;
+  stroke: var(--lm-nav-icon);
+  fill: none;
+  transition: stroke 0.2s ease;
+}
+
+.lm-bottom-nav-item.active,
+.lm-bottom-nav-item.active svg {
+  color: var(--lm-accent);
+  stroke: var(--lm-accent);
+}

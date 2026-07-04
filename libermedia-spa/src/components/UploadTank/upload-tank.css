@@ -1,0 +1,54 @@
+/* Tanque de upload — réplica do v2.0 (água + onda), nas cores do tema. */
+.lm-tank-frame {
+  position: relative;
+  width: 100%;
+  height: 8rem; /* = h-32 do grid de mídia do compose */
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0c0c0c;
+  border: 2px solid color-mix(in srgb, var(--lm-accent, #f59e0b) 70%, transparent);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+.lm-tank-thumb {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.5s ease;
+}
+.lm-tank-water {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 0%;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lm-accent, #f59e0b) 65%, transparent) 0%,
+    color-mix(in srgb, var(--lm-accent, #b45309) 90%, #000) 100%
+  );
+  transition: height 0.4s ease;
+}
+.lm-tank-wave {
+  position: absolute;
+  top: -5px; left: -60%;
+  width: 220%; height: 10px;
+  background: color-mix(in srgb, var(--lm-accent, #f59e0b) 45%, transparent);
+  border-radius: 50%;
+  animation: lm-tank-wave 1.8s linear infinite;
+}
+@keyframes lm-tank-wave {
+  from { transform: translateX(0); }
+  to   { transform: translateX(27%); }
+}
+.lm-tank-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .lm-tank-wave { animation: none; } }
