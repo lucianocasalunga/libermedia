@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
-    "nostr-tools": "^2.23.5",
+    "nostr-tools": "^2.23.12",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
