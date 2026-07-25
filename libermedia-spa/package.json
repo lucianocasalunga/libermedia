@@ -17,7 +17,7 @@
     "emoji-picker-element": "^1.29.1",
     "emoji-picker-element-data": "^1.8.0",
     "jotai": "^2.20.1",
-    "nostr-tools": "^2.23.9",
+    "nostr-tools": "^2.24.1",
     "qrcode": "^1.5.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
