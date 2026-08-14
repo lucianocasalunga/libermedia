@@ -19,7 +19,7 @@
     "jotai": "^2.20.1",
     "nostr-tools": "^2.23.9",
     "qrcode": "^1.5.4",
-    "react": "^19.2.6",
+    "react": "^19.2.8",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.1",
     "tailwindcss": "^4.3.2"
@@ -27,7 +27,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.1.1",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^10.7.0",
